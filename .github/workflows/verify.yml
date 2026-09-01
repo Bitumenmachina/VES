@@ -1,0 +1,31 @@
+name: verify
+# Executor-independent verification. Runs on GitHub's runners, not in the agent's VM.
+# Free on public repositories with standard runners. Read the result from the Actions tab
+# on your phone: the job summary carries size, sha256, and every finding verbatim.
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: ves-verify
+        shell: bash
+        run: |
+          set +e
+          node tools/ves-verify.mjs | tee verify.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo '## ves-verify'
+            echo
+            echo '```'
+            cat verify.txt
+            echo '```'
+            echo
+            echo "exit code: $code"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $code

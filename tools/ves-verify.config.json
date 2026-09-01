@@ -1,0 +1,7 @@
+{
+  "file": "src/VES_PM.html",
+  "egressBaseline": "tools/egress-baseline.json",
+  "freezeManifest": "tools/freeze-manifest.json",
+  "sentinelStart": "<!-- VES:FREEZE {name} -->",
+  "sentinelEnd": "<!-- VES:END {name} -->"
+}

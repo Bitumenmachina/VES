@@ -1,0 +1,39 @@
+{
+  "inputs": {
+    "manual": {
+      "qty": 100,
+      "unit": "EA",
+      "price": 10
+    },
+    "oh": 10,
+    "mu": 8,
+    "pr": 5
+  },
+  "recap": {
+    "material": 1000,
+    "labor": 0,
+    "equipment": 0,
+    "cost": 1000,
+    "oh": 0.1,
+    "mk": 0.08,
+    "pf": 0.05,
+    "ohAmt": 100,
+    "mkAmt": 88,
+    "pfAmt": 59.400000000000006,
+    "sell": 1247.4,
+    "lineCount": 1
+  },
+  "lines": [
+    {
+      "desc": "GATE-B ladder pin",
+      "csi": "01 00 00",
+      "kind": "material",
+      "ordered": 100,
+      "unit": "EA",
+      "unitCost": 10,
+      "extended": 1000,
+      "included": true,
+      "matchStatus": "MANUAL"
+    }
+  ]
+}

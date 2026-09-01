@@ -1,0 +1,15 @@
+{
+  "ves": {
+    "path": "/home/BuildOs/Downloads/VES.html",
+    "sha256": "506f80f7506829f2235856e1316861da4565aec84dbe9f585a17aee58b7b0204"
+  },
+  "goldenA_money_sha256": "4f5937425e7e8122d5ccbc010f7b7cfd38416b11ac94ef1567af36ad4a62a49c",
+  "goldenB_money_sha256": "b828fbcd4c5ec562c225d3e93244ced61cf765cb6d7e5a47c743b49f58bbba47",
+  "harness": {
+    "g0.mjs": "f38b76f2c107a5810c8c99da48620b9d9730a74b9bd078e3d0b97dc529706acc",
+    "scenarioA.js": "9baaa23459eac4025e15bb04b8b72a6a0f7b7564107ae0d5d1cd0fc78ddc1775",
+    "scenarioB.js": "ea9d46ac363a9f88ca4fd1bbc71f9c256b78ff60e7fc4fcaf69d470703b2d7df",
+    "scenarioC.js": "f1166ec1d611afb411124f5b80c9c8d62959060eb5d140ec10c779c54786d962",
+    "scenarioD.js": "450cdec0b5419b45b25bdd0cbc8477dd18290c64f2e19eed063af68b5dcd52ea"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "writtenFrom": {
+    "bytes": 3455798,
+    "sha256": "2ffd7d2ee255708b8b9b06a89c6c1bdd1cec20105713a60361713b1042c54a09"
+  },
+  "entries": {
+    "d8628d45a6221f851df5b137": {
+      "pattern": "\\bfetch\\s*\\(",
+      "sample": "!function webpackUniversalModuleDefinition(e,t){\"object\"==typeof exports&&\"object\"==typeof module?module.exports=e.pdfjsWorker=t():\"function\"==typeof define&&de"
+    },
+    "7271ff37dfd96c9db9f71d9f": {
+      "pattern": "\\bfetch\\s*\\(",
+      "sample": "!function webpackUniversalModuleDefinition(t,e){\"object\"==typeof exports&&\"object\"==typeof module?module.exports=t.pdfjsLib=e():\"function\"==typeof define&&defin"
+    },
+    "247881a6fd403a02c08b1fa3": {
+      "pattern": "\\bXMLHttpRequest\\b",
+      "sample": "!function webpackUniversalModuleDefinition(t,e){\"object\"==typeof exports&&\"object\"==typeof module?module.exports=t.pdfjsLib=e():\"function\"==typeof define&&defin"
+    },
+    "51b1a63e879272b219141bbf": {
+      "pattern": "\\bimportScripts\\s*\\(",
+      "sample": "!function webpackUniversalModuleDefinition(t,e){\"object\"==typeof exports&&\"object\"==typeof module?module.exports=t.pdfjsLib=e():\"function\"==typeof define&&defin"
+    },
+    "c0a8a1a4fce5d7a679377a6e": {
+      "pattern": "\\bfetch\\s*\\(",
+      "sample": "fetch({ filename }) {"
+    },
+    "44abc9021b8972df02a03160": {
+      "pattern": "\\bimport\\s*\\(",
+      "sample": "// import. Unlike a Condition-Set import (which only adds project conditions), this"
+    },
+    "72158704126d19d80f76951a": {
+      "pattern": "\\bimport\\s*\\(",
+      "sample": "toast('CSV carries a single table — use the .xlsx workbook for a full-library import (CSV import is best-effort, not the full graph).', 'warn');"
+    }
+  }
+}
