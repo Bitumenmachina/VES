@@ -1,0 +1,62 @@
+name: verify
+# Executor-independent verification. Runs on GitHub's runners, not in the agent's VM.
+# Free on public repositories with standard runners. Read the result from the Actions tab
+# on your phone: each job summary carries size, sha256, and every finding verbatim.
+#
+# Batch V (owner-approved 2026-09-01): a second job runs the G0 golden money-path gate on the
+# runner's preinstalled Google Chrome, so "byte-identical pricing" is checked outside any seat.
+# Actions are pinned by commit SHA and the token is read-only (least privilege).
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: ves-verify
+        shell: bash
+        run: |
+          set +e
+          node tools/ves-verify.mjs | tee verify.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo '## ves-verify'
+            echo
+            echo '```'
+            cat verify.txt
+            echo '```'
+            echo
+            echo "exit code: $code"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: g0 golden money-path gate
+        shell: bash
+        env:
+          VES_CHROME: google-chrome
+        run: |
+          set +e
+          { google-chrome --version; node --version; node gate/g0.mjs check src/VES_PM.html; } 2>&1 | tee gate.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo '## g0 gate'
+            echo
+            echo '```'
+            cat gate.txt
+            echo '```'
+            echo
+            echo "exit code: $code"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $code

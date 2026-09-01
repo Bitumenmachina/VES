@@ -1,0 +1,32 @@
+# VES public repo — the canonical file, its verification harness, and clean governance.
+# Everything below stays local: QA archive, client fixtures, vendor reference PDFs, and the
+# pricing book. Their history lives on the local-only `local-full` branch. Ruled 2026-08-31.
+
+node_modules/
+*.tmp
+*.swp
+*~
+.DS_Store
+
+# Local-only trees (never public)
+fixtures/
+evidence/
+refs/
+out/
+work/
+restore/
+harness/
+patches/
+verify.sh
+
+# Local-only registers (carry client-identifiable material)
+LEDGER.md
+MAP.md
+GTM_BAR.md
+RECONCILIATION.md
+THEORY_REGISTER.md
+COMMISSION_CONTEXT_CAPTURE_*.md
+
+# Release artifacts stay local except the synthetic demo
+release/*
+!release/demo/

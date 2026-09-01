@@ -1,0 +1,256 @@
+{
+  "inputs": {
+    "assembly": "ssmr",
+    "driver": "ssmr.field",
+    "qty": 3150.8,
+    "oh": 10,
+    "mu": 8,
+    "pr": 5
+  },
+  "recap": {
+    "material": 24181.18,
+    "labor": 57643.048,
+    "equipment": 0,
+    "cost": 81824.228,
+    "oh": 0.1,
+    "mk": 0.08,
+    "pf": 0.05,
+    "ohAmt": 8182.4228,
+    "mkAmt": 7200.532064,
+    "pfAmt": 4860.3591432,
+    "sell": 102067.5420072,
+    "lineCount": 23
+  },
+  "lines": [
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 3151,
+      "unit": "SF",
+      "unitCost": 3,
+      "extended": 9453,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 3151,
+      "unit": "EA",
+      "unitCost": 1,
+      "extended": 3151,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 13 00",
+      "kind": "material",
+      "ordered": 16,
+      "unit": "ROLL",
+      "unitCost": 130,
+      "extended": 2080,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 3151,
+      "unit": "EA",
+      "unitCost": 0.18,
+      "extended": 567.18,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 1,
+      "unit": "LS",
+      "unitCost": 1500,
+      "extended": 1500,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 1,
+      "unit": "LS",
+      "unitCost": 2500,
+      "extended": 2500,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 62 00",
+      "kind": "material",
+      "ordered": 30,
+      "unit": "EA",
+      "unitCost": 95,
+      "extended": 2850,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 92 00",
+      "kind": "material",
+      "ordered": 8,
+      "unit": "ROLL",
+      "unitCost": 18,
+      "extended": 144,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 92 00",
+      "kind": "material",
+      "ordered": 2,
+      "unit": "CASE",
+      "unitCost": 360,
+      "extended": 720,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 71 23",
+      "kind": "material",
+      "ordered": 2,
+      "unit": "EA",
+      "unitCost": 40,
+      "extended": 80,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 20,
+      "unit": "BOX",
+      "unitCost": 32,
+      "extended": 640,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 3,
+      "unit": "BOX",
+      "unitCost": 32,
+      "extended": 96,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "material",
+      "ordered": 1000,
+      "unit": "EA",
+      "unitCost": 0.2,
+      "extended": 200,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 62 00",
+      "kind": "material",
+      "ordered": 4,
+      "unit": "BOX",
+      "unitCost": 50,
+      "extended": 200,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 13 00",
+      "kind": "labor",
+      "ordered": 3150.8,
+      "unit": "SF",
+      "unitCost": 0.66,
+      "extended": 2079.5280000000002,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "07 41 13",
+      "kind": "labor",
+      "ordered": 3150.8,
+      "unit": "SF",
+      "unitCost": 4.4,
+      "extended": 13863.520000000002,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 1,
+      "unit": "CREW DAY",
+      "unitCost": 2750,
+      "extended": 2750,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 2,
+      "unit": "CREW DAY",
+      "unitCost": 2750,
+      "extended": 5500,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 1,
+      "unit": "CREW DAY",
+      "unitCost": 2750,
+      "extended": 2750,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 1,
+      "unit": "LS",
+      "unitCost": 6700,
+      "extended": 6700,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 1,
+      "unit": "DAY",
+      "unitCost": 600,
+      "extended": 600,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 38,
+      "unit": "DAY",
+      "unitCost": 600,
+      "extended": 22800,
+      "included": true,
+      "matchStatus": "MATCHED"
+    },
+    {
+      "csi": "",
+      "kind": "labor",
+      "ordered": 1,
+      "unit": "DAY",
+      "unitCost": 600,
+      "extended": 600,
+      "included": true,
+      "matchStatus": "MATCHED"
+    }
+  ]
+}

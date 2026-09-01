@@ -1,0 +1,292 @@
+{
+  "app": "VES",
+  "kind": "takeoff",
+  "version": 3,
+  "savedAt": "2026-08-23T15:50:33.127Z",
+  "pdfName": "Blank takeoff",
+  "projectMeta": {
+    "name": "Demo — Flat Roof Sample",
+    "client": "",
+    "address": "",
+    "phone": "",
+    "email": "",
+    "notes": "Neutral demo takeoff. Built-in TPO assembly, typed quantities, no real project data."
+  },
+  "schedule": {
+    "rows": {}
+  },
+  "view": {
+    "tool": "select",
+    "armedId": null
+  },
+  "viz": {
+    "hidden": [],
+    "fillMode": "on"
+  },
+  "sheetDone": {},
+  "identity": null,
+  "grid": {
+    "ftPerSquare": 1,
+    "page": {
+      "w": 320,
+      "h": 220
+    }
+  },
+  "mode": "single",
+  "activePane": 0,
+  "panes": [
+    {
+      "pageNum": 1,
+      "zoom": 3,
+      "scroll": {
+        "l": 0,
+        "t": 0
+      }
+    },
+    {
+      "pageNum": 0,
+      "zoom": 1,
+      "scroll": {
+        "l": 0,
+        "t": 0
+      }
+    }
+  ],
+  "rotations": {},
+  "calibrations": {
+    "1": {
+      "ftPerUnit": 1,
+      "fromGrid": true,
+      "points": null,
+      "typed": "grid · 1 ft/unit",
+      "page": 1,
+      "when": "2026-08-23T15:50:31.480Z",
+      "verifications": []
+    }
+  },
+  "conditions": [
+    {
+      "id": 1,
+      "name": "TPO — membrane field",
+      "color": "#ff5d3a",
+      "type": "area",
+      "csi": "07 54 23",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 1,
+      "libRef": "tpo.field",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 2,
+      "name": "TPO — parapet flashing",
+      "color": "#3d9be9",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 2,
+      "libRef": "tpo.parapet",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 3,
+      "name": "TPO — headwall flashing",
+      "color": "#6fd08c",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 3,
+      "libRef": "tpo.headwall",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 4,
+      "name": "TPO — step flashing",
+      "color": "#ffd166",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 4,
+      "libRef": "tpo.step",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 5,
+      "name": "TPO — drip edge",
+      "color": "#b07cd8",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 5,
+      "libRef": "tpo.dripedge",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 6,
+      "name": "TPO — inside/outside corner",
+      "color": "#f25f8e",
+      "type": "count",
+      "csi": "07 54 23",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 6,
+      "libRef": "tpo.corner",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 7,
+      "name": "TPO — pipe penetration",
+      "color": "#4ecdc4",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 7,
+      "libRef": "tpo.pipe",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 8,
+      "name": "TPO — drain",
+      "color": "#c8a24b",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 8,
+      "libRef": "tpo.drain",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 9,
+      "name": "TPO — scupper",
+      "color": "#ff5d3a",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 9,
+      "libRef": "tpo.scupper",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    },
+    {
+      "id": 10,
+      "name": "TPO — roof hatch",
+      "color": "#3d9be9",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 10,
+      "libRef": "tpo.hatch",
+      "assembly": "tpo",
+      "createdAt": "2026-08-23T15:50:32.090Z",
+      "updatedAt": "2026-08-23T15:50:32.090Z"
+    }
+  ],
+  "measurements": [
+    {
+      "id": 11,
+      "conditionId": 1,
+      "page": null,
+      "type": "area",
+      "points": [],
+      "value": 3150.8,
+      "notes": "",
+      "manual": true
+    },
+    {
+      "id": 12,
+      "conditionId": 5,
+      "page": null,
+      "type": "linear",
+      "points": [],
+      "value": 240,
+      "notes": "",
+      "manual": true
+    }
+  ],
+  "assemblyProject": {
+    "lineOverrides": {},
+    "conditionOverrides": {},
+    "settings": {
+      "overheadPct": 10,
+      "markupPct": 8,
+      "profitPct": 5
+    },
+    "general": []
+  },
+  "nextId": 13
+}
