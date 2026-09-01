@@ -26,6 +26,12 @@ every push, outside this VM — that run is the one Patrick reads.
 Never run --write-baseline or --write-manifest. Those record current bytes as accepted; only
 Patrick decides that.
 
+## Seat method (Claude Code)
+- When compacting, always preserve: the §Identity block, the last verifier / G0 / probe-v outputs verbatim, the open
+  rulings list from LEDGER.md, and the current batch's red-first probe results.
+- Persona passes run as read-only subagents (`.claude/agents/p-*.md`); the seat triages, never the persona.
+- A batch's stop condition is a check the transcript shows: verifier PASS, G0 GREEN, probe-v all green.
+
 ## Evidence Patrick accepts
 Hashes, byte counts, exit codes, raw tool output, the file booting in his browser.
 Not accepted: summaries of output, characterized severity, "done", a green badge standing in
