@@ -9,11 +9,14 @@ runtime egress. The file is the product; the repo state is the evidence.
   named-project CSVs, project-bound pricing. Synthetic fixtures only. The repo is public.
 - One canonical file, inside this worktree. No second writable copy.
 - Public docs in this repo name no clients, no projects, no addresses, no job dollar figures —
-  synthetic aliases only. The deep registers live locally, off this branch.
+  synthetic aliases only. There is no local seat (ruled 2026-09-01): every register, gate, probe and fixture
+  the work needs lives here, scrubbed. Anything that cannot be made synthetic does not exist for this project.
 - Acceptance is Patrick's word alone. Machine output is evidence; it gates nothing by itself.
 - Read bytes or say you did not. No projected paths, sizes, hashes, or contents.
 
-Current build state, work queue, and carried lessons: `NOTES.md` — read it before working.
+Current build state, work queue, and carried lessons: `NOTES.md` — read it before working. Rulings and open items:
+`LEDGER.md`. Gates: `node tools/ves-verify.mjs` · `VES_CHROME=<chrome> node gate/g0.mjs check src/VES_PM.html` ·
+`tools/sweep/probe-v.mjs` (see `tools/sweep/README.md`). CI runs all three on every push.
 
 ## Verification (run it yourself, paste the full output)
     node tools/ves-verify.mjs
@@ -30,11 +33,11 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-01, cloud seat, branch claude/ves-live-repo-sweep-x202rq)
 - canonical file: src/VES_PM.html
-- build: F18.59 (Batch V — owner-approved sweep + mobile-feasibility items; U2 file-door typing, freeze fences, scrub)
-- bytes: 3522442
-- sha256: 9612e4610ddeae6f034384d6937e3068bc3c7551824c0479c8e9ba78bada7ffb
-- priors: F18.58 = Batch T (f785eea7…) · F18.57 = Batch S (6eb480bc…) · F18.56 = Batch R (ffde5caa…) · F18.55 (retired tag) · first public root 8313a26 (retired).
-- history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub); the
-  F18.55–F18.58 commits and the `f18.55` tag are no longer on the remote. The full line lives on the owner seat only.
+- build: F18.60 (Batch W — twenty named module blocks, short-viewport recap panel; no-local-seat rails)
+- bytes: 3525697
+- sha256: c83737b334da9fdb43f31e974d374ee235365832389fa08f8e8dbeef6d470387
+- priors: F18.59 = Batch V (9612e461…) = the fresh public root `4920c35` · F18.58 = Batch T (f785eea7…) · F18.57 = Batch S (6eb480bc…) · earlier line retired.
+- history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The
+  retired commits and the `f18.55` tag are not part of the record; `main` is the line that moves forward.
 - freeze: VESCore + VESASM are fenced (`/* VES:FREEZE core|engine */`). The manifest is NOT written — only Patrick runs
   `node tools/ves-verify.mjs --write-manifest`, on a build he accepts; until then FREEZE reports "manifest absent" and gates nothing.

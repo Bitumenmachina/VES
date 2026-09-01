@@ -8,7 +8,7 @@ raw CDP.
 ## Contract (Fable 5 / Patrick, 2026-07-05)
 - Nothing from anyone is adopted until G0 runs **green on the untouched original
   AND on the candidate**. "Byte-identical pricing" == golden-identical G0 output.
-- Canonical reference build: the owner seat's `VES.html` of 2026-07-05,
+- Canonical reference build: the `VES.html` of 2026-07-05 the goldens were frozen from (not in this repo),
   sha256 `506f80f7…`, 3,172,449 B.
 - Acceptance is Patrick's cold run only. G0 is a save point, never a PASS.
 

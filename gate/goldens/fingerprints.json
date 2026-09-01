@@ -1,6 +1,6 @@
 {
   "ves": {
-    "path": "VES.html (reference build on the owner seat; sha256 below)",
+    "path": "VES.html (the 2026-07-05 reference build the goldens were frozen from; sha256 below)",
     "sha256": "506f80f7506829f2235856e1316861da4565aec84dbe9f585a17aee58b7b0204"
   },
   "goldenA_money_sha256": "4f5937425e7e8122d5ccbc010f7b7cfd38416b11ac94ef1567af36ad4a62a49c",

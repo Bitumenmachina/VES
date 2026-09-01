@@ -1,13 +1,20 @@
 # NOTES — build state, queue, and carried lessons
 
 Condensed 2026-08-31 from `WAVE2_QUEUE.md` + `WAVE2_HANDOFF_OPUS.md` (verbatim originals: commit
-`8313a26`, and the local seat's full-history branch). This file is the pickup document — current
+`8313a26`, retired with the 2026-09-01 fresh root). This file is the pickup document — current
 truth first, history compressed.
 
 ## State
 
-- **src = F18.59** — sha256 `9612e4610ddeae6f034384d6937e3068bc3c7551824c0479c8e9ba78bada7ffb`,
-  3,522,442 bytes. **Batch V landed 2026-09-01 on branch `claude/ves-live-repo-sweep-x202rq`** (owner-approved
+- **src = F18.60** — sha256 `c83737b334da9fdb43f31e974d374ee235365832389fa08f8e8dbeef6d470387`,
+  3,525,697 bytes. **Batch W landed 2026-09-01** (Patrick's ruling: there is no local seat): the application script
+  is split at its own module banners into twenty named `<script data-ves-module=…>` blocks (proof: a reverse
+  transform reproduces the F18.59 bytes exactly; 0 top-level statements call a later-defined function; G0 4/4);
+  the verifier names the block in every SYNTAX finding; under 560px of viewport height the summoned recap panel
+  takes the dock column with its own scroll and close (C-N1 class closed); `LEDGER.md` is public and seeded from
+  every ruling the bytes cite; CI runs verifier + G0 + probe-v. Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first
+  on F18.59) · selftest 10/10 · verifier PASS 0 new egress, FREEZE 2 regions.
+- **F18.59 = Batch V, landed 2026-09-01 (the fresh public root `4920c35`)** (owner-approved
   from `SWEEP_68c8e23.md` + `MOBILE_FEASIBILITY_68c8e23.md`): U2 file-door typing of measurements/conditions
   (drop + count + toast + standing banner; a string quantity priced as $0 silently on F18.58) · proposal legend
   swatches print under "background graphics off" · rail rests collapsed under 720px (one tap back) · coarse
@@ -82,16 +89,17 @@ truth first, history compressed.
 10. ✅ **Batch V LANDED — F18.59** (see State). Open from it, all Patrick's: (a) ✅ **history ruling: fresh root**
    (2026-09-01) — `main` restarted from a single root carrying the F18.59 tree; the earlier public commits and the
    `f18.55` tag are gone from the remote (GitHub may still serve them by SHA until its cache clears — a support
-   request purges that); the full line lives on the owner seat; (b) **freeze
+   request purges that); the retired line is not part of the record; (b) **freeze
    manifest** — `--write-manifest` on a build he accepts; (c) **GitHub Pages** serves `src/VES_PM.html` publicly
-   (sweep F-01) — keep and say so, or disable; (d) N-R1 rate precision (numbers in sweep F-04); (e) the structural
-   split (sweep P-06) is held for the local seat's full probe stack. Not built: the recap panel at short viewport
-   heights (C-N1 class; needs the local probe stack).
+   (sweep F-01) — keep and say so, or disable; (d) N-R1 rate precision (numbers in sweep F-04); (e) ✅ the structural
+   split and the short-viewport recap panel landed in **Batch W (F18.60)** once the no-local-seat ruling removed
+   their only blocker.
 11. **Field lane charter — `FIELD_LANE.md`** (owner-approved in principle 2026-09-01, interior lane included):
    import door for reports and room scans → Field lens → field delta → laser input → private host. Each item
    ships red-first with its own probe under `tools/sweep/`, G0 absolute, typed quantities OBS.
-12. Wave ends when a full 4-persona pass yields zero new P0/HIGH **and** the GTM bar rows close
-   (GTM_BAR.md is a local-seat doc).
+12. Wave ends when a full 4-persona pass yields zero new P0/HIGH **and** the bar rows close. The w2* persona
+   probes and GTM_BAR were never pushed; if they still exist anywhere they are re-created here, synthetic, under
+   `tools/sweep/` and `LEDGER.md` — otherwise the sweep probes are the stack and `LEDGER.md` is the bar.
 
 **Owner's blocking set (his calls, not buildable):** N5 · N6 · D-24.7b general print-latch
 release (needs a HEADED Chrome+Firefox bench — the one open leak-class hole) · F1 price/license.
@@ -107,8 +115,8 @@ option.
 
 ## Method rails (standing; do not regress)
 
-- Agents do the burn serial + announced; they develop on scratch copies and NEVER edit
-  `src/VES_PM.html`; orchestrator applies exact anchored edits, verifies md5, gates, commits.
+- A seat applies exact anchored edits to `src/VES_PM.html` (anchor count asserted, never a regex over the file),
+  gates, commits, and pushes — push is the save; `main` is the line that moves forward.
 - Every new gate is proven RED on unpatched src first. Every commit: G0 GREEN + the batch's
   probe GREEN; UI/print claims need real pointer / rendered bytes, both engines where stated.
 - Money paths: G0 goldens are absolute — a patch that moves them is wrong.
@@ -135,8 +143,8 @@ option.
 
 ## Seat notes
 
-- Cloud sessions: verifier + selftest run anywhere; G0 runs wherever a Chromium exists (`VES_CHROME=…`; the Claude
-  cloud VM ships one at `/opt/pw-browsers/chromium-*/chrome-linux/chrome`) and in CI as the `gate` job since Batch V;
-  the w2* probe stack still needs the local seat. Fixtures beyond the synthetic demo, probe evidence, the defect LEDGER,
-  and GTM_BAR are local-seat material and never enter this repo.
+- There is no local seat (ruled 2026-09-01). Verifier + selftest run anywhere; G0 and the probe gate run wherever a
+  Chromium exists (`VES_CHROME=…`; the Claude cloud VM ships one at `/opt/pw-browsers/chromium-*/chrome-linux/chrome`)
+  and in CI on every push (`verify`, `gate`, `probes` jobs). Fixtures are synthetic and live in `release/demo/` and
+  `tools/sweep/mkpdf.mjs`; the register is `LEDGER.md`. Client material never enters the repo and has no other home.
 - Public docs carry no client names, projects, addresses, or job dollar figures (CLAUDE.md rule).

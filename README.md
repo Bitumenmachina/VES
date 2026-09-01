@@ -23,9 +23,10 @@ not the badge. `bash test/selftest.sh` proves the verifier's exit-code contract 
     VES_CHROME=google-chrome node gate/g0.mjs check src/VES_PM.html
 
 Drives the app's own functions over CDP and diffs money output byte-for-byte against ratified
-goldens (`gate/README.md` has the contract). It runs on the local seat, in Claude cloud sessions
-(`VES_CHROME=/opt/pw-browsers/chromium-*/chrome-linux/chrome`), and on every push as the `gate`
-job of `.github/workflows/verify.yml` — read that job's summary alongside `verify`.
+goldens (`gate/README.md` has the contract). It runs anywhere a Chromium exists — Claude cloud sessions
+(`VES_CHROME=/opt/pw-browsers/chromium-*/chrome-linux/chrome`), a laptop, and on every push as the `gate`
+job of `.github/workflows/verify.yml`; the `probes` job runs the batch gate `tools/sweep/probe-v.mjs` the same
+way. Read the job summaries alongside `verify`.
 
 ## Working here
 
@@ -34,8 +35,8 @@ job of `.github/workflows/verify.yml` — read that job's summary alongside `ver
   document for any new session.
 - `release/demo/demo-flat-roof.json` — synthetic demo takeoff. All fixtures here are synthetic;
   client-identifiable material never enters this repo.
-- Deep QA archives (probe evidence, defect ledger, fixtures) live on the owner's local seat,
-  off this branch.
+- `LEDGER.md` — rulings by ID and the open-items register. `tools/sweep/` — the probes and the synthetic-plan
+  generator. There is no local seat: this repository is the whole record.
 
 ## License
 

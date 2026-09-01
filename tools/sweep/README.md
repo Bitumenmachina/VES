@@ -8,7 +8,7 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
     node tools/sweep/mkpdf.mjs /tmp/plan.pdf   # synthetic 36x24 in plan (no fonts, no client data)
     node tools/sweep/ladder-fuzz.mjs           # F5 invariant: bid Total == recap sell, 2M random takeoffs
     node tools/sweep/probe-v.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf "$PWD"
-                                               # Batch V gate — RED 13/15 on F18.58, GREEN 15/15 on F18.59
+                                               # the batch gate — 17 checks; RED-first on the prior build every batch (see NOTES.md)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out

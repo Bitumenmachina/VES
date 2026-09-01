@@ -86,7 +86,7 @@ const text = bytes.toString("utf8");
 const report = {
   file: filePath,
   identity: { bytes: bytes.length, sha256: sha256(bytes) },
-  syntax: { blocks: 0, checked: 0, skipped: 0, failures: [] },
+  syntax: { blocks: 0, checked: 0, skipped: 0, names: [], failures: [] },   // names: data-ves-module of each checked block ('' if unnamed)
   egress: { matches: 0, baseline: null, added: [], removed: [] },
   freeze: { regions: 0, manifest: null, mismatches: [], missing: [] },
   findings: [],
@@ -107,6 +107,9 @@ const report = {
     const isJs = type === "" || type === "text/javascript" || type === "application/javascript" || type === "module";
     if (!isJs) { report.syntax.skipped += 1; continue; }
     if (body.trim() === "") { report.syntax.skipped += 1; continue; }
+    const nameMatch = /\bdata-ves-module\s*=\s*["']?([^"'\s>]+)/i.exec(attrs);
+    const name = nameMatch ? nameMatch[1] : "";
+    report.syntax.names.push(name);
     const ext = type === "module" ? "mjs" : "cjs";
     const p = join(tmp, `block-${index}.${ext}`);
     writeFileSync(p, body);
@@ -119,8 +122,8 @@ const report = {
       const posMatch = /:(\d+)\s*$/m.exec(err.split("\n")[0] ?? "");
       const blockLine = posMatch ? Number(posMatch[1]) : null;
       const htmlLine = blockLine ? line + blockLine - 1 : line;
-      report.syntax.failures.push({ block: index, htmlLine, error: errLine.trim() });
-      report.findings.push(`SYNTAX block ${index} html line ${htmlLine}: ${errLine.trim()}`);
+      report.syntax.failures.push({ block: index, name, htmlLine, error: errLine.trim() });
+      report.findings.push(`SYNTAX block ${index}${name ? ` (${name})` : ""} html line ${htmlLine}: ${errLine.trim()}`);
     }
   }
   rmSync(tmp, { recursive: true, force: true });
