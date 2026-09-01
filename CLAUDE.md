@@ -13,6 +13,8 @@ runtime egress. The file is the product; the repo state is the evidence.
 - Acceptance is Patrick's word alone. Machine output is evidence; it gates nothing by itself.
 - Read bytes or say you did not. No projected paths, sizes, hashes, or contents.
 
+Current build state, work queue, and carried lessons: `NOTES.md` — read it before working.
+
 ## Verification (run it yourself, paste the full output)
     node tools/ves-verify.mjs
 Exit 0 passes. Exit 1 lists findings, one per line. The Stop hook in .claude/settings.json runs
