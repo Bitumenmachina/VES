@@ -6,8 +6,14 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.61** — sha256 `cdd4735fc32cea64813136dd2d859554c465bc3299e42ba85c9662cf21206af9`,
-  3,529,284 bytes. **Batch X landed 2026-09-01** (PASS_2026-09 rows T1 + T2, owner-approved B2): landing and README
+- **src = F18.62** — sha256 `a0cc60022622bb9fffc1051a48a49012f4ca0a7b2bce8f9ee6a60dbfcf80723f`,
+  3,538,866 bytes. **Batch Z landed 2026-09-02** (PASS row G6, owner-approved B4): hover (350 ms) or long-press
+  (500 ms) on a condition card floats a read-only money peek beside it — priced lines with quantity and amount, off
+  lines struck, gated lines named, cost, sell, share of the total — without arming, selecting or opening a lens.
+  Shared lines attributed 1/N, so per-condition sells + fixed allowances reproduce the recap sell to the cent
+  (probe-z Z4: diff 0.00 on the demo). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v 17/17 · G0 4/4 · verifier
+  PASS 0 new egress.
+- **F18.61 = Batch X, landed 2026-09-01** (PASS_2026-09 rows T1 + T2, owner-approved B2): landing and README
   state no seat fee / no report fee / no device limit / no login; **root cause of every slow open under file://** —
   pdf.js's same-origin test reads a file:// page as origin "null" and silently parsed every PDF on the main thread
   (fake worker); the app now starts one Worker at boot and hands pdf.js the port: 40k-segment sheet, longest
