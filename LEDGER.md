@@ -98,3 +98,4 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | S-11 | P-SEAT | No committed `/goal` text; S1 has no fixed condition to show met | (c) CANDIDATE — the batch stop condition is stated in CLAUDE.md §Seat method; a `/goal` string is typed per session |
 | S-12 | P-SEAT | A `CLAUDE_PROJECT_DIR`-rooted Stop hook verifies the parent checkout, not a worktree | (c) CANDIDATE — worktree subagents are read-only by rail; note carried |
 | S-13 | P-SEAT | "inside this worktree" names a surface; the principle is one writable copy of the product | (b) FIXED — CLAUDE.md wording |
+| Y-G1/G2 | seat (probe) | Sell-change repaint 9–33 ms desktop / 27–184 ms phone-4x on HUD, grid footer, recap; trace-point handler ≤ 1.7 ms desktop / ≤ 11.8 ms phone-4x | (b) bar met on F18.61 with no change; probe-y is the standing gate; the 184 ms margin-input path is the one to watch |

@@ -12,6 +12,8 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
     node tools/sweep/mkpdf.mjs /tmp/plan-dense.pdf 40000
     node tools/sweep/probe-x.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan-dense.pdf "$PWD"
                                                # Batch X gate — the absence stated + no lockup (5 checks)
+    node tools/sweep/probe-y.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf "$PWD"
+                                               # Batch Y gate — money-face repaint ≤ 200 ms, trace point ≤ 16 ms (4 checks)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out

@@ -81,6 +81,8 @@ jobs:
           code=${PIPESTATUS[0]}
           node tools/sweep/probe-x.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan-dense.pdf" "$PWD" 2>&1 | tee -a probes.txt
           code2=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code2
+          node tools/sweep/probe-y.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan.pdf" "$PWD" 2>&1 | tee -a probes.txt
+          code3=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code3
           {
             echo '## probe-v'
             echo

@@ -15,6 +15,11 @@ truth first, history compressed.
   guard hook (PreToolUse) refuses the verifier's two write flags from a seat; selftest 12/12. P-SEAT pass
   findings folded in (README/NOTES/LEDGER drift, selftest config restore, agents in worktrees). Gates: probe-x 5/5
   (RED-first 0/5 on F18.60) · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **Batch Y (PASS rows G1 + G2, owner-approved B3) landed 2026-09-01 as a gate only — the bytes already met the bar:**
+  `tools/sweep/probe-y.mjs` measures every on-screen money face after a sell change (HUD, grid footer, recap) and
+  the trace-point click handler at fit zoom. Desktop: faces repaint in 9–33 ms, handler 0.5–1.7 ms. Phone 4x: faces
+  27–184 ms (the margin `input` path is the slow one at 184 ms — under the bar, on the record), handler ≤ 11.8 ms.
+  No product byte changed; the gate runs in CI's `probes` job. src stays F18.61.
 - **F18.60 = Batch W, landed 2026-09-01** (Patrick's ruling: there is no local seat): the application script
   is split at its own module banners into twenty named `<script data-ves-module=…>` blocks (proof: a reverse
   transform reproduces the F18.59 bytes exactly; 0 top-level statements call a later-defined function; G0 4/4);
