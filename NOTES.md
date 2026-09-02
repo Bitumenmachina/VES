@@ -15,6 +15,10 @@ truth first, history compressed.
   The narrow-screen rail default yields to a saved choice and never records itself as one. Gates: probe-aa 5/5
   (RED-first 0/5 on F18.62) · probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
   **B2–B5 are landed; the approved list is complete.**
+  **PASS_2026-09 personas:** P-SEAT (13 rows, folded into Batch X) and P-TRADE (12 rows) are on record in LEDGER.md;
+  P-TRADE found two money-honesty rows — the client-review .xlsx exports COST (T-01) and a takeoff file re-prices
+  silently on another machine (T-02) — proposed as **Batch AB** (AB-1 review sheet in sell · AB-2 library fingerprint
+  + banner · AB-3 ladder rows in the estimate CSV), awaiting Patrick's word. P-MARKET and P-GAME pending.
 - **F18.62 = Batch Z, landed 2026-09-02** (PASS row G6, owner-approved B4): hover (350 ms) or long-press
   (500 ms) on a condition card floats a read-only money peek beside it — priced lines with quantity and amount, off
   lines struck, gated lines named, cost, sell, share of the total — without arming, selecting or opening a lens.
