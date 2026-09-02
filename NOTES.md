@@ -6,8 +6,16 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.62** — sha256 `a0cc60022622bb9fffc1051a48a49012f4ca0a7b2bce8f9ee6a60dbfcf80723f`,
-  3,538,866 bytes. **Batch Z landed 2026-09-02** (PASS row G6, owner-approved B4): hover (350 ms) or long-press
+- **src = F18.63** — sha256 `c637dfd558f86e2fa8373b17ee26c167f0905fc372e84489ecbdf5a29512e873`,
+  3,545,125 bytes. **Batch AA landed 2026-09-02** (PASS rows G5 + G7, owner-approved B5): one store the app owns
+  (`ves:prefs`, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the
+  new UI scale across reloads (theme keeps `ves:theme`); a UI-scale control beside the theme toggle cycles
+  100 → 115 → 130 → 150 → 90 % via CSS zoom on the root — a two-click trace at 1.5x still reads 111 ft and every lens,
+  the exports menu (its height cap is now computed in zoomed px) and the money peek stay inside a 1440x900 viewport.
+  The narrow-screen rail default yields to a saved choice and never records itself as one. Gates: probe-aa 5/5
+  (RED-first 0/5 on F18.62) · probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+  **B2–B5 are landed; the approved list is complete.**
+- **F18.62 = Batch Z, landed 2026-09-02** (PASS row G6, owner-approved B4): hover (350 ms) or long-press
   (500 ms) on a condition card floats a read-only money peek beside it — priced lines with quantity and amount, off
   lines struck, gated lines named, cost, sell, share of the total — without arming, selecting or opening a lens.
   Shared lines attributed 1/N, so per-condition sells + fixed allowances reproduce the recap sell to the cent

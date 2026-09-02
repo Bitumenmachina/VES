@@ -39,10 +39,10 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-01, cloud seat, branch claude/ves-live-repo-sweep-x202rq)
 - canonical file: src/VES_PM.html
-- build: F18.62 (Batch Z — glanceable money peek on the condition cards)
-- bytes: 3538866
-- sha256: a0cc60022622bb9fffc1051a48a49012f4ca0a7b2bce8f9ee6a60dbfcf80723f
-- priors: see NOTES.md §State (F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
+- build: F18.63 (Batch AA — rest state remembered; UI scale control)
+- bytes: 3545125
+- sha256: c637dfd558f86e2fa8373b17ee26c167f0905fc372e84489ecbdf5a29512e873
+- priors: see NOTES.md §State (F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
 - history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The
   retired commits and the `f18.55` tag are not part of the record; `main` is the line that moves forward.
 - freeze: VESCore + VESASM are fenced (`/* VES:FREEZE core|engine */`). The manifest is NOT written — only Patrick runs

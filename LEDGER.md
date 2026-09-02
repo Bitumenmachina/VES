@@ -100,3 +100,4 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | S-13 | P-SEAT | "inside this worktree" names a surface; the principle is one writable copy of the product | (b) FIXED — CLAUDE.md wording |
 | Y-G1/G2 | seat (probe) | Sell-change repaint 9–33 ms desktop / 27–184 ms phone-4x on HUD, grid footer, recap; trace-point handler ≤ 1.7 ms desktop / ≤ 11.8 ms phone-4x | (b) bar met on F18.61 with no change; probe-y is the standing gate; the 184 ms margin-input path is the one to watch |
 | Z-G6 | seat (probe) | Hover / long-press money peek: priced lines, cost, sell, share; no lens or arm change; Σ condition sells + fixed allowances = recap sell (diff 0.00) | (b) LANDED F18.62; probe-z is the standing gate |
+| AA-G5/G7 | seat (probe) | Rail, drawer pin, fill mode, grid ft, theme and UI scale restore after reload; 1.5x scale keeps every lens hittable and the pointer math true (111 ft trace) | (b) LANDED F18.63; probe-aa is the standing gate |
