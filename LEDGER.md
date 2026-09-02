@@ -33,7 +33,7 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | D-24.6f | line 973 | D-24.6f (L-2): the 6px top padding was scrollport, not gutter — Chrome sticks |
 | D-24.6g | line 178 | D-24.6g (L-4): the sheet label opens the sheet index — say so on hover/focus. */ |
 | D-24.7a | line 9669 | any print, so every print path that returns without writing it must also clear it. D-24.7a |
-| D-24.7b | — |  |
+| D-24.7b | general print-latch release — still needs a HEADED bench (Chrome + Firefox); CI runs headless Chrome only — open |
 | D-24.7c | line 4844 | D-24.7c: the overlay gets the SAME backing-store cap the raster canvas got above — the one |
 | D-24.7d | line 9670 | and D-24.7d found and closed all six live returns — but each of them wrote `''` on its own |
 | D-24.7e | line 9667 | T-J3 + D-24.7e · ONE RELEASE FOR THE PRINT LATCH. |
@@ -69,7 +69,7 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | C-R1 | resolve fan-out perf — needs real ms before any money-path memoization | parked |
 | C-R2 | the build-log comment line (34 KB) | parked; the split (F18.60) leaves it in the `boot` block |
 | F-C1 · F-C2 · W2M-C3 · T-K3 · C-K1 · C-H1/2/3 · T-3 · T-5 · C-O1/C-O2 | design candidates, none built | parked |
-| F1 · N5 · N6 · D-24.7b | owner's blocking set (price/license; headed print-latch bench now runnable in CI's Chrome+Firefox — see NOTES) | Patrick's call |
+| F1 · N5 · N6 · D-24.7b | owner's blocking set (price/license; headed print-latch bench (Chrome + Firefox) — still open; CI runs headless Chrome only| Patrick's call |
 | sweep F-01 | GitHub Pages serves `src/VES_PM.html` publicly | ruling pending |
 | freeze manifest | `node tools/ves-verify.mjs --write-manifest` on an accepted build | Patrick's act |
 | tag f18.55 | still on the remote, points at retired history | Patrick deletes (`git push origin --delete f18.55`) |
@@ -79,3 +79,22 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 - `MOBILE_FEASIBILITY_68c8e23.md` — phone/tablet measurements and the ROI frame.
 - `FIELD_LANE.md` — the field-lane charter, interior lane included.
 - Batch V (F18.59) and Batch W (F18.60) — see NOTES.md §State and the build-stamp chain in `src/VES_PM.html`.
+
+## PASS_2026-09 — findings on record (triage: NOTES.md rubric; owner rules)
+
+| id | persona | finding (what was SEEN) | disposition |
+|---|---|---|---|
+| X-T2 | seat (probe) | Under file:// pdf.js parsed every PDF on the main thread (fake worker after a null-origin same-origin test); longest task 552 ms desktop / 1,484 ms at 4x on a 40k-segment sheet | (a) FIXED F18.61 — one Worker started at boot, port handed to pdf.js; probe-x X3–X5 |
+| S-01 | P-SEAT | "Read-only" persona agents carry Bash, which can write; prose, not a rail | (b) agents now run in `isolation: worktree`; Bash stays (probes need it) — the worktree is the rail |
+| S-02 | P-SEAT | CLAUDE.md said the Stop hook "will not let a turn end on a failure"; it blocks once, then allows (docs' cap) | (b) FIXED — CLAUDE.md states the real contract |
+| S-03 | P-SEAT | the verifier's two write flags were forbidden in prose only | (b) FIXED — PreToolUse guard hook, selftest rows 11–12 |
+| S-04 | P-SEAT | selftest copied over the tracked verifier config and restored it only on a clean exit | (b) FIXED — trap restores on any exit |
+| S-05 | P-SEAT | README named F18.59 while bytes were F18.60; README said "freeze (none currently)" with two regions fenced | (b) FIXED — README names no build; freeze sentence true |
+| S-06 | P-SEAT | NOTES said the `f18.55` tag was gone; LEDGER said it remains; remote still has it | (b) FIXED in NOTES; the deletion is Patrick's (a seat cannot delete a remote ref) |
+| S-07 | P-SEAT | NOTES named `release/VES_F18.57.html` and `evidence/w2/…` paths not at HEAD | (b) FIXED — historical wording |
+| S-08 | P-SEAT | LEDGER D-24.7b row claimed a Chrome+Firefox bench runs in CI; CI is headless Chrome only | (b) FIXED — row corrected; the bench stays open |
+| S-09 | P-SEAT | gate/README called the product `VES.html` | (b) FIXED |
+| S-10 | P-SEAT | CLAUDE.md carries content derivable from the verifier (bytes, sha, exit codes, freeze names) and repeats priors held in NOTES | (c) CANDIDATE — §Identity is the owner's convention; prune is his call; priors now point to NOTES |
+| S-11 | P-SEAT | No committed `/goal` text; S1 has no fixed condition to show met | (c) CANDIDATE — the batch stop condition is stated in CLAUDE.md §Seat method; a `/goal` string is typed per session |
+| S-12 | P-SEAT | A `CLAUDE_PROJECT_DIR`-rooted Stop hook verifies the parent checkout, not a worktree | (c) CANDIDATE — worktree subagents are read-only by rail; note carried |
+| S-13 | P-SEAT | "inside this worktree" names a surface; the principle is one writable copy of the product | (b) FIXED — CLAUDE.md wording |

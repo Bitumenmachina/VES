@@ -3,10 +3,11 @@
 A construction estimating application in **one HTML file**: plan takeoff (PDF sheets, scale
 calibration, traced measurement), condition-based pricing, assemblies, margins/OH ladder, and
 client documents (bid, proposal, cost sheet) — no build step, no package manager, no runtime
-network egress. Open the file in a browser; that is the whole install.
+network egress. Open the file in a browser; that is the whole install. **No seat fee, no report fee, no
+device limit, no login** — copy the file to any machine and it works there.
 
-**The product is `src/VES_PM.html`** — the build stamp in the app's own chrome (`VES_BUILD`,
-currently F18.59) is the authority; `CLAUDE.md` §Identity carries its hash. The repo around it
+**The product is `src/VES_PM.html`** — the build stamp in the app's own chrome (`VES_BUILD`, shown in the
+corner) is the authority; `CLAUDE.md` §Identity carries the current hash. The repo around it
 is evidence and verification, not tooling the file needs.
 
 ## Verify (any seat, including CI)
@@ -14,7 +15,8 @@ is evidence and verification, not tooling the file needs.
     node tools/ves-verify.mjs
 
 Exit 0 = pass. Checks: per-`<script>` syntax (`node --check`), egress pattern set vs the
-committed baseline, sentinel-region freeze (none currently), and file identity (size + sha256).
+committed baseline, sentinel-region freeze (two regions, `core` and `engine`; the manifest is written only by
+Patrick), and file identity (size + sha256).
 `.github/workflows/verify.yml` runs the same script on every push and PR; read the job summary,
 not the badge. `bash test/selftest.sh` proves the verifier's exit-code contract (10 checks).
 

@@ -76,8 +76,11 @@ jobs:
         run: |
           set +e
           node tools/sweep/mkpdf.mjs "$RUNNER_TEMP/plan.pdf" | tee probes.txt
+          node tools/sweep/mkpdf.mjs "$RUNNER_TEMP/plan-dense.pdf" 40000 | tee -a probes.txt
           node tools/sweep/probe-v.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan.pdf" "$PWD" 2>&1 | tee -a probes.txt
           code=${PIPESTATUS[0]}
+          node tools/sweep/probe-x.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan-dense.pdf" "$PWD" 2>&1 | tee -a probes.txt
+          code2=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code2
           {
             echo '## probe-v'
             echo

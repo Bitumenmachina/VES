@@ -4,7 +4,7 @@
 # Writes its baseline/manifest into a temp dir; never touches tools/*.json.
 set -u
 cd "$(dirname "$0")/.." || exit 3
-T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
+T=$(mktemp -d); trap '[ -f "$T/config.bak" ] && cp "$T/config.bak" tools/ves-verify.config.json; rm -rf "$T"' EXIT
 F=test/fixture.html
 cp "$F" "$T/fixture.html"
 cat > "$T/config.json" <<JSON
@@ -36,5 +36,7 @@ echo '{"stop_hook_active":true}' | node tools/ves-stop-hook.mjs >/dev/null 2>&1;
 cp "$F" "$T/fixture.html"
 echo '{}' | node tools/ves-stop-hook.mjs >/dev/null 2>&1; check "stop hook, passing file -> allow (exit 0)" 0 $?
 cp "$T/config.bak" tools/ves-verify.config.json
+echo '{"tool_name":"Bash","tool_input":{"command":"node tools/ves-verify.mjs --write-manifest"}}' | node tools/ves-guard-hook.mjs >/dev/null 2>&1; check "guard hook, --write-manifest -> block (exit 2)" 2 $?
+echo '{"tool_name":"Bash","tool_input":{"command":"node tools/ves-verify.mjs"}}' | node tools/ves-guard-hook.mjs >/dev/null 2>&1; check "guard hook, plain verifier run -> allow (exit 0)" 0 $?
 echo "selftest: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

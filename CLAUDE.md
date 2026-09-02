@@ -7,7 +7,7 @@ runtime egress. The file is the product; the repo state is the evidence.
 - Zero runtime egress in the shipped file. Nothing here adds a CDN, fetch, script src, or build step.
 - No client-identifiable material in this repo, ever: takeoff JSON, job PDFs, job screenshots,
   named-project CSVs, project-bound pricing. Synthetic fixtures only. The repo is public.
-- One canonical file, inside this worktree. No second writable copy.
+- One writable copy of the product, ever: the checkout a batch edits. Subagents work in read-only worktrees.
 - Public docs in this repo name no clients, no projects, no addresses, no job dollar figures —
   synthetic aliases only. There is no local seat (ruled 2026-09-01): every register, gate, probe and fixture
   the work needs lives here, scrubbed. Anything that cannot be made synthetic does not exist for this project.
@@ -20,11 +20,11 @@ Current build state, work queue, and carried lessons: `NOTES.md` — read it bef
 
 ## Verification (run it yourself, paste the full output)
     node tools/ves-verify.mjs
-Exit 0 passes. Exit 1 lists findings, one per line. The Stop hook in .claude/settings.json runs
-the same script and will not let a turn end on a failure. The GitHub workflow runs it again on
+Exit 0 passes. Exit 1 lists findings, one per line. The Stop hook runs the same script: it blocks the first attempt
+to end a failing turn and prints the findings; the second attempt is allowed so a stuck failure cannot loop (the
+hooks guide's cap). A PreToolUse guard hook refuses the two write flags from a seat. The GitHub workflow runs it again on
 every push, outside this VM — that run is the one Patrick reads.
-Never run --write-baseline or --write-manifest. Those record current bytes as accepted; only
-Patrick decides that.
+The verifier's two write flags record current bytes as accepted; only Patrick runs them, by hand.
 
 ## Seat method (Claude Code)
 - When compacting, always preserve: the §Identity block, the last verifier / G0 / probe-v outputs verbatim, the open
@@ -39,10 +39,10 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-01, cloud seat, branch claude/ves-live-repo-sweep-x202rq)
 - canonical file: src/VES_PM.html
-- build: F18.60 (Batch W — twenty named module blocks, short-viewport recap panel; no-local-seat rails)
-- bytes: 3525697
-- sha256: c83737b334da9fdb43f31e974d374ee235365832389fa08f8e8dbeef6d470387
-- priors: F18.59 = Batch V (9612e461…) = the fresh public root `4920c35` · F18.58 = Batch T (f785eea7…) · F18.57 = Batch S (6eb480bc…) · earlier line retired.
+- build: F18.61 (Batch X — the absence stated; pdf.js parser off the main thread under file://)
+- bytes: 3529284
+- sha256: cdd4735fc32cea64813136dd2d859554c465bc3299e42ba85c9662cf21206af9
+- priors: see NOTES.md §State (F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
 - history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The
   retired commits and the `f18.55` tag are not part of the record; `main` is the line that moves forward.
 - freeze: VESCore + VESASM are fenced (`/* VES:FREEZE core|engine */`). The manifest is NOT written — only Patrick runs

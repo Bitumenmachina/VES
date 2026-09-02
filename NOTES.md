@@ -6,8 +6,16 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.60** — sha256 `c83737b334da9fdb43f31e974d374ee235365832389fa08f8e8dbeef6d470387`,
-  3,525,697 bytes. **Batch W landed 2026-09-01** (Patrick's ruling: there is no local seat): the application script
+- **src = F18.61** — sha256 `cdd4735fc32cea64813136dd2d859554c465bc3299e42ba85c9662cf21206af9`,
+  3,529,284 bytes. **Batch X landed 2026-09-01** (PASS_2026-09 rows T1 + T2, owner-approved B2): landing and README
+  state no seat fee / no report fee / no device limit / no login; **root cause of every slow open under file://** —
+  pdf.js's same-origin test reads a file:// page as origin "null" and silently parsed every PDF on the main thread
+  (fake worker); the app now starts one Worker at boot and hands pdf.js the port: 40k-segment sheet, longest
+  main-thread task 552 ms → 0 on desktop, 1,484 → 194 ms at 4x throttle, first raster 3.0 → 1.7 s. Deterministic
+  guard hook (PreToolUse) refuses the verifier's two write flags from a seat; selftest 12/12. P-SEAT pass
+  findings folded in (README/NOTES/LEDGER drift, selftest config restore, agents in worktrees). Gates: probe-x 5/5
+  (RED-first 0/5 on F18.60) · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.60 = Batch W, landed 2026-09-01** (Patrick's ruling: there is no local seat): the application script
   is split at its own module banners into twenty named `<script data-ves-module=…>` blocks (proof: a reverse
   transform reproduces the F18.59 bytes exactly; 0 top-level statements call a later-defined function; G0 4/4);
   the verifier names the block in every SYNTAX finding; under 560px of viewport height the summoned recap panel
@@ -61,8 +69,8 @@ truth first, history compressed.
    D-25.2a silence was root-caused to R5's caret-walk restoration; full gate stack green; CI
    green on `476ad0c`). CANDIDAtes parked: C-S1 · C-S2 · C-S3 · **C-S4** narrow-width toolbar
    overlay (happens with NO name; design call) · per-line cost-sheet pennies (with B-16).
-5. ✅ **Phase 4 release repackage DONE** — release/ = VES_F18.57.html + honest notes; B-02 +
-   C-Q3 closed; public README defers to the in-app stamp (`098889c`); Downloads shipped.
+5. ✅ **Phase 4 release repackage DONE** (historical) — the release folder was never public and is not at HEAD
+   (`.gitignore` keeps `release/*` except the synthetic demo); the public README defers to the in-app stamp.
 6. ✅ **P-CODE pass 2 DONE** — 9/15 DEAD by the finder (all P0 mechanisms), R1/R2/R3/R5 DEAD,
    zero-egress re-proven; ALIVE = the four ruled parks. **But 1 new P0 + 1 new HIGH, both
    created by wave fixes** (NEW-1: bid Qty×Unit≠Amount by the waste factor, S4's own class;
@@ -77,19 +85,17 @@ truth first, history compressed.
    4 new rows (1 HIGH: the Unlink freeze writes flat + two false comments assert it safe;
    1 MED: conditions/measurements arrays unvalidated at the door; 2 LOW). Triage in LEDGER.
 9. **Batch U — STOPPED MID-DEVELOPMENT 2026-09-01 (operator interrupt; agent killed cleanly,
-   src untouched at F18.58).** COLD PICKUP: charter = LEDGER §"P-CODE PASS 3 TRIAGE" (U1 freeze
-   truth + both false-comment corrections · U2 remaining-arrays validation · U3 apportionCents
-   total guard · U4 bid walk unified, cent-identical or stop); findings detail =
-   evidence/w2/persona-code-pass3.md; check the scratchpad for a partial VES_U.html /
-   probe-w2u-codepass3.mjs / batch-u-edits.md before respawning — verify any leftovers against
-   the charter, or discard and respawn fresh. Then **P-CODE pass 4** (scoped) → **P-BUYER
+   src untouched at F18.58).** COLD PICKUP: charter = LEDGER.md §Open items (U1 freeze truth + both false-comment corrections · ✅ U2 landed in Batch V ·
+   U3 apportionCents total guard · U4 bid walk unified, cent-identical or stop). The pass-3 findings file and the
+   partial Batch U scratch were never pushed; U1/U3/U4 restart from the charter text with fresh red-first probes. Then **P-CODE pass 4** (scoped) → **P-BUYER
    pass 2** on the final build → GTM_BAR reconciliation → WAVE2_CLOSEOUT; release re-cut at the
    wave-close build.
    Wave then closes pending the owner's set: F1 · N5 · N6 · D-24.7b headed bench · C-S4 · N-R1.
 10. ✅ **Batch V LANDED — F18.59** (see State). Open from it, all Patrick's: (a) ✅ **history ruling: fresh root**
-   (2026-09-01) — `main` restarted from a single root carrying the F18.59 tree; the earlier public commits and the
-   `f18.55` tag are gone from the remote (GitHub may still serve them by SHA until its cache clears — a support
-   request purges that); the retired line is not part of the record; (b) **freeze
+   (2026-09-01) — `main` restarted from a single root carrying the F18.59 tree; the earlier public commits are
+   unreachable from any branch, but **`refs/tags/f18.55` is still on the remote** (a seat cannot delete a remote ref;
+   Patrick runs `git push origin --delete f18.55`); GitHub may serve old SHAs until its cache clears — a support
+   request purges that; (b) **freeze
    manifest** — `--write-manifest` on a build he accepts; (c) **GitHub Pages** serves `src/VES_PM.html` publicly
    (sweep F-01) — keep and say so, or disable; (d) N-R1 rate precision (numbers in sweep F-04); (e) ✅ the structural
    split and the short-viewport recap panel landed in **Batch W (F18.60)** once the no-local-seat ruling removed

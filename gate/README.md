@@ -1,7 +1,7 @@
 # VES G0 — Golden Money-Path Gate
 
 The proof that a VES build's pricing is byte-identical to a ratified reference.
-Lives OUTSIDE the product file (`VES.html` carries no proof machinery). Zero
+Lives OUTSIDE the product file (`src/VES_PM.html` carries no proof machinery). Zero
 dependencies: Node ≥ 22 (global `WebSocket` + `fetch`; verified on 22.22.2 and 24) drives headless Chrome/Chromium over
 raw CDP.
 
