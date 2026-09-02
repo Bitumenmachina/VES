@@ -18,7 +18,8 @@ const port = 9300 + Math.floor(Math.random() * 300);
 const profile = mkdtempSync(join(tmpdir(), 'ves-sweep-'));
 const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--remote-allow-origins=*', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--no-default-browser-check', 'about:blank'], { stdio: 'ignore' });
 let wsUrl = null;
-for (let i = 0; i < 150 && !wsUrl; i++) { try { const list = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); const p = list.find((t) => t.type === 'page'); if (p) wsUrl = p.webSocketDebuggerUrl; } catch (_) {} if (!wsUrl) await sleep(100); }
+for (let i = 0; i < 600 && !wsUrl; i++) { try { const list = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); const p = list.find((t) => t.type === 'page'); if (p) wsUrl = p.webSocketDebuggerUrl; } catch (_) {} if (!wsUrl) await sleep(100); }
+if (!wsUrl) { console.error('HARNESS FAIL: devtools target never appeared (Chrome did not start within 60 s)'); try { chrome.kill('SIGKILL'); } catch (_) {} process.exit(2); }
 const c = await connect(wsUrl);
 await c.send('Page.enable'); await c.send('Runtime.enable'); await c.send('Log.enable');
 const consoleErrs = [];
