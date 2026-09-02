@@ -22,6 +22,8 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
                                                # Batch AC gate — the UI scale on phones and paper (5 checks)
     node tools/sweep/probe-ab.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD"
                                                # Batch AB gate — client numbers in sell, library fingerprint, CSV ladder, audit copy (4 checks)
+    node tools/sweep/probe-ad.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD"
+                                               # Batch AD gate — Estimate workbook with formulas, menu doors, print toasts, keyboard peek, persistence (5 checks)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out

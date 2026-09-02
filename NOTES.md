@@ -6,8 +6,14 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.65** — sha256 `3c3b53def99e533960faada090691c666e28f2fb24fb9c7522d2a1ae1bb43f1c`,
-  3,554,056 bytes. **Batch AB landed 2026-09-02** (owner-approved: P-TRADE T-01/T-02/T-03 + P-MARKET M-08): the
+- **src = F18.66** — sha256 `95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998`,
+  3,560,089 bytes. **Batch AD landed 2026-09-02** (the personas' cheap candidates + bar M2's internal half, under
+  the owner's standing word): an internal **Estimate .xlsx** with every line's Qty × Unit as a live formula, Cost as
+  SUM, the ladder as formulas and Sell as their sum (values cached); the exports menu carries it and the client
+  review workbook (T-05); a print sets the toast to say what went to print (T-06); the money peek has a keyboard
+  door (G-10); snap, split mode and the dock width persist (G-12). Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) ·
+  probe-ab 4/4 · probe-aa 5/5 · probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.65 = Batch AB, landed 2026-09-02** — 2026-09-02** (owner-approved: P-TRADE T-01/T-02/T-03 + P-MARKET M-08): the
   client-review .xlsx is now the bid in SELL only — the bid's cent apportionment and derived rate are one helper
   (`bidCents` / `bidRate`) both papers read, subtotals and the Total are live SUM formulas (bar M2, client half);
   a takeoff file carries the library's name + fingerprint and a different book here raises the standing banner
