@@ -6,8 +6,15 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.63** — sha256 `c637dfd558f86e2fa8373b17ee26c167f0905fc372e84489ecbdf5a29512e873`,
-  3,545,125 bytes. **Batch AA landed 2026-09-02** (PASS rows G5 + G7, owner-approved B5): one store the app owns
+- **src = F18.64** — sha256 `83628318c91bf8760f7a54f2f058b2a5a5fd16bb463a8864536818640936e162`,
+  3,547,656 bytes. **Batch AC landed 2026-09-02** (P-GAME rows G1–G7 on Batch AA's UI scale — the same approval):
+  print media resets the root zoom (a bid at 150% paginated onto two pages); the scale range follows the viewport
+  (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and
+  the money peek stay on a 390 px screen; the exports menu carries a Text size item (the toolbar control sits in the
+  rest sliver on a phone); the menu cap is measured again after the toolbar expands; peek width in zoomed px;
+  schedule inputs join the coarse-pointer rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa 5/5 ·
+  probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.63 = Batch AA, landed 2026-09-02** — 2026-09-02** (PASS rows G5 + G7, owner-approved B5): one store the app owns
   (`ves:prefs`, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the
   new UI scale across reloads (theme keeps `ves:theme`); a UI-scale control beside the theme toggle cycles
   100 → 115 → 130 → 150 → 90 % via CSS zoom on the root — a two-click trace at 1.5x still reads 111 ft and every lens,
@@ -18,7 +25,8 @@ truth first, history compressed.
   **PASS_2026-09 personas:** P-SEAT (13 rows, folded into Batch X) and P-TRADE (12 rows) are on record in LEDGER.md;
   P-TRADE found two money-honesty rows — the client-review .xlsx exports COST (T-01) and a takeoff file re-prices
   silently on another machine (T-02) — proposed as **Batch AB** (AB-1 review sheet in sell · AB-2 library fingerprint
-  + banner · AB-3 ladder rows in the estimate CSV), awaiting Patrick's word. P-MARKET and P-GAME pending.
+  + banner · AB-3 ladder rows in the estimate CSV · AB-4 the landing/README name the audit trail), awaiting Patrick's
+  word. P-MARKET (10 rows) and P-GAME (19 rows) are on record in LEDGER.md; P-GAME's scale regressions became Batch AC.
 - **F18.62 = Batch Z, landed 2026-09-02** (PASS row G6, owner-approved B4): hover (350 ms) or long-press
   (500 ms) on a condition card floats a read-only money peek beside it — priced lines with quantity and amount, off
   lines struck, gated lines named, cost, sell, share of the total — without arming, selecting or opening a lens.

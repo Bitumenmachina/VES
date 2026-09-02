@@ -113,3 +113,32 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | T-10 | P-TRADE | Landscape phone two-tap trace lands (111.56 ft) with touch events unthrottled; the earlier landscape null was harness timing under 4x | INF — refutes the memo's open landscape hole as a product defect |
 | T-11 | P-TRADE | No bid-alternate surface anywhere | (b) bar row M3 — B9, held unless asked |
 | T-12 | P-TRADE | JSON round-trip within one browser: sell identical to the float | holds |
+| G-01 | P-GAME | The printed bid followed the UI scale: 2 pages at 150%, 1 at 100% | (b) client paper — FIXED F18.64 (print media resets root zoom; probe-ac AC1) |
+| G-02 | P-GAME | On a phone the UI-scale control lives in the hidden rest sliver; reached only after the exports menu expands the toolbar, and a tap there fired an export | (b) FIXED F18.64 — "Text size" item in the exports menu (AC4) |
+| G-03 | P-GAME | Phone at 130/150%: dock, card ✎ ◉ ⌖, Hide and the exports door left the 390 px screen | (b) FIXED F18.64 — scale range follows the viewport (narrow ≤ 115%); AC2 |
+| G-04 | P-GAME | Phone at 130/150%: the money peek's amount column was off-screen | (b) FIXED F18.64 — peek width in zoomed px + the clamp; AC2 |
+| G-05 | P-GAME | Phone at 130/150%: exports-menu items below the screen, menu not scrolling | (b) FIXED F18.64 — cap measured after the toolbar expands + the clamp; AC2 |
+| G-06 | P-GAME | Phone at 130/150%: the measure bar painted over card 1 | (b) closed by the clamp (≤ 115% on narrow); re-check under the Field lens |
+| G-07 | P-GAME | Phone at 90%: coarse-pointer targets shrank to 36 px | (b) FIXED F18.64 — coarse pointers floor at 100%; AC3 |
+| G-08 | P-GAME | Touch targets at 100% on the phone: card ⌖ 23×24, ◉ 19×18, ✎ 25×22, Hide 44×22, rack tools 29×34, drawer buttons h 24–32, schedule rows h 16 — the §3 bar is 44 | (b) bar row — queued for the Field lens (FIELD_LANE F-1), where the card geometry is redrawn for touch |
+| G-09 | P-GAME | Unpinned recap: the click that dismisses it also acts on the sheet (added a count marker); the exports scrim consumes its click (F-C1) — two rules for one gesture | (d) tension recorded — src comment at the dismiss site says "both dismisses AND proceeds" by design; Patrick's call |
+| G-10 | P-GAME | The money peek has no keyboard door (focus on ⌖ shows nothing) | (c) CANDIDATE — focus-in on a card could show the peek after the same delay |
+| G-11 | P-GAME | No remap surface exists (G4) | (b) B9, held |
+| G-12 | P-GAME | Dock width, snap, split mode do not persist | (c) CANDIDATE — extend the G7 list |
+| G-13 | P-GAME | Phone control reminders at rest: only "⌖ or 1–9 to measure" (a keyboard hint on a keyboardless lens) | (b) Field lens (FIELD_LANE F-1) |
+| G-14 | P-GAME | Expanded toolbar stays expanded across a drawer tap; the file:// banner takes 19% of a grid takeoff's screen; C-S4 overprint at 390 px | (c) CANDIDATE — banner shown only when a PDF path is relevant; C-S4 stands |
+| G-15 | P-GAME | Schedule start/dur inputs 11.5 px / 22 px tall on a coarse pointer | (b) FIXED F18.64 — schedule inputs join the coarse-pointer rule |
+| G-16 | P-GAME | Feedback timing: scale click 40–45 ms to first frame; theme 17 ms; lens switches 7–99 ms; phone tap 48 ms | holds (G2 met) |
+| G-17 | P-GAME | Peek honesty under a typed money change: peek = HUD = recap | holds |
+| G-18 | P-GAME | Desktop HUD tiers at rest and at 150%: every control hittable | holds |
+| G-19 | P-GAME | Estimate lens on the phone: opens in 48 ms, returns to Plan, cells 40 px | holds |
+| M-01 | P-MARKET | Client-labelled Review .xlsx carries COST (Recap total 51,804.12) while the bid carries SELL (64,620.46) — corroborates T-01 | (a) → Batch AB-1 |
+| M-02 | P-MARKET | No Estimate XLSX exists; every export is values-only; `csvSafe` prefixes `'` to any cell starting with `=`, so a CSV cannot carry a formula — a recorded tension between bar M2 and the injection guard | (b) B7 held; the tension is Patrick's to rule (formulas live in XLSX, never CSV, is the seat's reading) |
+| M-03 | P-MARKET | Opening a revised PDF over a takeoff clears the traced measurements after a confirm; no "what moved" list | (b) B8 held (revision delta) |
+| M-04 | P-MARKET | No bid-alternate surface; the only "Alternates" heading lives in dead code (`clientReviewHTML`) | (b) B9 held; M-7 open |
+| M-05 | P-MARKET | T2's 2 s first-raster figure is met best-of-3 but missed on single loads in a loaded VM; the input-never-blocked half held every run | INF — the 2 s bar is the seat's choice; the buyer's complaint is blocked input (met) |
+| M-06 | P-MARKET | T1 met on landing and README | holds |
+| M-07 | P-MARKET | README/landing say "copy the file to any machine and it works there" while LICENSE grants no right to copy or use | (d) tension recorded — F1 price/license is Patrick's open call; the copy is not changed by the seat |
+| M-08 | P-MARKET | VES claims less than it does: the audit trail (Audit CSV with identity rows, calibration and warning status; the bid's Sheet column), per-item quantity formulas and per-location breakdown are named nowhere on landing or README | (b) → Batch AB-4 (one sentence on each surface) |
+| M-09 | P-MARKET | Tablet row: nothing observed either way | — |
+| M-10 | P-MARKET | Price-creep row: no pricing text exists beyond the four absences | — (F1) |
