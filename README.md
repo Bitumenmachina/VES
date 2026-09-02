@@ -4,7 +4,8 @@ A construction estimating application in **one HTML file**: plan takeoff (PDF sh
 calibration, traced measurement), condition-based pricing, assemblies, margins/OH ladder, and
 client documents (bid, proposal, cost sheet) — no build step, no package manager, no runtime
 network egress. Open the file in a browser; that is the whole install. **No seat fee, no report fee, no
-device limit, no login** — copy the file to any machine and it works there.
+device limit, no login** — copy the file to any machine and it works there. Every quantity is auditable: the Audit CSV
+records who measured it, on which sheet, at what calibration; the bid prints the sheet beside each line.
 
 **The product is `src/VES_PM.html`** — the build stamp in the app's own chrome (`VES_BUILD`, shown in the
 corner) is the authority; `CLAUDE.md` §Identity carries the current hash. The repo around it

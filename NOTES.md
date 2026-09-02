@@ -6,8 +6,15 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.64** — sha256 `83628318c91bf8760f7a54f2f058b2a5a5fd16bb463a8864536818640936e162`,
-  3,547,656 bytes. **Batch AC landed 2026-09-02** (P-GAME rows G1–G7 on Batch AA's UI scale — the same approval):
+- **src = F18.65** — sha256 `3c3b53def99e533960faada090691c666e28f2fb24fb9c7522d2a1ae1bb43f1c`,
+  3,554,056 bytes. **Batch AB landed 2026-09-02** (owner-approved: P-TRADE T-01/T-02/T-03 + P-MARKET M-08): the
+  client-review .xlsx is now the bid in SELL only — the bid's cent apportionment and derived rate are one helper
+  (`bidCents` / `bidRate`) both papers read, subtotals and the Total are live SUM formulas (bar M2, client half);
+  a takeoff file carries the library's name + fingerprint and a different book here raises the standing banner
+  instead of silently re-pricing; the estimate CSV footer shows Overhead / Markup / Profit apportioned so Cost +
+  ladder = Sell; landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) ·
+  probe-v 17/17 · probe-z 6/6 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.64 = Batch AC, landed 2026-09-02** — 2026-09-02** (P-GAME rows G1–G7 on Batch AA's UI scale — the same approval):
   print media resets the root zoom (a bid at 150% paginated onto two pages); the scale range follows the viewport
   (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and
   the money peek stay on a 390 px screen; the exports menu carries a Text size item (the toolbar control sits in the
@@ -25,8 +32,10 @@ truth first, history compressed.
   **PASS_2026-09 personas:** P-SEAT (13 rows, folded into Batch X) and P-TRADE (12 rows) are on record in LEDGER.md;
   P-TRADE found two money-honesty rows — the client-review .xlsx exports COST (T-01) and a takeoff file re-prices
   silently on another machine (T-02) — proposed as **Batch AB** (AB-1 review sheet in sell · AB-2 library fingerprint
-  + banner · AB-3 ladder rows in the estimate CSV · AB-4 the landing/README name the audit trail), awaiting Patrick's
-  word. P-MARKET (10 rows) and P-GAME (19 rows) are on record in LEDGER.md; P-GAME's scale regressions became Batch AC.
+  + banner · AB-3 ladder rows in the estimate CSV · AB-4 the landing/README name the audit trail) — ✅ approved and
+  landed as F18.65. P-MARKET (10 rows) and P-GAME (19 rows) are on record in LEDGER.md; P-GAME's scale regressions
+  became Batch AC. Owner 2026-09-02: "make these changes and anything else you see fit" — the seat continues with
+  the cheap candidates (Batch AD) and reports.
 - **F18.62 = Batch Z, landed 2026-09-02** (PASS row G6, owner-approved B4): hover (350 ms) or long-press
   (500 ms) on a condition card floats a read-only money peek beside it — priced lines with quantity and amount, off
   lines struck, gated lines named, cost, sell, share of the total — without arming, selecting or opening a lens.
