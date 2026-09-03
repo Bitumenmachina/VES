@@ -6,7 +6,17 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.69** — sha256 `88431f9b6b252cf97744461ba804bcf5a50aa66edb516137516ad0a81dc7e3b3`,
+- **src = F18.70** — sha256 `45f522151c6e561626d19ffcd2602dfd2bbec269f91d6c9cbb4f1bfccbbab863`,
+  3577166 bytes. **Batch AH landed 2026-09-03** (Patrick's review, item 4: "still don't like the way pitch is done, should
+  be a fraction 2/12"): `fmtPitch` / `parsePitch` in the `cards` block — the card chip, both pitch fields, the toasts, the
+  rollup CSV (a new "Pitch factor" column keeps the multiplier beside the fraction) and the takeoff quantities page say
+  **6/12**; input takes 6/12, 6:12 or a bare 6 (a decimal multiplier still works; a word is refused with the help line).
+  Storage stays the multiplier in both D-26.1 stores — the engine and G0's goldens do not move. **Found on the way (money):
+  on F18.69 a bare "6" typed into the pitch field was stored as a 6× multiplier** — six times the quantities and money —
+  because the old grammar read anything without "/12" as a multiplier (probe-ah AH2 RED). Gates: probe-ah 6/6 (RED-first
+  0/6 on F18.69) · probe-ag 5/5 · probe-af 7/7 · probe-ae 8/8 · probe-ad 5/5 · probe-ab 4/4 · probe-ac 5/5 · probe-aa 5/5 ·
+  probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.69 = Batch AG, landed 2026-09-03** — sha256 `88431f9b6b252cf97744461ba804bcf5a50aa66edb516137516ad0a81dc7e3b3`,
   3574616 bytes. **Batch AG landed 2026-09-03** (Patrick's ruling P3-R1: "clicking from conditions isn't smooth, I find
   myself still on the old condition a lot"): a click on a condition card **arms it** — the card is D-24.5c's explicit
   gesture (digits still never re-arm); clicking the armed card keeps it armed; ⌖, Esc and the pill stop. The open

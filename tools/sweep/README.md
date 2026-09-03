@@ -31,6 +31,8 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
                                                # Batch AF gate — the click picks what you aimed at: a line on a field's edge, a nested area, the repeat-click cycle (7 checks, real pointer)
     node tools/sweep/probe-ag.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD"
                                                # Batch AG gate — a card click arms, the detail follows, the armed card stays armed, digits still go to the buffer (5 checks, real pointer + keys)
+    node tools/sweep/probe-ah.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD"
+                                               # Batch AH gate — pitch reads as rise over 12 on the chip, the fields, the rollup CSV; a bare 6 is 6/12, a word is refused (6 checks)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out
