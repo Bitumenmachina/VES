@@ -6,7 +6,16 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.68** — sha256 `4bf0a3dbd699514de9cd13539d029960f8058fe79e064da50d38f247ea7dbecc`,
+- **src = F18.69** — sha256 `88431f9b6b252cf97744461ba804bcf5a50aa66edb516137516ad0a81dc7e3b3`,
+  3574616 bytes. **Batch AG landed 2026-09-03** (Patrick's ruling P3-R1: "clicking from conditions isn't smooth, I find
+  myself still on the old condition a lot"): a click on a condition card **arms it** — the card is D-24.5c's explicit
+  gesture (digits still never re-arm); clicking the armed card keeps it armed; ⌖, Esc and the pill stop. The open
+  condition detail follows the arm (a plain condition closes it rather than sit empty over the wrong name). L-05's
+  highlight-only state (`selectedCondId`, `.card.selected`) is gone; the card hint, the ⌖ title, the stop toast and the
+  empty-state step say "click the condition". Gates: probe-ag 5/5 with real pointer + key events (RED-first 0/5 on
+  F18.68) · probe-af 7/7 · probe-ae 8/8 · probe-ad 5/5 · probe-ab 4/4 · probe-ac 5/5 · probe-aa 5/5 · probe-z 6/6 ·
+  probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.68 = Batch AF, landed 2026-09-03** — sha256 `4bf0a3dbd699514de9cd13539d029960f8058fe79e064da50d38f247ea7dbecc`,
   3573310 bytes. **Batch AF landed 2026-09-03** (Patrick's review, item 2: "unable to easily click items so I can modify
   them, i.e. flashings over field conditions"): `selectAt` ranks what the pointer is ON (a stroke, vertex or marker within
   8 screen px — nearest first, a line or marker before an area, a smaller area before a larger one) ahead of the area that

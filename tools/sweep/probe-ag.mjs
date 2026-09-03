@@ -1,0 +1,34 @@
+// Batch AG gate — one click means one thing on the conditions rail (Patrick's ruling P3-R1, 2026-09-03). RED-first on F18.68.
+// args: <VES_PM.html> <demo.json> <repo root>
+import { spawn } from 'node:child_process'; import { mkdtempSync, readFileSync } from 'node:fs'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
+const CHROME = process.env.VES_CHROME; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const [VES, DEMO, ROOT] = process.argv.slice(2);
+function connect(url) { return new Promise((resolve, reject) => { const ws = new WebSocket(url); let id = 0; const pending = new Map(); ws.addEventListener('open', () => resolve({ send(m, p = {}) { return new Promise((res, rej) => { const mid = ++id; pending.set(mid, { res, rej }); ws.send(JSON.stringify({ id: mid, method: m, params: p })); }); }, close() { ws.close(); } })); ws.addEventListener('error', () => reject(new Error('ws'))); ws.addEventListener('message', (ev) => { const msg = JSON.parse(ev.data); if (msg.id && pending.has(msg.id)) { const { res, rej } = pending.get(msg.id); pending.delete(msg.id); msg.error ? rej(new Error(JSON.stringify(msg.error))) : res(msg.result); } }); }); }
+const port = 9100 + Math.floor(Math.random() * 40); const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${mkdtempSync(join(tmpdir(), 'ves-pag-'))}`, '--remote-allow-origins=*', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+let wsUrl = null; for (let i = 0; i < 600 && !wsUrl; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); const p = l.find((t) => t.type === 'page'); if (p) wsUrl = p.webSocketDebuggerUrl; } catch (_) {} if (!wsUrl) await sleep(100); }
+if (!wsUrl) { console.error('HARNESS FAIL: devtools target never appeared (Chrome did not start within 60 s)'); try { chrome.kill('SIGKILL'); } catch (_) {} process.exit(2); }
+const c = await connect(wsUrl); await c.send('Page.enable'); await c.send('Runtime.enable');
+const ev = async (expr) => { const { result, exceptionDetails } = await c.send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }); if (exceptionDetails) throw new Error(exceptionDetails.exception?.description || exceptionDetails.text); return result.value; };
+const results = []; const check = (name, ok, detail) => { results.push({ name, ok: !!ok }); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail !== undefined ? '  ' + JSON.stringify(detail) : '')); };
+const demo = readFileSync(DEMO, 'utf8');
+await c.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }); await c.send('Page.navigate', { url: 'file://' + VES }); for (let i = 0; i < 400; i++) { try { if (await ev('document.readyState==="complete" && !!window.VESApp')) break; } catch (_) {} await sleep(50); }
+await ev(`localStorage.clear(); window.__demo = ${demo}; loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true); VESApp.loadFromData(window.__demo); 1`); await sleep(600);
+const names = await ev(`VESApp.state.conditions.map(c => c.name)`);
+// a click on the card's NAME row: the card body past the ▸ chevron (the qty number below is its own control — it opens the price detail)
+async function clickCard(i) { const r = await ev(`(() => { const m = document.querySelectorAll('#cards .card')[${i}].querySelector('.card-main .name'); const b = m.getBoundingClientRect(); const ch = m.querySelector('.card-expand'); const cw = ch ? ch.getBoundingClientRect().width : 0; return { x: b.left + cw + 24, y: b.top + b.height / 2 }; })()`); for (const type of ['mousePressed', 'mouseReleased']) await c.send('Input.dispatchMouseEvent', { type, x: Math.round(r.x), y: Math.round(r.y), button: 'left', clickCount: 1 }); await sleep(350); return await ev(`({ armed: VESApp.state.activeCond ? VESApp.state.activeCond.id : null, armedName: VESApp.state.activeCond ? VESApp.state.activeCond.name : null, tool: VESApp.state.tool, pill: (document.getElementById('activeIndicator') || { textContent: '' }).textContent.replace(/\\s+/g, ' ').trim().slice(0, 120), expanded: VESApp.state.expandedCondId, detailName: (document.querySelector('#depthPanel .dsh-name b') || { textContent: null }).textContent, selectedClass: document.querySelectorAll('#cards .card.selected').length, hasSelState: 'selectedCondId' in VESApp.state })`); }
+await ev(`VESApp.activateCondition(VESApp.state.conditions[0]); 1`); await sleep(200);   // card 1 armed by the old explicit door
+const r1 = await clickCard(1);
+check('AG1 with card 1 armed, one click on card 2 arms card 2 (the pill names it)', r1.armed === 2 && r1.tool === 'measure' && r1.pill.includes(names[1]), r1);
+await ev(`VESApp.state.expandedCondId = VESApp.state.conditions[0].id; VESApp.renderCards(); 1`); await sleep(250);
+const r2 = await clickCard(2);
+check('AG2 with the condition detail open on card 1, a click on card 3 arms card 3 AND the detail shows card 3', r2.armed === 3 && r2.expanded === 3 && r2.detailName === names[2], r2);
+const r3 = await clickCard(2);
+check('AG3 clicking the armed card keeps it armed (⌖, Esc, the pill are the ways to stop)', r3.armed === 3 && r3.tool === 'measure', r3);
+await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
+const afterEsc = await ev(`({ armed: VESApp.state.activeCond ? VESApp.state.activeCond.id : null, tool: VESApp.state.tool })`);
+const r4a = await clickCard(1);
+for (const k of ['5']) { await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code: 'Digit5', text: k, windowsVirtualKeyCode: 53 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code: 'Digit5', windowsVirtualKeyCode: 53 }); }
+await sleep(200);
+const r4 = await ev(`({ armed: VESApp.state.activeCond ? VESApp.state.activeCond.id : null, buf: VESApp.state.qtyBuf })`);
+check('AG4 Esc stops measuring; after a click arms card 2, a typed digit goes to the quantity buffer and never re-arms card 5 (D-24.5c/d)', afterEsc.armed == null && afterEsc.tool === 'select' && r4a.armed === 2 && r4.armed === 2 && r4.buf === '5', { afterEsc, armedByClick: r4a.armed, after5: r4 });
+check('AG5 the highlight-only state is gone (no .selected card, no selectedCondId in state)', r4a.selectedClass === 0 && r4a.hasSelState === false, { selectedClass: r4a.selectedClass, hasSelState: r4a.hasSelState });
+const fails = results.filter(r => !r.ok).length; console.log(`\nprobe-ag: ${results.length - fails}/${results.length} passed, ${fails} failed`); c.close(); chrome.kill('SIGKILL'); process.exit(fails ? 1 : 0);
