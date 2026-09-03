@@ -6,7 +6,16 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.67** — sha256 `e85f693e615469b88f427a02e98ed4014f9d09ee6a54f94e78cab666f85dc2f7`,
+- **src = F18.68** — sha256 `4bf0a3dbd699514de9cd13539d029960f8058fe79e064da50d38f247ea7dbecc`,
+  3573310 bytes. **Batch AF landed 2026-09-03** (Patrick's review, item 2: "unable to easily click items so I can modify
+  them, i.e. flashings over field conditions"): `selectAt` ranks what the pointer is ON (a stroke, vertex or marker within
+  8 screen px — nearest first, a line or marker before an area, a smaller area before a larger one) ahead of the area that
+  merely contains the point (smallest first); a repeat click within 4 px steps through the stack; the message names the
+  condition and how many shapes sit under it. `VESCore.distToMeasurement` (fenced) is untouched — the stroke-only distance
+  lives in the `tools` block. Gates: probe-af 7/7 (RED-first 4/7 on F18.67 — the edge, nesting and cycle picks fail
+  there) · probe-ae 8/8 · probe-ad 5/5 · probe-ab 4/4 · probe-ac 5/5 · probe-aa 5/5 · probe-z 6/6 · probe-v 17/17 ·
+  G0 4/4 · verifier PASS 0 new egress.
+- **F18.67 = Batch AE, landed 2026-09-03** — sha256 `e85f693e615469b88f427a02e98ed4014f9d09ee6a54f94e78cab666f85dc2f7`,
   3569896 bytes. **Batch AE landed 2026-09-03** (Patrick's review of F18.66, first item: "there is no way to just print a
   takeoff"): **Print takeoff…** in the exports menu and the palette prints every sheet that carries measurements whole and
   landscape with the markup the screen shows, a per-sheet legend (that sheet's quantities, pitched per D-26.1) and a closing
@@ -15,7 +24,7 @@ truth first, history compressed.
   every early return releases the latch (D-24.7a); a sheet that fails composes a marked placeholder (MED-4); the toast names
   the document (AD-3). `mkpdf.mjs` takes a page count. Gates: probe-ae 8/8 (RED-first 1/8 on F18.66 — only the AE7 regression guard passes there) · probe-ad 5/5 · probe-ab 4/4 · probe-ac 5/5 ·
   probe-aa 5/5 · probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
-  **Patrick's 2026-09-03 review queue (his order): AE print takeoff ✅ → AF canvas pick → AG card click arms (his ruling) →
+  **Patrick's 2026-09-03 review queue (his order): AE print takeoff ✅ → AF canvas pick ✅ → AG card click arms (his ruling) →
   AH pitch as rise/12 → AI the two dropdowns, CSVs under Setup, plain words. HELD on his word: .xlsx table formatting,
   the schedule/Gantt review, the roofing-knowledge import.** Plan of record: LEDGER.md §"Patrick's review of F18.66".
 - **F18.66 = Batch AD, landed 2026-09-02** — sha256 `95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998`,

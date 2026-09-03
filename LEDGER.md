@@ -89,7 +89,7 @@ calls were put to him and answered (his word, recorded here):
 | id | what was SEEN | disposition |
 |---|---|---|
 | P3-01 | No way to just print a takeoff — the only marked-up plan on paper was the proposal's one cropped snapshot | (a) **FIXED F18.67 (Batch AE)** — Print takeoff…: one landscape sheet per measured page, legend, quantities page, no money; probe-ae |
-| P3-02 | Cannot click a flashing that lies on a field area — `selectAt` lets the area's interior (distance 0) beat a line on its edge | Batch AF — stroke hits before interior hits, smallest shape wins, a repeat click cycles; probe-af |
+| P3-02 | Cannot click a flashing that lies on a field area — `selectAt` lets the area's interior (distance 0) beat a line on its edge | (a) **FIXED F18.68 (Batch AF)** — stroke hits rank before interior hits, a line or marker before an area, smaller before larger, a repeat click steps through the stack; probe-af 7/7 (RED-first 4/7 on F18.67) |
 | P3-03 | Clicking a condition leaves the old one armed; four states on one card (selected / armed / editing / expanded) | Batch AG — P3-R1; the detail panel follows the arm; probe-ag |
 | P3-04 | Pitch reads as a multiplier ("1.118×"); should read as rise over 12 ("6/12") | Batch AH — faces only (chip, fields, CSV); storage stays the multiplier so G0 goldens do not move; probe-ah |
 | P3-05 | The exports menu (15 flat items, "one breath" captions) and the left rack read as prototype; captions are AI-speak, not trade words | Batch AI — P3-R2 + P3-R3 + a plain-language pass on the menu, rack and Setup headings; probe-ai |

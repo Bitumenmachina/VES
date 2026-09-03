@@ -27,6 +27,8 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
     node tools/sweep/mkpdf.mjs /tmp/plan2.pdf 1500 2      # two synthetic sheets (third arg = page count)
     node tools/sweep/probe-ae.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan2.pdf "$PWD" [prior-build.html]
                                                # Batch AE gate — the takeoff prints: one landscape sheet per measured page, legends, quantities page, no money (8 checks; a prior build makes AE7 a byte-for-byte snapshot compare)
+    node tools/sweep/probe-af.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf "$PWD"
+                                               # Batch AF gate — the click picks what you aimed at: a line on a field's edge, a nested area, the repeat-click cycle (7 checks, real pointer)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out
