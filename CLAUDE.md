@@ -37,12 +37,12 @@ Hashes, byte counts, exit codes, raw tool output, the file booting in his browse
 Not accepted: summaries of output, characterized severity, "done", a green badge standing in
 for output he has not seen.
 
-## Identity (from bytes, 2026-09-01, cloud seat, branch claude/ves-live-repo-sweep-x202rq)
+## Identity (from bytes, 2026-09-03, cloud seat, branch claude/kind-curie-jirx2q)
 - canonical file: src/VES_PM.html
-- build: F18.66 (Batch AD — the estimate still computes in Excel; the small things are remembered)
-- bytes: 3560089
-- sha256: 95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998
-- priors: see NOTES.md §State (F18.65 Batch AB · F18.64 Batch AC · F18.63 Batch AA · F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
+- build: F18.67 (Batch AE — the takeoff is a document: Print takeoff…)
+- bytes: 3569896
+- sha256: e85f693e615469b88f427a02e98ed4014f9d09ee6a54f94e78cab666f85dc2f7
+- priors: see NOTES.md §State (F18.66 Batch AD · F18.65 Batch AB · F18.64 Batch AC · F18.63 Batch AA · F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
 - history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The
   retired commits and the `f18.55` tag are not part of the record; `main` is the line that moves forward.
 - freeze: VESCore + VESASM are fenced (`/* VES:FREEZE core|engine */`). The manifest is NOT written — only Patrick runs

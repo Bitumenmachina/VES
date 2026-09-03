@@ -6,8 +6,20 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.66** — sha256 `95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998`,
-  3,560,089 bytes. **Batch AD landed 2026-09-02** (the personas' cheap candidates + bar M2's internal half, under
+- **src = F18.67** — sha256 `e85f693e615469b88f427a02e98ed4014f9d09ee6a54f94e78cab666f85dc2f7`,
+  3569896 bytes. **Batch AE landed 2026-09-03** (Patrick's review of F18.66, first item: "there is no way to just print a
+  takeoff"): **Print takeoff…** in the exports menu and the palette prints every sheet that carries measurements whole and
+  landscape with the markup the screen shows, a per-sheet legend (that sheet's quantities, pitched per D-26.1) and a closing
+  quantities page — the card numbers, never money. The proposal's plan snapshot and the takeoff share one compositor
+  (`compositeSheet`; the proposal's bytes are unchanged — probe-ae AE7 compares against the prior build). No identity gate;
+  every early return releases the latch (D-24.7a); a sheet that fails composes a marked placeholder (MED-4); the toast names
+  the document (AD-3). `mkpdf.mjs` takes a page count. Gates: probe-ae 8/8 (RED-first 1/8 on F18.66 — only the AE7 regression guard passes there) · probe-ad 5/5 · probe-ab 4/4 · probe-ac 5/5 ·
+  probe-aa 5/5 · probe-z 6/6 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+  **Patrick's 2026-09-03 review queue (his order): AE print takeoff ✅ → AF canvas pick → AG card click arms (his ruling) →
+  AH pitch as rise/12 → AI the two dropdowns, CSVs under Setup, plain words. HELD on his word: .xlsx table formatting,
+  the schedule/Gantt review, the roofing-knowledge import.** Plan of record: LEDGER.md §"Patrick's review of F18.66".
+- **F18.66 = Batch AD, landed 2026-09-02** — sha256 `95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998`,
+  3,560,089 bytes (the personas' cheap candidates + bar M2's internal half, under
   the owner's standing word): an internal **Estimate .xlsx** with every line's Qty × Unit as a live formula, Cost as
   SUM, the ladder as formulas and Sell as their sum (values cached); the exports menu carries it and the client
   review workbook (T-05); a print sets the toast to say what went to print (T-06); the money peek has a keyboard

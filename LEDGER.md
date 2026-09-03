@@ -74,6 +74,29 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | freeze manifest | `node tools/ves-verify.mjs --write-manifest` on an accepted build | Patrick's act |
 | tag f18.55 | still on the remote, points at retired history | Patrick deletes (`git push origin --delete f18.55`) |
 
+## Patrick's review of F18.66 (2026-09-03) — rulings and the batch plan
+
+Patrick reviewed F18.66 from five screenshots, an exported client-review workbook (client material — read, not kept)
+and a list of complaints. His order: print a takeoff first, then the open UI items; hold the .xlsx work. Three design
+calls were put to him and answered (his word, recorded here):
+
+| ruling | Patrick's answer (2026-09-03) | consequence |
+|---|---|---|
+| P3-R1 card click | **a single click on a condition card arms it** (measure into it); ⌖ / Esc still stop | supersedes L-05 ("body click selects, never arms"); D-24.5c stands — the card click IS the explicit gesture; digits never re-arm |
+| P3-R2 left rack | **drop the Type group** (Linear / Area / Count) — the armed condition's type decides the tool | Select · Pan · Rect · Poly · Edit · Delete · Snap · Fills remain |
+| P3-R3 exports menu | four plain sections (Project · Print · Spreadsheets · Settings); **the internal CSVs (Rollup, Audit, BOM) move under Setup** | ids kept; captions in trade words |
+
+| id | what was SEEN | disposition |
+|---|---|---|
+| P3-01 | No way to just print a takeoff — the only marked-up plan on paper was the proposal's one cropped snapshot | (a) **FIXED F18.67 (Batch AE)** — Print takeoff…: one landscape sheet per measured page, legend, quantities page, no money; probe-ae |
+| P3-02 | Cannot click a flashing that lies on a field area — `selectAt` lets the area's interior (distance 0) beat a line on its edge | Batch AF — stroke hits before interior hits, smallest shape wins, a repeat click cycles; probe-af |
+| P3-03 | Clicking a condition leaves the old one armed; four states on one card (selected / armed / editing / expanded) | Batch AG — P3-R1; the detail panel follows the arm; probe-ag |
+| P3-04 | Pitch reads as a multiplier ("1.118×"); should read as rise over 12 ("6/12") | Batch AH — faces only (chip, fields, CSV); storage stays the multiplier so G0 goldens do not move; probe-ah |
+| P3-05 | The exports menu (15 flat items, "one breath" captions) and the left rack read as prototype; captions are AI-speak, not trade words | Batch AI — P3-R2 + P3-R3 + a plain-language pass on the menu, rack and Setup headings; probe-ai |
+| P3-06 | The client-review .xlsx is not formatted as a table (one font, no header style, no widths, raw floats) — confirmed in the bytes: `serializeXLSX` writes one empty style | **HELD** (Patrick: "we will hold on xls") |
+| P3-07 | The schedule/Gantt lens: every row 5d, day offsets only — review against the older formats | **HELD** — not in this queue |
+| P3-08 | A roofing knowledge base (shingles and others) lives on Patrick's machine; VES ships four assemblies and no shingle | **HELD** — an import lane, his call on what enters (synthetic only in this repo) |
+
 ## Sweep and batch records
 - `SWEEP_68c8e23.md` — the live-repo sweep (findings F-01…F-14, proposals P-01…P-12).
 - `MOBILE_FEASIBILITY_68c8e23.md` — phone/tablet measurements and the ROI frame.
@@ -142,3 +165,4 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | M-08 | P-MARKET | VES claims less than it does: the audit trail (Audit CSV with identity rows, calibration and warning status; the bid's Sheet column), per-item quantity formulas and per-location breakdown are named nowhere on landing or README | (b) FIXED F18.65 (Batch AB-4) — one sentence on the landing and in the README (probe-ab AB4) |
 | M-09 | P-MARKET | Tablet row: nothing observed either way | — |
 | M-10 | P-MARKET | Price-creep row: no pricing text exists beyond the four absences | — (F1) |
+| AE-1 | seat (probe) | On F18.66 `printTakeoff` does not exist and the menu has no door (probe-ae RED-first 1/8: only the AE7 regression guard passes on the prior build) | (a) FIXED F18.67 — probe-ae 8/8; standing gate in CI |
