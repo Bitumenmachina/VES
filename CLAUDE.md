@@ -39,10 +39,10 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-03, cloud seat, branch claude/kind-curie-jirx2q)
 - canonical file: src/VES_PM.html
-- build: F18.70 (Batch AH — pitch reads as rise over 12)
-- bytes: 3577166
-- sha256: 45f522151c6e561626d19ffcd2602dfd2bbec269f91d6c9cbb4f1bfccbbab863
-- priors: see NOTES.md §State (F18.69 Batch AG · F18.68 Batch AF · F18.67 Batch AE · F18.66 Batch AD · F18.65 Batch AB · F18.64 Batch AC · F18.63 Batch AA · F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
+- build: F18.71 (Batch AI — the two dropdowns in trade words)
+- bytes: 3577953
+- sha256: 9b8a1ea3f141204051699da29e9e8436e46cc3df84bd497e895455a0a6d086e7
+- priors: see NOTES.md §State (F18.70 Batch AH · F18.69 Batch AG · F18.68 Batch AF · F18.67 Batch AE · F18.66 Batch AD · F18.65 Batch AB · F18.64 Batch AC · F18.63 Batch AA · F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
 - history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The
   retired commits and the `f18.55` tag are not part of the record; `main` is the line that moves forward.
 - freeze: VESCore + VESASM are fenced (`/* VES:FREEZE core|engine */`). The manifest is NOT written — only Patrick runs

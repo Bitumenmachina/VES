@@ -102,6 +102,8 @@ jobs:
           code11=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code11
           node tools/sweep/probe-ah.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" 2>&1 | tee -a probes.txt
           code12=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code12
+          node tools/sweep/probe-ai.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" 2>&1 | tee -a probes.txt
+          code13=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code13
           {
             echo '## probe-v'
             echo

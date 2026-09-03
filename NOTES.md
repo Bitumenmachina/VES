@@ -6,7 +6,18 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.70** — sha256 `45f522151c6e561626d19ffcd2602dfd2bbec269f91d6c9cbb4f1bfccbbab863`,
+- **src = F18.71** — sha256 `9b8a1ea3f141204051699da29e9e8436e46cc3df84bd497e895455a0a6d086e7`,
+  3577953 bytes. **Batch AI landed 2026-09-03** (Patrick's rulings P3-R2 + P3-R3: "top and side drop down are still weird",
+  "a lot of the language is AI speak and not construction talk"): **Files & exports** is four plain sections — Project ·
+  Print (Takeoff, Bid, Cost sheet, Proposal) · Spreadsheets (Estimate .xlsx, Client review .xlsx, Estimate CSV, Supplier
+  RFQ) · Settings — with one trade phrase per item; the bill-of-materials, condition-totals and audit CSVs live under
+  **Setup › Working files** (same ids, same functions; the duplicate BOM button in the BOM pane is gone). The **rack drops
+  the Type group** — the condition you click decides linear / area / count; Rect and Poly are the two ways to draw an
+  area. Setup headings (Price library · Add a priced item to a system · Add a line by hand) and the price-source legend
+  are plain; the Estimate lens's buttons say they are the same files. Gates: probe-ai 5/5 (RED-first 0/5 on F18.70) · probe-ah 6/6 · probe-ag 5/5 ·
+  probe-af 7/7 · probe-ae 8/8 · probe-ad 5/5 · probe-ab 4/4 · probe-ac 5/5 · probe-aa 5/5 · probe-z 6/6 · probe-v 17/17 ·
+  G0 4/4 · verifier PASS 0 new egress. **Patrick's 2026-09-03 queue is complete (AE–AI); the held items stand.**
+- **F18.70 = Batch AH, landed 2026-09-03** — sha256 `45f522151c6e561626d19ffcd2602dfd2bbec269f91d6c9cbb4f1bfccbbab863`,
   3577166 bytes. **Batch AH landed 2026-09-03** (Patrick's review, item 4: "still don't like the way pitch is done, should
   be a fraction 2/12"): `fmtPitch` / `parsePitch` in the `cards` block — the card chip, both pitch fields, the toasts, the
   rollup CSV (a new "Pitch factor" column keeps the multiplier beside the fraction) and the takeoff quantities page say
