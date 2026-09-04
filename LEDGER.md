@@ -76,6 +76,23 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | freeze manifest | `node tools/ves-verify.mjs --write-manifest` on an accepted build | Patrick's act |
 | tag f18.55 | still on the remote, points at retired history | Patrick deletes (`git push origin --delete f18.55`) |
 
+## Batch AF — Estimate sheet depth (TEST BUILD F18.69 on `claude/estimate-sheet-depth-vrhnf6`; not `main`)
+
+Architect commission "Estimate sheet depth · branch a test build" (2026-09-04), executed by the cloud seat against
+`b191423`. The commission made rulings R1–R7 in lane from Patrick's stated requirement ("unless you're able to see it,
+you can't trust it"); each is his to veto — a veto is a row here, not a redesign. Product changes are journaled in
+`CHANGE_LEDGER.md`; the reviewer's checklist is `research/HANDOFF_ESTIMATE_SHEET_AF.md`.
+
+| id | ruling / choice | what the bytes now say | status |
+|---|---|---|---|
+| AF-R3 | **NEW-4 reversed** (P-CODE pass 2, Batch T3: `qty_expr` dropped at the load door as "rendered on NO surface, no UI door writes it"). Both premises are false on F18.69: the Estimate grid renders the driver, expression, inputs and result on every engine row and its Formula cell writes it; every cost export carries it. The key name `qty_expr` is **reused**, so F18.68 and earlier drop it under "unsupported override field" with the standing banner (probe-af AF7) — loud beats silent. The door types it (string ≤ 500) and its `params` (≤ 50 identifier-named finite numbers). Takeoff `version` stays 3. | `sanitizeMoneyStore`: `LINE_FORBID = []`, `LINE_SPEC` typed rules; rationale block rewritten in place | recorded; Patrick's veto open |
+| AF-R4 | **Function set added** to the closed DSL (executor's call under R4): `ceil floor round abs max min`. The estimator's own rounding, typed on purpose; the engine adds none (CEIL at the material `ordered` step unchanged). A parameter may not shadow RAW/ADJ/WASTE/Q or a function — the line gates EXPR_ERROR and says which. | `resolveExpr` · `RESERVED_NAMES` | recorded |
+| AF-R1 | **Level truth**: the item's own drivers moved from `resolveOverride`'s SCHEMA default onto the ITEM layer so the marker can say "library" truthfully. Resolved values identical (G0 4/4). | `resolveItem` layers | recorded |
+| AF-W | **Condition waste: the door was added** (F4.1 item 4; the commission left the pick to the executor). The Flags advisory was right — waste is keyed per condition per takeoff (seed :tildes comment) and the engine reads `conditionOverrides[libRef].waste`; the grid's waste cell is ITEM waste, a different figure. The door lives on the Condition detail panel beside pitch, library conditions only (plain conditions are priced by `VESCore.rollup` with no waste — a door there would be dead), journaled, negatives refused. | `setConditionWaste` · `buildCondWasteRow` | recorded |
+| AF-L | **Library lens host**: a third full-screen lens (`L`), not a recap-drawer tab — the drawer is 344 px and cannot hold a 15-field editable row, and R7 says the library is not hidden. The built-in seed is labelled "built-in seed library — estimator-authored standards, not quotes" (the guardrail's "demo library" wording was not used: the seed is the owned standard, per its own provenance comment). | `#libview` · `renderLibraryLens` | recorded; wording Patrick's to change |
+| AF-P | **Price unit** (R5): out of scope, not added; every surface showing a unit cost now says "per order unit". Follow-on named in the handoff. | headers | open (follow-on) |
+| AF-F | **Freeze fence**: the `engine` region was edited on purpose. The manifest does not exist, so the fence gated nothing on F18.68 and gates nothing here; the verifier reports `manifest absent`. Patrick writes the manifest on the accepted pre-batch build before this branch is reviewed for merge. | — | Patrick's act |
+
 ## Sweep and batch records
 - `SWEEP_68c8e23.md` — the live-repo sweep (findings F-01…F-14, proposals P-01…P-12).
 - `MOBILE_FEASIBILITY_68c8e23.md` — phone/tablet measurements and the ROI frame.

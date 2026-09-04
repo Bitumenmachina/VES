@@ -28,6 +28,11 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
                                                # Batch U gate — the Unlink freeze keeps the priced quantity, says so, undoes (8 checks; RED-first 2/8 on F18.66)
     node tools/sweep/probe-ae.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf "$PWD"
                                                # Batch AE gate — Print takeoff: the plan as measured, nothing priced (5 checks; RED-first 1/5 on F18.67)
+    git show b191423:src/VES_PM.html > /tmp/VES_F18.68.html
+    node tools/sweep/probe-af.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" /tmp/VES_F18.68.html
+                                               # Batch AF gate — estimate sheet depth: the coil case end to end, the derivation on every row and export,
+                                               # the old build's loud drop (needs the F18.68 bytes, 4th arg), add-a-line funnel, condition waste, Library lens
+                                               # (15 checks; RED-first 1/15 on F18.68 — the provenance-colour control)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out

@@ -6,7 +6,23 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.68** — sha256 `494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760`, 3,570,752 bytes. **Batch AE landed 2026-09-04** (owner's word in chat: a Print
+- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.69, Batch AF — a TEST BUILD, not on `main`** — sha256
+  `0ba7e3c4c95b9a88f900902612d47fc867354b8b657d81926402db1eea177661`, 3,633,084 bytes (2026-09-04, cloud seat, architect
+  commission "Estimate sheet depth · branch a test build", rulings R1–R7 in lane; Patrick's veto open on each — LEDGER §Batch AF).
+  THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE: the engine line carries its derivation
+  (`driver`), per-line parameters enter the formula scope (the coil case: LF measured, LB bought, `RAW * width * lbsf`
+  with the width typed on the line), NEW-4 is reversed at the load door (the key is reused so F18.68 drops it loudly),
+  the Estimate grid gains a Formula column with a provenance chip and two text cells, the qty cell edits from full
+  precision, add-a-line states its funnel and asks the unit chain in EDGE order, condition waste has a journaled door,
+  every cost export carries the derivation and the .xlsx ladder multiplies by Pct cells, client paper carries none of
+  it, the ＋ labor OFF-note reads the reference, and a Library lens (L) shows and edits every item and assembly with
+  the import's own validation. Registers: `CHANGE_LEDGER.md` (18 rows keyed to the recon ledger) ·
+  `research/HANDOFF_ESTIMATE_SHEET_AF.md` (reviewer's checklist, not-done, risk, follow-ons). Gates on these bytes:
+  probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 ·
+  probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x 5/5 · probe-y 4/4 · probe-aa 5/5 · probe-ac 5/5 · G0 4/4 ·
+  verifier PASS, 0 new egress, FREEZE manifest absent (the engine fence was edited on purpose; the manifest is
+  Patrick's act before merge review). Acceptance: Patrick's cold run of the coil case (commission §5).
+- **src on `main` = F18.68** — sha256 `494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760`, 3,570,752 bytes. **Batch AE landed 2026-09-04** (owner's word in chat: a Print
   takeoff door, shape the seat's): Files & exports → Print takeoff… (and the command palette) prints the plan as measured —
   the proposal's own plan snapshot and legend (proposalVisualHTML), every condition with the quantity the estimate uses
   (traced × pitch, the factor shown), every measurement with sheet, points and calibration — and nothing priced: no $

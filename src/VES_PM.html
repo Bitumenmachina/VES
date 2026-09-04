@@ -918,8 +918,29 @@
      lens ate every click on the Plan/Estimate/Schedule control — in EVERY chrome
      state, not just sheet-live. The top row now outranks the lens and the lens
      starts below it, so the control is reachable without covering the lens chrome. */
-  #gridview, #schedview { top: 43px; }
-  body.sheet-live #gridview, body.sheet-live #schedview { top: 24px; }
+  #gridview, #schedview, #libview { top: 43px; }
+  body.sheet-live #gridview, body.sheet-live #schedview, body.sheet-live #libview { top: 24px; }
+  /* Batch AF Library lens — same overlay grammar as the other two lenses */
+  #libview { position: fixed; inset: 0; z-index: 30; display: none; flex-direction: column; background: var(--stage-bg); }
+  body.lib-view #libview { display: flex; }
+  .lib-head { padding: 10px 0 8px; font-size: 12.5px; color: var(--ink-dim); line-height: 1.45; max-width: 1100px; }
+  .lib-head b { color: var(--ink); }
+  .lib-head .fp { font-family: var(--mono); }
+  .libgrid td { font-size: 12px; vertical-align: top; }
+  .libgrid tr.divh td { font-size: 13px; }
+  .libgrid input.lib-edit, .libgrid select.lib-edit { background: var(--panel); border: 1px solid var(--line); color: var(--ink); border-radius: 4px; padding: 2px 5px; font-size: 12px; min-height: 26px; }
+  .libgrid input.lib-edit { width: 72px; text-align: right; font-family: var(--mono); }
+  .libgrid input.lib-edit.t { width: 118px; text-align: left; font-family: var(--sans); }
+  .libgrid input.lib-edit.w { width: 170px; text-align: left; font-family: var(--mono); }
+  .libgrid input.lib-edit.ov { border-color: var(--accent); color: var(--accent); }
+  .libgrid input.lib-edit.bad { border-color: var(--unknown); }
+  .libgrid input.lib-edit:focus, .libgrid select.lib-edit:focus { outline: none; border-color: var(--accent); }
+  .libgrid input.lib-edit::placeholder { color: var(--ink-dim); opacity: .4; font-family: var(--sans); font-style: italic; }
+  .libgrid .lib-msg { display: block; color: var(--unknown); font-size: 11px; margin-top: 3px; white-space: normal; max-width: 360px; }
+  .libgrid .lib-id { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); display: block; }
+  .libgrid tr.libadd td { background: var(--panel-2); }
+  .libgrid tr.libadd input.lib-edit, .libgrid tr.libadd select.lib-edit { min-height: 24px; }
+  .libgrid button.libAddBtn { padding: 3px 9px; }
   /* F18 Schedule lens — same overlay grammar as the Estimate lens */
   #schedview { position: fixed; inset: 0; z-index: 30; display: none; flex-direction: column; background: var(--stage-bg); }
   body.sched-view #schedview { display: flex; }
@@ -1000,6 +1021,19 @@
   .estgrid input.recap-edit:hover, .estgrid input.gen-edit:hover { border-color: var(--line); }
   .estgrid input.recap-edit:focus, .estgrid input.gen-edit:focus { border-color: var(--accent); outline: none; background: var(--panel-2); }
   .estgrid input.recap-edit.ov { color: var(--accent); }
+  /* Batch AF: the Formula column — marker chip (which layer the derivation came from), the derivation in
+     words, the gate reason when the line is flagged, and the two text cells (formula · inputs). */
+  .estgrid td.deriv { min-width: 280px; max-width: 420px; font-size: 11px; line-height: 1.35; white-space: normal; vertical-align: top; }
+  .estgrid .dmark { display: inline-block; padding: 0 6px; border: 1px solid var(--line); border-radius: 9px; font-size: 10px; letter-spacing: .02em; margin-right: 6px; color: var(--ink-dim); white-space: nowrap; }
+  .estgrid .dmark.ov { border-color: var(--accent); color: var(--accent); background: rgba(46,117,182,.09); }
+  .estgrid .dsum { color: var(--ink-dim); font-family: var(--mono); font-size: 10.5px; }
+  .estgrid .dgate { display: block; color: var(--unknown); font-weight: 600; margin-top: 2px; }
+  .estgrid .dedit { display: flex; gap: 4px; margin-top: 3px; }
+  .estgrid input.recap-edit.fx { width: 160px; text-align: left; font-family: var(--mono); font-size: 11px; }
+  .estgrid input.recap-edit.fxp { width: 120px; text-align: left; font-family: var(--mono); font-size: 11px; }
+  .estgrid input.recap-edit.fx::placeholder, .estgrid input.recap-edit.fxp::placeholder { color: var(--ink-dim); opacity: .45; font-family: var(--sans); font-style: italic; }
+  .estgrid .ge-mode { display: block; font-size: 11px; line-height: 1.3; color: var(--ink-dim); white-space: normal; max-width: 420px; }
+  .estgrid .ge-mode.lib { color: var(--accent); }
   table.estgrid { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }   /* R1: collapse breaks sticky thead in Firefox */
   table.estgrid thead th { position: sticky; top: 0; background: var(--navy-2); z-index: 2; text-align: left;
     font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--txt-3); font-weight: 600;
@@ -1043,7 +1077,9 @@
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(4),
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(4),
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(6),
-  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(6) { display: none; }
+  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(6),
+  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(7),
+  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(7) { display: none; }   /* Batch AF: the Formula column is a full-lens column too */
   body[data-mode="split"]:not(.grid-view) #gridview .gscroll { padding: 0 10px; }
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td,
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid thead th { padding-left: 7px; padding-right: 7px; }
@@ -1584,14 +1620,28 @@
      failure. The expanded bar therefore reserves the pinned band the same way L-07c reserves
      the lens control's — padding-right grows to clear it, so a wrapped row can never paint
      underneath the door. ── */
-  body.sheet-live:not(.grid-view):not(.sched-view) #toolbar > #dataMenuWrap {
+  body.sheet-live:not(.grid-view):not(.sched-view):not(.lib-view) #toolbar > #dataMenuWrap {
     display: flex !important; visibility: visible !important; position: absolute; top: 0;
     right: 264px; height: 24px; align-items: center; z-index: 3; }
-  body.sheet-live:not(.grid-view):not(.sched-view) #toolbar > #dataMenuWrap #btnDataMenu {
+  body.sheet-live:not(.grid-view):not(.sched-view):not(.lib-view) #toolbar > #dataMenuWrap #btnDataMenu {
     min-height: 20px; padding: 1px 9px; font-size: 11.5px; }
-  body.sheet-live:not(.grid-view):not(.sched-view) #toolbar:hover,
-  body.sheet-live:not(.grid-view):not(.sched-view) #toolbar:focus-within,
-  body.sheet-live:not(.grid-view):not(.sched-view) #toolbar.menu-open { padding-right: 396px; }
+  body.sheet-live:not(.grid-view):not(.sched-view):not(.lib-view) #toolbar:hover,
+  body.sheet-live:not(.grid-view):not(.sched-view):not(.lib-view) #toolbar:focus-within,
+  body.sheet-live:not(.grid-view):not(.sched-view):not(.lib-view) #toolbar.menu-open { padding-right: 396px; }
+  /* Batch AF: the Library lens freezes the top bar exactly as the Estimate and Schedule lenses do (L-07a/b/c
+     grammar, H-3 document-door pin) — the same rules, third lens, no new design. */
+  body.lib-view #toolbar > .group:not(#dataMenuWrap), body.lib-view #toolbar > .sep, body.lib-view #toolbar > #projChip { display: none !important; }
+  body.lib-view #toolbar, body.lib-view #toolbar:hover, body.lib-view #toolbar:focus-within, body.lib-view #toolbar.menu-open {
+    height: 43px; min-height: 43px; margin-bottom: 0; flex-wrap: nowrap; overflow: visible;
+    position: relative; top: auto; left: auto; right: auto; z-index: 40; padding: 4px 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.28); }
+  body.sheet-live.lib-view #toolbar, body.sheet-live.lib-view #toolbar:hover, body.sheet-live.lib-view #toolbar:focus-within, body.sheet-live.lib-view #toolbar.menu-open {
+    height: 24px; min-height: 24px; padding: 0 12px; }
+  body.sheet-live.lib-view:has(#toolbar:hover), body.sheet-live.lib-view:has(#toolbar:focus-within), body.sheet-live.lib-view:has(#toolbar.menu-open) { padding-top: 0; }
+  body.sheet-live.lib-view #toolbar > #dataMenuWrap {
+    display: flex !important; visibility: visible !important; position: absolute; top: 0;
+    right: 264px; height: 24px; align-items: center; z-index: 3; }
+  body.sheet-live.lib-view #toolbar > #dataMenuWrap #btnDataMenu { min-height: 20px; padding: 1px 9px; font-size: 11.5px; }
   /* ── F-C1 · THE OPEN EXPORTS MENU TAKES THE NEXT CLICK.
      While #dataMenu is open this scrim is the hit target for everything outside the menu, so a
      click aimed past it CLOSES the menu and never reaches the control underneath. The persona's
@@ -1731,6 +1781,7 @@
     <div class="vseg on" id="segPlan"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/></svg>Plan</div>
     <div class="vseg" id="segEstimate" title="Estimate lens (E)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18M3 12h18M3 19h18M9 5v14"/></svg>Estimate</div>
     <div class="vseg" id="segSchedule" title="Schedule lens (G)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h9M4 12h14M4 18h6"/></svg>Schedule</div>
+    <div class="vseg" id="segLibrary" title="Library lens (L) — the price book: every item, its unit, cost, formula and inputs. Edits here change the library, never this takeoff."><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h6v16H4zM10 4h6l4 16h-6z"/></svg>Library</div>
   </div>
   <div class="group">
     <button id="btnUiScale" class="quiet" title="UI scale — click to cycle 100% → 115% → 130% → 150% → 90% (remembered)" aria-label="UI scale">A 100%</button>
@@ -2124,7 +2175,10 @@
   <div class="gtabs" id="gTabs"></div>
   <div class="gscroll">
     <table class="estgrid">
-      <thead><tr><th>Description</th><th>Kind</th><th class="num">Qty</th><th>Unit</th><th class="num">Unit $</th><th class="num">Waste</th><th class="num">Total</th></tr></thead>
+      <!-- Batch AF: an 8th column, Formula — the derivation the engine ran (driver, inputs, result) and the
+           line's own formula cell; Unit $ says which unit it is per (commission R5: per ORDER unit until a
+           price unit exists). Split mode hides it with the other secondary columns. -->
+      <thead><tr><th>Description</th><th>Kind</th><th class="num">Qty</th><th>Unit</th><th class="num" title="Per order unit — the unit in the Unit column ($/hr where a production rate is set). There is no separate price unit yet.">Unit $ / order unit</th><th class="num">Waste</th><th title="How the quantity was derived: the driving measurement (RAW; ADJ = with condition waste), the driver the library or this line supplies, the quantity needed, and the ordered quantity after purchasing round-up. Type a formula here to put this line on its own derivation.">Formula</th><th class="num">Total</th></tr></thead>
       <tbody id="estgridBody"></tbody>
     </table>
   </div>
@@ -2149,6 +2203,27 @@
     <span class="gmeta" id="sMeta"></span>
   </div>
   <div class="sched-scroll"><div id="schedBody"></div></div>
+</div>
+
+<!-- Batch AF (commission R7): Library lens — the price book is not hidden. Every item with its full field set,
+     every assembly's item list and overrides; editing HERE edits the library (persisted in this browser, the
+     fingerprint moves); editing on the Estimate sheet edits the project. Never confused: the sheet's marker says
+     "library" for a derivation that came from here. -->
+<div id="libview">
+  <div class="gtop">
+    <div class="gback" id="lBack" title="Back to the Plan cockpit (Esc)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Plan</div>
+    <span class="gtitle">Library · price book</span>
+    <span class="gspacer"></span>
+    <button id="lExport" class="gexport" title="This library as a workbook — every tab, every column; edit it there and import it back">⤓ Library .xlsx</button>
+    <span class="gmeta" id="libMeta"></span>
+  </div>
+  <div class="gscroll">
+    <div id="libHead" class="lib-head"></div>
+    <table class="estgrid libgrid">
+      <thead><tr><th>Item</th><th>Kind</th><th>Driven by</th><th>Unit</th><th class="num" title="Per order unit — the unit in the Unit column">Unit $ / order unit</th><th class="num" title="Condition-units per item-unit (÷)">Coverage</th><th class="num" title="Item-units per condition-unit (×)">Density</th><th title="Quantity formula: RAW, ADJ, WASTE, Q, inputs, and ceil floor round abs max min — at most ONE of coverage / density / formula">Formula</th><th title="Inputs the formula may use, name=value">Inputs</th><th class="num" title="Item waste (must be 0 in an imported library — waste is keyed per condition per takeoff)">Waste</th><th class="num" title="Labor only: units per hour; the unit cost is then $/hr">Prod. rate</th><th>CSI</th><th title="OBS observed · INF inferred · STD standard">Auth.</th><th title="What to verify before bid">Verify</th><th>Description</th><th>Note</th></tr></thead>
+      <tbody id="libBody"></tbody>
+    </table>
+  </div>
 </div>
 
 <div class="modalBack" id="cmdOverlay">
@@ -2818,13 +2893,23 @@ const VESASM = (() => {
 
   /* ---------- safe arithmetic for the {expr} / ~TOKEN~ DSL ---------- */
   // grammar: expr := term (('+'|'-') term)* ; term := factor (('*'|'/') factor)* ;
-  //          factor := number | ident | '(' expr ')' | ('-'|'+') factor
+  //          factor := number | ident | func '(' expr (',' expr)* ')' | '(' expr ')' | ('-'|'+') factor
+  // Batch AF (commission R4): the grammar stays closed — no strings, no comparison, no conditional. It gains
+  // exactly the six functions below, so an estimator can write `ceil(ADJ / 200)` or `max(RAW, 100)` on a line.
+  // An unknown function throws exactly as an unknown identifier does. These are the estimator's own rounding,
+  // typed on purpose; the engine adds none of its own here (CEIL at the material `ordered` step is unchanged).
+  // Scope names are RAW · ADJ · WASTE · Q plus any per-line parameters (resolveItem); a parameter may not
+  // shadow a scope name or a function name — the line gates EXPR_ERROR and says which.
+  const FUNCS = { ceil: Math.ceil, floor: Math.floor, round: Math.round, abs: Math.abs, max: Math.max, min: Math.min };
+  const SCOPE_NAMES = ['RAW', 'ADJ', 'WASTE', 'Q'];
+  const RESERVED_NAMES = SCOPE_NAMES.concat(Object.keys(FUNCS));
+  const PARAM_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
   function tokenize(s) {
     const out = []; let i = 0;
     while (i < s.length) {
       const c = s[i];
       if (c === ' ' || c === '\t') { i++; continue; }
-      if ('+-*/()'.indexOf(c) !== -1) { out.push(c); i++; continue; }
+      if ('+-*/(),'.indexOf(c) !== -1) { out.push(c); i++; continue; }
       if (/[0-9.]/.test(c)) { let j = i + 1; while (j < s.length && /[0-9.]/.test(s[j])) j++; out.push(parseFloat(s.slice(i, j))); i = j; continue; }
       if (/[A-Za-z_]/.test(c)) { let j = i + 1; while (j < s.length && /[A-Za-z0-9_]/.test(s[j])) j++; out.push(s.slice(i, j)); i = j; continue; }
       throw new Error('bad character "' + c + '"');
@@ -2861,6 +2946,14 @@ const VESASM = (() => {
       next();
       if (typeof t === 'number') return t;
       if (typeof t === 'string') {
+        if (peek() === '(') {   // Batch AF: a call — only the closed FUNCS table; `IDENT (` was already an error before
+          if (!Object.prototype.hasOwnProperty.call(FUNCS, t)) throw new Error('unknown function "' + t + '"');
+          next(); const args = [];
+          if (peek() !== ')') { args.push(parseExpr()); while (peek() === ',') { next(); args.push(parseExpr()); } }
+          if (next() !== ')') throw new Error('missing ")" after ' + t + '(');
+          if (!args.length) throw new Error(t + '() needs at least one argument');
+          return FUNCS[t].apply(null, args);
+        }
         if (!Object.prototype.hasOwnProperty.call(scope, t)) throw new Error('unknown token "' + t + '"');
         const v = scope[t];
         if (typeof v !== 'number' || !isFinite(v)) throw new Error('token "' + t + '" is not a finite number');
@@ -2932,13 +3025,19 @@ const VESASM = (() => {
       LINE: (project.lineOverrides && project.lineOverrides[itemId]) || {},
       PROJECT: (project.settings && project.settings.itemOverrides && project.settings.itemOverrides[itemId]) || {},
       ASSEMBLY: (library.assemblies[asmId] && library.assemblies[asmId].itemOverrides && library.assemblies[asmId].itemOverrides[itemId]) || {},
-      ITEM: { unit_cost: item.unit_cost != null ? { value: item.unit_cost, authority: item.authority || 'STD' } : undefined },
+      /* Batch AF (commission R1/R2): the item's own drivers sit on the ITEM layer instead of riding in as the
+         SCHEMA default, so the resolved record can say WHERE the driver came from (level ITEM, not SCHEMA).
+         resolveOverride skips null/undefined keys, so every resolved VALUE is exactly what it was — the
+         G0 goldens are byte-identical; only the provenance the sheet renders is new. `params` is carried on
+         every layer but never resolved by resolveOverride (see below). */
+      ITEM: { unit_cost: item.unit_cost != null ? { value: item.unit_cost, authority: item.authority || 'STD' } : undefined,
+        coverage: item.coverage, density: item.density, qty_expr: item.qty_expr, params: item.params },
       SCHEMA: {},
     };
     const ov = (key, dflt) => resolveOverride(key, layers, dflt).value;
-    const coverage = ov('coverage', item.coverage != null ? item.coverage : undefined);
-    const density = ov('density', item.density != null ? item.density : undefined);
-    const qtyExpr = ov('qty_expr', item.qty_expr != null ? item.qty_expr : undefined);
+    const ovR = (key) => resolveOverride(key, layers, undefined);   // the whole record — value AND level
+    const covR = ovR('coverage'), denR = ovR('density'), exprR = ovR('qty_expr');
+    const coverage = covR.value, density = denR.value, qtyExpr = exprR.value;
     const wasteVal = ov('waste', (typeof item.waste === 'number' && isFinite(item.waste)) ? item.waste : 0);
     const itemWaste = (typeof wasteVal === 'number' && isFinite(wasteVal) && wasteVal >= 0) ? wasteVal : 0;
     const prodRateRaw = ov('production_rate', item.production_rate != null ? item.production_rate : undefined);
@@ -2947,8 +3046,43 @@ const VESASM = (() => {
     // derived coverage/density/expr/waste math AND resolves the unit themselves,
     // so the unit-conversion gate is satisfied. No override → undefined → the
     // certified derivation below is byte-for-byte unchanged.
-    const qtyOvRaw = ov('qty', undefined);
+    const qtyR = ovR('qty'); const qtyOvRaw = qtyR.value;
     const hasQtyOv = (typeof qtyOvRaw === 'number' && isFinite(qtyOvRaw) && qtyOvRaw >= 0);
+
+    /* ── Batch AF (commission R4) · PER-LINE PARAMETERS ────────────────────────────────────────────
+       The coil case: LF of profile measured, pounds bought, `LF × stretch-out width × lb/SF` — and the
+       width is a property of the DETAIL, typed on the line, not baked into a library string. A `params`
+       object ({ name: number }) may sit on any layer; they merge key by key, ITEM < ASSEMBLY < PROJECT <
+       LINE, so a line can override one width and keep the library's lb/SF. Merged HERE, never through
+       resolveOverride: that function reads any object carrying a key literally named `value` as a
+       {value, authority} wrapper, and a parameter may be called anything. `paramsLevel` is the highest
+       layer that contributed, so the sheet can say "line" when the formula is the library's but the
+       width is the estimator's. Names are checked at evaluation time only (below), inside the branch a
+       typed qty does not take — a typed qty still wins over a bad parameter, as it wins over a bad
+       expression today. */
+    const params = {}; let paramsLevel = null;
+    for (const lvl of OVERRIDE_LEVELS.slice().reverse()) {
+      const p = layers[lvl] && layers[lvl].params;
+      if (p && typeof p === 'object' && !Array.isArray(p)) for (const k of Object.keys(p)) { params[k] = p[k]; paramsLevel = lvl; }
+    }
+    const rank = (l) => (l ? OVERRIDE_LEVELS.indexOf(l) : OVERRIDE_LEVELS.length);
+    // The derivation the line will carry (commission R1/R2): which branch below priced it, from which layer,
+    // with what expression, parameters and inputs. Assembled from the same resolved values the branch uses,
+    // so the sheet renders what the engine ran — never a second evaluation of the stack.
+    const scopeOut = { RAW: scope.RAW, ADJ: scope.ADJ, WASTE: scope.WASTE, Q: scope.Q };
+    const paramsOut = Object.keys(params).length ? Object.assign({}, params) : null;
+    const driverOf = () => hasQtyOv
+      ? { kind: 'qty', value: qtyOvRaw, level: qtyR.level, exprLevel: null, paramsLevel: null, expr: null, params: null, scope: scopeOut }
+      : qtyExpr != null
+        ? { kind: 'qty_expr', value: String(qtyExpr), level: rank(paramsLevel) < rank(exprR.level) ? paramsLevel : exprR.level,
+          exprLevel: exprR.level, paramsLevel, expr: String(qtyExpr), params: paramsOut, scope: scopeOut }
+        : coverage != null
+          ? { kind: 'coverage', value: coverage, level: covR.level, exprLevel: null, paramsLevel, expr: null, params: paramsOut, scope: scopeOut }
+          : density != null
+            ? { kind: 'density', value: density, level: denR.level, exprLevel: null, paramsLevel, expr: null, params: paramsOut, scope: scopeOut }
+            : refs === 'FIXED'
+              ? { kind: 'fixed', value: base, level: 'ITEM', exprLevel: null, paramsLevel, expr: null, params: paramsOut, scope: scopeOut }
+              : { kind: 'identity', value: null, level: 'ITEM', exprLevel: null, paramsLevel, expr: null, params: paramsOut, scope: scopeOut };
 
     // ---- unit-conversion gate: never make a number from mismatched units ----
     // Allowed: same unit, OR a declared conversion (coverage / density / qty_expr),
@@ -2956,9 +3090,9 @@ const VESASM = (() => {
     const hasConversion = qtyExpr != null || coverage != null || density != null;
     if (refs !== 'FIXED' && !hasQtyOv) {
       if (condUnit == null) return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'UNIT_GATE',
-        'driven by conditions with mixed units — cannot combine without a declared conversion');
+        'driven by conditions with mixed units — cannot combine without a declared conversion', driverOf());
       if (condUnit !== item.unit && !hasConversion) return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'UNIT_GATE',
-        `scope unit ${condUnit} ≠ item unit ${item.unit}; needs coverage, density, or a width/depth — none supplied`);
+        `scope unit ${condUnit} ≠ item unit ${item.unit}; needs coverage, density, or a width/depth — none supplied`, driverOf());
     }
 
     // ---- derive quantity needed ----
@@ -2967,16 +3101,24 @@ const VESASM = (() => {
       qtyNeeded = qtyOvRaw;                                         // human-authored — no derivation
     } else {
       try {
-        if (qtyExpr != null) qtyNeeded = resolveExpr(qtyExpr, scope);
-        else if (coverage != null) {
-          if (!(coverage > 0)) return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'BAD_DRIVER', `coverage must be > 0 (got ${coverage})`);
+        if (qtyExpr != null) {
+          // Batch AF: parameters enter the scope only here; a name that would shadow a scope name or a
+          // function, or a value that is not a finite number, gates the line and says which.
+          for (const k of Object.keys(params)) {
+            if (!PARAM_NAME.test(k)) throw new Error(`parameter "${k}" is not a name (letters, digits, _)`);
+            if (RESERVED_NAMES.indexOf(k) !== -1) throw new Error(`parameter "${k}" is reserved (${SCOPE_NAMES.join(', ')} and the functions ${Object.keys(FUNCS).join(', ')})`);
+            if (typeof params[k] !== 'number' || !isFinite(params[k])) throw new Error(`parameter "${k}" is not a finite number`);
+          }
+          qtyNeeded = resolveExpr(qtyExpr, Object.assign({}, scope, params));
+        } else if (coverage != null) {
+          if (!(coverage > 0)) return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'BAD_DRIVER', `coverage must be > 0 (got ${coverage})`, driverOf());
           qtyNeeded = base / coverage;                                // condition-units per item-unit
         } else if (density != null) {
-          if (!(density >= 0)) return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'BAD_DRIVER', `density must be ≥ 0 (got ${density})`);
+          if (!(density >= 0)) return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'BAD_DRIVER', `density must be ≥ 0 (got ${density})`, driverOf());
           qtyNeeded = base * density;                                 // item-units per condition-unit
         } else qtyNeeded = base;                                      // identity (same unit)
       } catch (e) {
-        return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'EXPR_ERROR', e.message);
+        return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'EXPR_ERROR', e.message, driverOf());
       }
     }
     if (qtyNeeded == null) return null;                              // no driving geometry → no line (legit absence)
@@ -2984,7 +3126,7 @@ const VESASM = (() => {
     // and a non-finite (e.g. /0) one would otherwise vanish — both must surface, flagged + excluded.
     if (!isFinite(qtyNeeded) || qtyNeeded < 0)
       return gateLine(item, itemId, asmId, asmLabel, drivingRefs, 'BAD_QTY',
-        `derived quantity is ${isFinite(qtyNeeded) ? 'negative' : 'not finite'} (${qtyNeeded}) — check qty / coverage / density / expr`);
+        `derived quantity is ${isFinite(qtyNeeded) ? 'negative' : 'not finite'} (${qtyNeeded}) — check qty / coverage / density / expr`, driverOf());
 
     const match = matchDispatch(layers);
 
@@ -3012,6 +3154,7 @@ const VESASM = (() => {
       csi: item.csi || '', matchCode: item.match_code || '',
       drivingRefs, qtyNeeded, ordered, unit: lineUnit, itemWaste, qtyOverridden: hasQtyOv,
       coverage, density, productionRate: prodRate, laborHours: prodRate ? ordered : null,
+      driver: driverOf(),   // Batch AF (R1/R2): the derivation actually used — additive key, G0's mapper copies nine named keys
       unitCost: match.unitCost, extended,
       matchStatus: match.status, authority: match.authority,
       gate: null, note, verify: item.verify || null,
@@ -3019,13 +3162,15 @@ const VESASM = (() => {
     };
   }
 
-  function gateLine(item, itemId, asmId, asmLabel, drivingRefs, gate, reason) {
+  const NO_DRIVER = { kind: null, value: null, level: null, exprLevel: null, paramsLevel: null, expr: null, params: null, scope: null };
+  function gateLine(item, itemId, asmId, asmLabel, drivingRefs, gate, reason, driver) {
     return {
       assembly: asmId, assemblyLabel: asmLabel,
       item: itemId, desc: item.desc, kind: item.kind,
       csi: item.csi || '', matchCode: item.match_code || '',
       drivingRefs, qtyNeeded: null, ordered: null, unit: item.unit, itemWaste: 0,
       productionRate: null, laborHours: null,
+      driver: driver || NO_DRIVER,   // Batch AF: a gated line still says what it tried to run (the FIXED qty gate fires before a scope exists → NO_DRIVER)
       unitCost: null, extended: null,
       matchStatus: gate, authority: null, gate: reason, note: item.note || '',
       verify: item.verify || null,
@@ -3050,6 +3195,7 @@ const VESASM = (() => {
       drivingRefs: [], qtyNeeded: qty, ordered: qty, unit: g.unit || 'LS', itemWaste: 0,
       qtyOverridden: false, coverage: undefined, density: undefined,
       productionRate: null, laborHours: null,
+      driver: { kind: 'flat', value: qty, level: 'PROJECT', exprLevel: null, paramsLevel: null, expr: null, params: null, scope: null },   // Batch AF: a general line is qty × unit cost, typed on the project
       unitCost: cost, extended: bad ? null : qty * cost,
       matchStatus: bad ? 'NO_MATCH' : 'MATCHED', authority: bad ? null : (g.authority || 'OBS'),
       gate: bad ? (!qtyOK ? 'qty must be a number ≥ 0' : (noQty ? 'no quantity entered' : 'no unit cost')) : null, note: g.note || '', verify: g.verify || null,
@@ -3160,6 +3306,9 @@ const VESASM = (() => {
     // Additive export only — the function itself is untouched, and resolveTakeoff still calls
     // the same internal binding, so no priced number moves.
     resolveItem, resolveGeneral, resolveTakeoff, totalsOf, signatureOf,
+    // Batch AF: the DSL's closed vocabulary, exported so the sheet and the library view can say what a
+    // parameter may be called without re-implementing the rule (one evaluator, one truth).
+    FUNCS, SCOPE_NAMES, RESERVED_NAMES, PARAM_NAME,
   };
 })();
 
@@ -3198,6 +3347,10 @@ const VES_LIBRARY = {
 
   // Tilde tokens usable in {expr} and as ~CODE~. Seed asserts no waste — the human keys
   // waste per takeoff on the condition (authority OBS). Default 0.00.
+  // Batch AF: what an {expr} may reference — RAW · ADJ · WASTE · Q (VESASM.SCOPE_NAMES), the functions
+  // ceil floor round abs max min (VESASM.FUNCS), and any `params` carried on the item or on the line
+  // ({ name: number }; a name may not shadow the scope or a function). Nothing else is in scope: not
+  // another item, not this item's own coverage or unit_cost, not the tildes table beyond WASTE.
   tildes: {
     WASTE: { label: 'Default waste %', default: 0.00, authority: 'STD' },
   },
@@ -3574,7 +3727,10 @@ const VESX = (() => {
     items: [{ k: 'id' }, { k: 'assembly' }, { k: 'kind' }, { k: 'cqty_ref', ref: 1 }, { k: 'qty', num: 1 }, { k: 'unit' },
       { k: 'unit_cost', num: 1 }, { k: 'coverage', num: 1 }, { k: 'density', num: 1 }, { k: 'qty_expr' },
       { k: 'waste', num: 1 }, { k: 'production_rate', num: 1 }, { k: 'crew_size', num: 1 },
-      { k: 'csi' }, { k: 'match_code' }, { k: 'authority' }, { k: 'note' }, { k: 'verify' }],
+      { k: 'csi' }, { k: 'match_code' }, { k: 'authority' }, { k: 'note' }, { k: 'verify' },
+      // Batch AF (ledger F2.1): desc was lost on every workbook round-trip; params is the formula's inputs,
+      // written as name=value|name=value. Both trailing, so a workbook written by an earlier build still reads.
+      { k: 'desc' }, { k: 'params', kv: 1 }],
     general: [{ k: 'id' }, { k: 'label' }, { k: 'qty', num: 1 }, { k: 'unit' }, { k: 'unit_cost', num: 1 },
       { k: 'csi' }, { k: 'authority' }, { k: 'note' }],
   };
@@ -3626,6 +3782,7 @@ const VESX = (() => {
     const cell = (col, obj, extra) => {
       const v = extra && col.k in extra ? extra[col.k] : obj[col.k];
       if (v == null) return '';
+      if (col.kv) return (v && typeof v === 'object') ? Object.keys(v).map((k) => k + '=' + v[k]).join('|') : String(v);   // Batch AF: params
       if (col.arr) return Array.isArray(v) ? v.join('|') : String(v);
       if (col.ref) return v === 'FIXED' ? 'FIXED' : (Array.isArray(v) ? v.join('|') : String(v));
       return v;
@@ -3703,8 +3860,10 @@ const VESX = (() => {
     for (const r of objects('items')) {
       const id = strOf(r.id); if (!id || isReserved(id)) continue;
       const it = { kind: strOf(r.kind), cqty_ref: refOf(r.cqty_ref), unit: strOf(r.unit) };
-      for (const f of ['csi', 'match_code', 'authority', 'note', 'verify', 'qty_expr']) { const v = strOf(r[f]); if (v != null) it[f] = v; }
+      for (const f of ['csi', 'match_code', 'authority', 'note', 'verify', 'qty_expr', 'desc']) { const v = strOf(r[f]); if (v != null) it[f] = v; }   // Batch AF: desc round-trips
       for (const f of ['unit_cost', 'coverage', 'density', 'qty', 'waste', 'production_rate', 'crew_size']) { const v = numOf(r[f]); if (v != null) it[f] = v; }
+      { const pv = strOf(r.params);   // Batch AF: name=value|name=value → { name: number }; a bad pair is left for validateLibrary to name
+        if (pv != null) { const p = {}; for (const pair of pv.split('|')) { const eq = pair.indexOf('='); if (eq > 0) { const k = pair.slice(0, eq).trim(), n = Number(pair.slice(eq + 1).trim()); p[k] = isFinite(n) && pair.slice(eq + 1).trim() !== '' ? n : pair.slice(eq + 1).trim(); } } it.params = p; } }
       items[id] = it;
     }
 
@@ -3777,6 +3936,17 @@ const VESX = (() => {
       if (it.coverage != null && !(isFinite(it.coverage) && it.coverage > 0)) E(`items:${iid}`, `coverage must be > 0 (got ${it.coverage})`);
       if (it.density != null && !(isFinite(it.density) && it.density >= 0)) E(`items:${iid}`, `density must be ≥ 0 (got ${it.density})`);
       if (it.waste != null && it.waste !== 0) E(`items:${iid}`, 'item-level waste must be 0 — waste is keyed per condition per takeoff (avoids double-applying with condition waste)');
+      // Batch AF: params = { name: finite number }; a name may not shadow the DSL's scope or a function (the engine
+      // would gate the line at evaluation — refused here so a workbook says so before it is imported).
+      if (it.params != null) {
+        if (typeof it.params !== 'object' || Array.isArray(it.params)) E(`items:${iid}`, 'params must be name=value pairs');
+        else for (const k of Object.keys(it.params)) {
+          if (!VESASM.PARAM_NAME.test(k)) E(`items:${iid}`, `params: "${k}" is not a name (letters, digits, _)`);
+          else if (VESASM.RESERVED_NAMES.indexOf(k) !== -1) E(`items:${iid}`, `params: "${k}" is reserved (${VESASM.RESERVED_NAMES.join(', ')})`);
+          if (typeof it.params[k] !== 'number' || !isFinite(it.params[k])) E(`items:${iid}`, `params: "${k}" must be a finite number (got ${JSON.stringify(it.params[k])})`);
+        }
+      }
+      if (it.qty_expr != null && typeof it.qty_expr !== 'string') E(`items:${iid}`, 'qty_expr must be a string');
     }
     for (const [cid, c] of Object.entries(cond)) {
       if (!GEOMETRY.includes(c.geometry_type)) E(`conditions:${cid}`, `geometry_type "${c.geometry_type}" not in {${GEOMETRY.join(',')}}`);
@@ -4104,6 +4274,7 @@ const state = {
   recapTab: 'summary',            // summary | materials | labor | exceptions | ledger(=Audit) (drawer content)
   gridDiv: 'all',                 // F10: Estimate-lens division tab ('all' | CSI division token)
   schedView: false,               // F18: Schedule lens visible
+  libView: false,                 // Batch AF: Library lens visible (the price book, every item with its full field set)
   schedule: { rows: {} },         // F18 (R2): per-condition {start,dur} in DAYS — project JSON only, pricing-inert
   sheetDone: {},                  // D3: pageNum -> true once the estimator marks the sheet swept (raw-side key)
   panes: null, active: 0,         // built at boot
@@ -6175,6 +6346,7 @@ window.addEventListener('keydown', (e) => {
     if ($('cmdOverlay').classList.contains('open')) { closeCmd(); return; }
     if (abortSchedDrag()) { e.preventDefault(); return; }   // F18: drop the bar back, write nothing
     if (state.schedView) { showSchedule(false); return; }   // Schedule → back to Plan
+    if (state.libView) { showLibrary(false); return; }      // Batch AF: Library → back to Plan
     if (state.gridView) { showEstimate(false); return; }   // Estimate grid → back to Plan
     if (state.mode === 'split') { setMode('single'); return; }   // R6 split → single
     if ($('calModalBack').classList.contains('open')) { closeCalModal(); return; }
@@ -6226,6 +6398,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'f' || e.key === 'F') { if (AP().page) fitToView(AP()); }
   else if (e.key === 'e' || e.key === 'E') showEstimate(!state.gridView);   // F10: lens door — mouse AND keyboard
   else if (e.key === 'g' || e.key === 'G') showSchedule(!state.schedView);   // F18: Schedule door
+  else if (e.key === 'l' || e.key === 'L') showLibrary(!state.libView);      // Batch AF: Library door (L was unbound)
   else if (e.key === '?') openHotkeys();
   else if (e.key === '+' || e.key === '=') setZoom(AP(), AP().zoom * 1.25);
   else if (e.key === '-' || e.key === '_') setZoom(AP(), AP().zoom / 1.25);
@@ -6556,6 +6729,7 @@ function openHotkeys() {
   row('\u0060', 'command palette');
   row('E', 'Estimate \u21c4 Plan lens');
   row('G', 'Schedule \u21c4 Plan lens');
+  row('L', 'Library \u21c4 Plan lens \u00b7 the price book, every item with its formula');
   row('?', 'this card');
   a.appendChild(dl);
   const act = document.createElement('div'); act.className = 'actions';
@@ -6763,19 +6937,29 @@ function lineDisplayName(itemId) {
   const it = (lib && lib.items) ? lib.items[itemId] : null;
   return itemLabel({ item: itemId, desc: it ? it.desc : null });
 }
+/* Batch AF: the two non-numeric line fields, in the estimator's words — a formula is shown as typed, a
+   parameter set as `name=value` pairs (the same text the grid cell edits). */
+const FIELD_WORD_AF = { params: 'formula inputs' };
+function paramsText(p) { return (p && typeof p === 'object') ? Object.keys(p).map((k) => k + '=' + p[k]).join(' ') : ''; }
 function lineEditLabel(itemId, field, value) {
-  const w = FIELD_WORD[field] || field, nm = lineDisplayName(itemId);
+  const w = FIELD_WORD[field] || FIELD_WORD_AF[field] || field, nm = lineDisplayName(itemId);
   if (value == null) return w + ' cleared → ' + nm;
   const v = field === 'unit_cost' ? VESCore.fmtMoney(value)
     : field === 'waste' ? (Math.round(value * 1000) / 10) + '%'
+    : field === 'qty_expr' ? String(value)
+    : field === 'params' ? paramsText(value)
     : VESCore.fmtQty(value);
   return w + ' ' + v + ' → ' + nm;
 }
-// field ∈ coverage|density|qty_expr|waste|production_rate|unit_cost|qty ; value already in ENGINE units
+// field ∈ coverage|density|qty_expr|params|waste|production_rate|unit_cost|qty ; value already in ENGINE units
+// (qty_expr is a string, params a {name: number} object — Batch AF; everything else a number)
 function editLine(itemId, field, value) {
   if (itemId === '__proto__' || itemId === 'constructor' || itemId === 'prototype') return;  // prototype-pollution guard (reserved item id from a hostile import)
   if (lineIsAdhoc(itemId)) {
     const c = adhocCondForLine(itemId);
+    if (c && field !== 'unit_cost' && field !== 'qty') {   // Batch AF: a manual line has no library derivation to override — say so instead of a silent no-op
+      toast('A manual line has no library formula — its quantity is the number you typed. Author it as a library item (Library lens) to give it a formula.', 'warn'); return;
+    }
     if (c) {
       /* D-25.2a: prior/next are MINIMAL payloads (a price and a measurement value), never a
          state snapshot — the journal's own contract. The replay re-synthesises through the
@@ -6926,6 +7110,34 @@ function buildCondParamRow(c) {
   spacer();              // Cost column
   return row;
 }
+// Batch AF (ledger F4.1 item 4): condition waste, beside pitch, same row grammar. Writes the store the engine's
+// CQty reads (material lifted by waste once, labor paid on raw) — the one the Flags advisory asks for.
+function buildCondWasteRow(c) {
+  const ov = (state.assemblyProject.conditionOverrides && state.assemblyProject.conditionOverrides[c.libRef]) || null;
+  const row = document.createElement('div'); row.className = 'depth-row cond-params';
+  const name = document.createElement('div'); name.className = 'dr-name';
+  name.appendChild(document.createTextNode('Waste % (this condition)'));
+  name.title = 'Laps, cuts, drops — applied ONCE to the measured quantity for every MATERIAL item this condition drives (ADJ = measured × (1 + waste)). Labor is paid on the measured quantity. Item waste on the Estimate grid is a separate, per-item figure.';
+  row.appendChild(name);
+  const wf = document.createElement('div'); wf.className = 'dr-f';
+  const win = document.createElement('input'); win.type = 'text'; win.className = 'cond-waste'; win.inputMode = 'decimal';
+  win.value = (ov && ov.waste != null) ? String(+(ov.waste * 100).toFixed(2)) : '';
+  win.placeholder = '0';
+  win.title = 'Type a percentage (5 = 5% laps/cuts). Blank or 0 = none. Negative is refused.';
+  if (ov && ov.waste != null) win.classList.add('ov');
+  win.addEventListener('change', () => { if (win.dataset.entered) return; setConditionWaste(c.libRef, win.value); });
+  win.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault(); ev.stopPropagation(); win.dataset.entered = '1';
+    const r = setConditionWaste(c.libRef, win.value);
+    requestAnimationFrame(() => { const back = document.querySelector('#depthPanel input.cond-waste') || document.querySelector('input.cond-waste'); if (back) { back.focus(); try { back.select(); } catch (_) {} } });
+    if (r && r.ok) toast(r.waste == null ? `Waste cleared on "${c.name}".` : `Waste ${Math.round(r.waste * 1000) / 10}% applied to "${c.name}" — material quantities follow; labor stays on the measured figure.`, 'ok');
+  });
+  wf.appendChild(win);
+  const spacer = () => { const s = document.createElement('div'); s.className = 'dr-f dr-mute'; row.appendChild(s); };
+  spacer(); row.appendChild(wf); spacer();
+  return row;
+}
 
 function buildDepthPanel(c, lines) {
   const panel = document.createElement('div'); panel.className = 'card-depth';
@@ -6942,7 +7154,7 @@ function buildDepthPanel(c, lines) {
     const s = document.createElement('span'); s.className = cls; s.textContent = t; head.appendChild(s);
   }
   panel.appendChild(head);
-  if (c.type !== 'count') panel.appendChild(buildCondParamRow(c));   // pitch (§2) — area/linear only
+  if (c.type !== 'count') { panel.appendChild(buildCondParamRow(c)); panel.appendChild(buildCondWasteRow(c)); }   // pitch (§2) + waste (Batch AF) — area/linear only
   for (const l of lines) panel.appendChild(buildDepthRow(c, l));
   return panel;
 }
@@ -8721,14 +8933,15 @@ function csvNum(v, dp) {
 function exportBOMCSV() {
   const res = resolveAssembly();
   if (!res.lines.length) { toast('No assembly lines to export — load + trace first.'); return; }
-  const rows = [['Project', projectTitle()], [], ['Assembly', 'Component', 'CSI', 'Match Code', 'Ordered', 'Unit', 'Unit Cost', 'Extended', 'Authority', 'Status', 'Off']];   // F18.18: additive column — shipped headers stay
+  const rows = [['Project', projectTitle()], [], ['Assembly', 'Component', 'CSI', 'Match Code', 'Ordered', 'Unit', 'Unit Cost', 'Extended', 'Authority', 'Status', 'Off', ...DERIV_HEADERS]];   // F18.18: additive column — shipped headers stay · Batch AF: five more, trailing
   for (const l of res.lines) {
     rows.push([l.assemblyLabel, itemLabel(l), l.csi, l.matchCode,
       csvNum(l.ordered, 4), displayUnit(l.unit),
       l.unitCost == null ? '' : l.unitCost.toFixed(4),
       l.extended == null ? '' : l.extended.toFixed(2),
       l.authority || '', l.gate ? displayStatus(l.matchStatus) + ': ' + l.gate : displayStatus(l.matchStatus),
-      lineOmitted(l.item) ? 'off' : '']);   // F18.18: the BOM is the whole engine record; OFF is marked, never hidden
+      lineOmitted(l.item) ? 'off' : '',   // F18.18: the BOM is the whole engine record; OFF is marked, never hidden
+      ...derivColumnsOfLine(l)]);   // Batch AF: the derivation the engine ran, on the purchasing record
   }
   rows.push([]);
   rows.push(['', 'MATERIAL', '', '', '', '', '', res.totals.material.toFixed(2)]);
@@ -8836,6 +9049,42 @@ function setConditionPitch(libRef, raw) {
   markDirty(); renderCards(); renderAssembly();
   return co[libRef] ? co[libRef].pitch : undefined;
 }
+/* ── Batch AF (ledger F4.1 item 4) · CONDITION WASTE HAS A DOOR ─────────────────────────────────────────
+   The Flags tab advised "key a waste %" against conditionOverrides[libRef].waste — the store the engine reads
+   at CQty (adj = raw × (1 + waste), material only; labor is paid on raw) — and nothing in the UI wrote it. The
+   grid's waste cell writes ITEM waste (lineOverrides[item].waste, applied at the material `ordered` step), a
+   different number the advisory never reads. This door writes the condition store the seed and the engine mean
+   (:3199 "the human keys waste per takeoff on the condition"), on the library condition's card, beside pitch.
+   Plain (non-library) conditions are priced by VESCore.rollup with no waste, so they get no door — it would be
+   dead. `pct` is a percentage as typed (5 → 0.05); 0 or blank deletes the key (the advisory's own test);
+   a negative is refused (D-26.2 parity — the engine would subtract material). Journaled with prior/next, the
+   way editLine journals a line — this door does not use the pitch setter's unjournaled-money fallback. */
+function setConditionWaste(libRef, pct) {
+  if (!libRef || libRef === '__proto__' || libRef === 'constructor' || libRef === 'prototype') return { ok: false, error: 'no condition' };
+  const co = state.assemblyProject.conditionOverrides || (state.assemblyProject.conditionOverrides = {});
+  const s = String(pct == null ? '' : pct).trim().replace(/%$/, '');
+  const prior = co[libRef] && co[libRef].waste != null ? co[libRef].waste : null;
+  let next = null;
+  if (s !== '') {
+    const v = Number(s);
+    if (!(isFinite(v) && v >= 0)) { const err = 'Waste is a percentage ≥ 0 (e.g. 5 for laps and cuts). A negative waste would subtract material — refused.'; toast(err, 'warn'); renderCards(); return { ok: false, error: err }; }
+    next = v / 100 === 0 ? null : v / 100;
+  }
+  const apply = (val) => {
+    const ov = co[libRef] || (co[libRef] = {});
+    if (val == null) delete ov.waste; else ov.waste = val;
+    if (!Object.keys(ov).length) delete co[libRef];
+  };
+  apply(next);
+  const label = (state.library.conditions[libRef] || {}).label || libRef;
+  if (prior !== next) journalPush({
+    label: 'condition waste ' + (next == null ? 'cleared' : (Math.round(next * 1000) / 10) + '%') + ' → ' + label,
+    undo() { apply(prior); markDirty(); renderCards(); renderAssembly(); },
+    redo() { apply(next); markDirty(); renderCards(); renderAssembly(); },
+  });
+  markDirty(); renderCards(); renderAssembly();
+  return { ok: true, waste: next };
+}
 
 /* ---------- minimal authoring: attach a priced Item to an assembly ---------- */
 // The full authoring substrate is the owned library.json (export → edit → import);
@@ -8937,13 +9186,18 @@ function fmtEditVal(field, v) {
   if (field === 'qty') { const q = +v; return (q === 0 ? 0 : q).toLocaleString('en-US', { maximumFractionDigits: 4 }); }   // M-11: -0 collapses like fmtQty
   return String(v);   // waste (pct digits), production_rate — plain
 }
-function moneyInputAttrs(field, disp) {
-  const raw = disp == null ? '' : String(disp);
+/* Batch AF (ledger F1.4 m): the qty cell SHOWS two decimals but EDITS from the full-precision engine value.
+   `data-raw` was the rounded display figure, so an estimator who focused a derived quantity and retyped
+   what they saw froze the 2-dp figure as a `qty` override — the derivation replaced by its own rounding.
+   `rawOverride`, when given, is the exact number the cell edits from; the display stays what it was. */
+function moneyInputAttrs(field, disp, rawOverride) {
+  const raw = rawOverride != null ? String(rawOverride) : (disp == null ? '' : String(disp));
   return `type="text" inputmode="decimal" autocomplete="off" data-raw="${escA(raw)}" value="${escA(fmtEditVal(field, disp))}"`;
 }
-function recapEditCell(line, field, disp, ph, pct) {
+const qtyDisp2 = (q) => (q == null ? null : +(Math.round(q * 100) / 100));   // the 2-dp face every qty cell shows
+function recapEditCell(line, field, disp, ph, pct, rawOverride) {
   const over = (field === 'qty') ? !!line.qtyOverridden : isLineOverridden(line.item, field);
-  return `<input class="recap-edit${over ? ' ov' : ''}" ${moneyInputAttrs(field, disp)}`
+  return `<input class="recap-edit${over ? ' ov' : ''}" ${moneyInputAttrs(field, disp, rawOverride)}`
     + ` data-item="${escA(line.item)}" data-field="${field}"${pct ? ' data-pct="1"' : ''}`
     + ` placeholder="${escA(ph || '')}" title="${over ? 'project override — clear to revert' : 'type to set a project value'}">`;
 }
@@ -8962,7 +9216,7 @@ function renderRecapMaterials() {
   const engineRow = (l) => {
     if (l.extended != null) total += l.extended; else partial = true;
     return `<tr><td class="l">${escA(itemLabel(l))}<span class="rsub"> · ${escA(l.assemblyLabel)}</span></td>`
-      + `<td class="n">${recapEditCell(l, 'qty', l.ordered == null ? null : +(Math.round(l.ordered * 100) / 100), l.unit)} <span class="ru">${escA(l.unit || '')}</span></td>`
+      + `<td class="n">${recapEditCell(l, 'qty', qtyDisp2(l.ordered), l.unit, false, l.ordered)} <span class="ru">${escA(l.unit || '')}</span></td>`
       + `<td class="n">${recapEditCell(l, 'unit_cost', l.unitCost, '$')}</td>`
       + `<td class="n">${l.extended != null ? money(l.extended) : '<span class="rneeds">needs price</span>'}</td></tr>`;
   };
@@ -8976,7 +9230,7 @@ function renderRecapMaterials() {
   const body = mats.map(engineRow).join('') + plain.map(plainRow).join('');
   const foot = `<tfoot><tr><td class="l" colspan="3">Material${partial ? ' (partial — unpriced excluded)' : ''}</td>`
     + `<td class="n rtotal ${partial ? 'partial' : ''}">${partial ? '≥ ' : ''}${money(total) || '$0.00'}</td></tr></tfoot>`;
-  return recapTable(['Component', 'Qty', 'Unit $', 'Material $'], body, foot);
+  return recapTable(['Component', 'Qty', 'Unit $ / order unit', 'Material $'], body, foot);   // Batch AF (R5): the price is per the ordered unit until a price unit exists
 }
 
 function renderRecapLabor() {
@@ -8991,7 +9245,7 @@ function renderRecapLabor() {
     return `<tr><td class="l">${escA(itemLabel(l))}<span class="rsub"> · ${escA(l.assemblyLabel)}</span></td>`
       + `<td class="n">${recapEditCell(l, 'production_rate', l.productionRate, 'u/hr')}</td>`
       + `<td class="n">${hrs}</td>`
-      + `<td class="n">${recapEditCell(l, 'qty', l.ordered == null ? null : +(Math.round(l.ordered * 100) / 100), l.unit)} <span class="ru">${escA(l.laborHours != null ? 'hr' : l.unit)}</span></td>`
+      + `<td class="n">${recapEditCell(l, 'qty', qtyDisp2(l.ordered), l.unit, false, l.ordered)} <span class="ru">${escA(l.laborHours != null ? 'hr' : l.unit)}</span></td>`
       + `<td class="n">${recapEditCell(l, 'unit_cost', l.unitCost, l.laborHours != null ? '$/hr' : '$')}</td>`
       + `<td class="n">${l.extended != null ? money(l.extended) : '<span class="rneeds">needs rate</span>'}</td></tr>`;
   }).join('');
@@ -9162,17 +9416,26 @@ function omitDisplayName(key) {
    so the toggle says exactly what is still being charged. The deeper material<->labor coupling
    is Wave-3 N1/N2 schema territory and is deliberately NOT built here: nothing is turned off on
    the estimator's behalf. ── */
+/* Batch AF (commission R6, ledger F4.2 item 2): the sibling test read the DISPLAY NAME, and a ＋ labor line is named
+   "<material> — labor" — so the note never fired for the very sibling it was written for. It now reads the
+   REFERENCE first: a ＋ labor line follows its source condition by `qtyLink` (F18.21), and the material's driving
+   condition is `drivingRefs[0]` — a labor line whose adhoc condition links to that condition is the sibling. The
+   name match stays as the fallback for library pairs that share a desc and have no link. Nothing is turned off
+   on the estimator's behalf, as before. */
 function offLineLaborNote(key) {
   const res = (typeof resolveAssembly === 'function') ? resolveAssembly() : { lines: [] };
   const me = (res.lines || []).find((l) => l.item === key);
   if (!me || me.kind !== 'material') return;
   const nm = String(itemLabel(me) || '').trim();
-  if (!nm) return;
-  const sibs = (res.lines || []).filter((l) => l.kind === 'labor' && l.included && l.extended != null
-    && !lineOmitted(l.item) && String(itemLabel(l) || '').trim().toLowerCase() === nm.toLowerCase());
+  const srcRef = me.drivingRefs && me.drivingRefs.length === 1 ? me.drivingRefs[0] : null;
+  const srcCond = srcRef ? state.conditions.find((c) => c.libRef === srcRef) : null;
+  const linked = (l) => { if (!srcCond || !lineIsAdhoc(l.item)) return false; const ac = adhocCondForLine(l.item); return !!(ac && ac.qtyLink != null && String(ac.qtyLink) === String(srcCond.id)); };
+  const named = (l) => nm && String(itemLabel(l) || '').trim().toLowerCase() === nm.toLowerCase();
+  const sibs = (res.lines || []).filter((l) => l.kind === 'labor' && l.included && l.extended != null && !lineOmitted(l.item) && (linked(l) || named(l)));
   if (!sibs.length) return;
   const sum = sibs.reduce((a, l) => a + l.extended, 0);
-  sayHere(`"${nm} — material" is off. "${nm} — labor" is still priced at ${VESCore.fmtMoney(sum)} and still on the bid — turn it off too if that work is not happening.`, 'warn');
+  const names = sibs.map((l) => `"${itemLabel(l)}"`).join(', ');
+  sayHere(`"${nm}" (material) is off. Its labor — ${names} — is still priced at ${VESCore.fmtMoney(sum)} and still on the bid; turn it off too if that work is not happening.`, 'warn');
 }
 function setLineOmit(key, off) {
   if (key == null || key === '__proto__' || key === 'constructor' || key === 'prototype') return;
@@ -9321,7 +9584,7 @@ function renderRecapEstimate() {
     + `<td class="n rtotal">${money(l.cost)}</td></tr>`).join('');
   const foot = `<tfoot><tr><td class="l">Cost (Σ direct)</td><td></td><td></td><td class="n rtotal">${money(m.cost)}</td></tr>`
     + `<tr class="grand"><td class="l">Sell</td><td></td><td></td><td class="n rtotal">${money(m.sell)}</td></tr></tfoot>`;
-  return `<div class="recap-summary">${recapTable(['Line', 'Qty', 'Unit $', 'Total'], body, foot)}`
+  return `<div class="recap-summary">${recapTable(['Line', 'Qty', 'Unit $ / order unit', 'Total'], body, foot)}`
     + `<div class="recap-ladder-wrap"><button class="recap-print" id="recapOpenGrid" title="Open the full estimate grid — tabs, inline edits, exports">Full estimate ⤢</button></div></div>`;
 }
 
@@ -9350,6 +9613,7 @@ function estimateRows() {
   const condByRef = {}; const condByIdRows = {};   // F18.21: driving-condition lookup for ＋L links
   for (const c of state.conditions) { if (c.libRef) condByRef[c.libRef] = c; condByIdRows[c.id] = c; }
   const gen = state.assemblyProject.general || [];
+  const lib = (typeof mergedLibrary === 'function') ? mergedLibrary() : state.library;   // Batch AF: the driving condition's unit for the derivation text
   const rows = [];
   for (const l of res.lines) {
     if (l.assembly === '__general__') continue;   // L-22(i): the editable lane copy below is the grid's ONE face for general lines — engine copy deduped (money was never double-counted; the display was)
@@ -9360,6 +9624,9 @@ function estimateRows() {
       waste: (l.kind === 'material' && l.itemWaste != null) ? l.itemWaste : null,
       total: l.extended, conf: lineConfColor(l), np: l.extended == null,
       div, edit: 'engine', item: l.item, kind: l.kind, qtyOverridden: !!l.qtyOverridden,
+      // Batch AF (R1): the derivation rides the row — the engine's own record, never re-derived here
+      driver: l.driver || null, gate: l.gate || null, status: l.matchStatus, qtyNeeded: l.qtyNeeded, productionRate: l.productionRate,
+      condUnit: (l.drivingRefs && l.drivingRefs.length && lib.conditions && lib.conditions[l.drivingRefs[0]]) ? lib.conditions[l.drivingRefs[0]].unit : null,
       okey: l.item, omitted: lineOmitted(l.item),
       srcCid: (l.drivingRefs && l.drivingRefs.length === 1 ? (condByRef[l.drivingRefs[0]] || {}).id : null),
       linkedTo: (l.drivingRefs && l.drivingRefs.length === 1 && condByRef[l.drivingRefs[0]] && condByRef[l.drivingRefs[0]].qtyLink
@@ -9412,26 +9679,143 @@ function exportGridCSV() {
     out.push([r.group, r.csi, r.label, csvNum(r.qty, 2), r.unit || '',
       r.unitCost == null ? '' : r.unitCost.toFixed(4),
       r.total == null ? '' : r.total.toFixed(2),
-      r.kind || '']);   // L-03: the register the grid already shows (F18.8 Kind column)
+      r.kind || '',   // L-03: the register the grid already shows (F18.8 Kind column)
+      ...derivColumns(r)]);   // Batch AF: driver · formula · params · qty_needed · basis — trailing, same precedent
   }
   const m = recapModel();
-  out.push(['', '', 'Cost (Σ direct)', '', '', '', m.cost.toFixed(2), '']);   // M-D: cents, and it still equals the sum of the rows above
+  const pad = ['', '', '', '', ''];   // Batch AF: the five derivation columns, blank on the footer rows
+  out.push(['', '', 'Cost (Σ direct)', '', '', '', m.cost.toFixed(2), '', ...pad]);   // M-D: cents, and it still equals the sum of the rows above
   /* AB-3 (P-TRADE T-03): the reader could see Cost and Sell but not how one became the other. The three ladder
      rows land between them, apportioned to cents against Sell − Cost, so Cost + Overhead + Markup + Profit = Sell
      on the page a controller adds up. */
   { const costC = Math.round(m.cost * 100), sellC = Math.round(m.sell * 100);
     const parts = apportionCents([m.ohAmt, m.mkAmt, m.pfAmt], (sellC - costC) / 100);
     const pct = (x) => (x * 100).toFixed(1).replace(/\.0$/, '') + '%';
-    out.push(['', '', 'Overhead (' + pct(m.oh) + ')', '', '', '', (centsVal(parts[0]) || 0).toFixed(2), '']);
-    out.push(['', '', 'Markup (' + pct(m.mk) + ')', '', '', '', (centsVal(parts[1]) || 0).toFixed(2), '']);
-    out.push(['', '', 'Profit (' + pct(m.pf) + ')', '', '', '', (centsVal(parts[2]) || 0).toFixed(2), '']); }
-  out.push(['', '', 'Sell', '', '', '', m.sell.toFixed(2), '']);
+    out.push(['', '', 'Overhead (' + pct(m.oh) + ')', '', '', '', (centsVal(parts[0]) || 0).toFixed(2), '', ...pad]);
+    out.push(['', '', 'Markup (' + pct(m.mk) + ')', '', '', '', (centsVal(parts[1]) || 0).toFixed(2), '', ...pad]);
+    out.push(['', '', 'Profit (' + pct(m.pf) + ')', '', '', '', (centsVal(parts[2]) || 0).toFixed(2), '', ...pad]); }
+  out.push(['', '', 'Sell', '', '', '', m.sell.toFixed(2), '', ...pad]);
   // L-03: `kind` lands as an ADDITIVE TRAILING column, matching this file's own
   // precedent (F18.18 added Off to the BOM, F18.19 added Pitch to the rollup —
-  // both trailing) so column-index consumers survive.
+  // both trailing) so column-index consumers survive. Batch AF adds five more the same way.
   saveBlob(projectSlug() + '-estimate-grid.csv',
-    VESX.rowsToCSV(['group', 'csi', 'line', 'qty', 'unit', 'unit_cost', 'total', 'kind'], out), 'text/csv');
+    VESX.rowsToCSV(['group', 'csi', 'line', 'qty', 'unit', 'unit_cost', 'total', 'kind', ...DERIV_HEADERS], out), 'text/csv');
   toast('Grid CSV exported — matches the grid, division filter and all.', 'ok');
+}
+/* ════ Batch AF · THE FORMULA COLUMN ═══════════════════════════════════════════════════════════════════
+   Commission "Estimate sheet depth", rulings R1/R2: every engine row shows the derivation the engine actually
+   ran — the driving quantity (RAW; ADJ with condition waste), the driver and where it came from, the quantity
+   needed, and the ordered figure — and carries the line's own formula cell and its inputs. Everything here reads
+   `row.driver`, the record resolveItem emitted from the same values it priced on; nothing re-evaluates the
+   override stack (the M-5 pattern this file warns against at recapModel). Trade voice, no tool nouns. */
+const DMARK_WORD = { LINE: 'line formula', PROJECT: 'project formula', ASSEMBLY: 'library', ITEM: 'library', QTY: 'typed qty', MANUAL: 'manual line' };
+const DMARK_TITLE = {
+  LINE: 'This line prices on a formula or inputs typed here — clear the cells to return to the library’s derivation.',
+  PROJECT: 'A project-level override in this takeoff’s settings — not the library’s derivation.',
+  ASSEMBLY: 'The library’s derivation for this item (assembly override) — edit it in the Library lens (L).',
+  ITEM: 'The library’s derivation for this item — edit it in the Library lens (L). Type a formula here to put this line on its own.',
+  QTY: 'A typed quantity replaces the derivation — clear the Qty cell to revert to it.',
+  MANUAL: 'A manual line: the quantity you typed, priced at the unit cost you typed. No library derivation.',
+};
+function derivLevel(it) {
+  const d = it.driver || {};
+  if (lineIsAdhoc(it.item)) return 'MANUAL';
+  if (d.kind === 'qty') return 'QTY';
+  return d.level || 'ITEM';
+}
+const fq = (v) => (v == null || !isFinite(v) ? '—' : VESCore.fmtQty(v));
+const fmtParam = (v) => (typeof v === 'number' && isFinite(v) ? String(+v.toFixed(6)) : String(v));   // an input is shown as typed, not rounded to the qty face
+// The derivation in one line: `ADJ 412.5 LF · width 1.25 · lbsf 1.156 → 596.06 → 597 LB`
+function derivSummary(it) {
+  const d = it.driver || {}; const sc = d.scope || {}; const cu = it.condUnit || '';
+  const isLab = it.kind === 'labor';
+  const baseWord = isLab ? 'RAW' : 'ADJ';
+  const base = isLab ? sc.RAW : sc.ADJ;
+  const wasteNote = (!isLab && sc.WASTE > 0) ? ` (${fq(sc.RAW)} + ${Math.round(sc.WASTE * 1000) / 10}% waste)` : '';
+  const tail = () => {
+    if (it.qtyNeeded == null) return '';
+    if (isLab && it.productionRate) return ` = ${fq(it.qtyNeeded)} ÷ ${fq(it.productionRate)}/hr → ${fq(it.qty)} hr`;
+    if (isLab) return ` → ${fq(it.qty)} ${it.unit || ''}`;
+    return ` = ${fq(it.qtyNeeded)} → ${fq(it.qty)} ${it.unit || ''}`;
+  };
+  switch (d.kind) {
+    case 'qty': return `typed ${fq(d.value)} ${it.unit || ''} — replaces the derivation (${baseWord} ${fq(base)} ${cu})`;
+    case 'fixed': return `fixed allowance ${fq(d.value)} ${it.unit || ''}`;
+    case 'coverage': return `${baseWord} ${fq(base)} ${cu}${wasteNote} ÷ ${fq(d.value)} ${cu}/${it.unit || 'unit'}${tail()}`;
+    case 'density': return `${baseWord} ${fq(base)} ${cu}${wasteNote} × ${fq(d.value)} ${it.unit || 'unit'}/${cu}${tail()}`;
+    case 'qty_expr': {
+      const ins = d.params ? ' · ' + Object.keys(d.params).map((k) => `${k} ${fmtParam(d.params[k])}`).join(' · ') : '';
+      return `RAW ${fq(sc.RAW)} · ADJ ${fq(sc.ADJ)} ${cu}${ins}${it.gate ? '' : tail()}`;
+    }
+    case 'identity': return `${baseWord} ${fq(base)} ${cu}${wasteNote} as is${tail()}`;
+    default: return it.gate ? '' : `${fq(it.qty)} ${it.unit || ''}`;
+  }
+}
+// Batch AF: the derivation as five trailing export columns (grid CSV, Estimate .xlsx, BOM CSV — every export that
+// carries cost; the client papers carry none of it). `basis` is the engine's inputs, `driver` names the branch and
+// the layer it came from, or the gate when the line did not price.
+const DERIV_HEADERS = ['driver', 'formula', 'params', 'qty_needed', 'basis'];
+function derivColumnsOf(driver, gate, status, qtyNeeded, isAdhoc) {
+  const d = driver || {};
+  if (gate) return [`${status || 'gated'}: ${gate}`, d.expr || '', paramsText(d.params), '', d.scope ? `RAW=${d.scope.RAW};ADJ=${d.scope.ADJ};WASTE=${d.scope.WASTE}` : ''];
+  if (isAdhoc) return ['manual', '', '', qtyNeeded == null ? '' : csvNum(qtyNeeded, 4), ''];
+  if (!d.kind) return ['', '', '', '', ''];
+  const word = d.kind === 'qty' ? 'typed qty' : d.kind === 'qty_expr' ? 'formula' : d.kind;
+  const lvl = d.kind === 'qty' || d.kind === 'qty_expr' || d.kind === 'coverage' || d.kind === 'density' ? (d.level || '') : '';
+  const value = d.kind === 'coverage' || d.kind === 'density' || d.kind === 'qty' || d.kind === 'fixed' ? ` ${d.value}` : '';
+  return [`${word}${value}${lvl ? ` (${lvl})` : ''}`, d.expr || '', paramsText(d.params), qtyNeeded == null ? '' : csvNum(qtyNeeded, 4),
+    d.scope ? `RAW=${d.scope.RAW};ADJ=${d.scope.ADJ};WASTE=${d.scope.WASTE}` : ''];
+}
+const derivColumns = (r) => r.edit === 'engine' ? derivColumnsOf(r.driver, r.gate, r.status, r.qtyNeeded, lineIsAdhoc(r.item)) : ['typed', '', '', '', ''];
+const derivColumnsOfLine = (l) => derivColumnsOf(l.driver, l.gate, l.matchStatus, l.qtyNeeded, lineIsAdhoc(l.item));
+// What the library would do without a line formula — shown as the formula cell's placeholder, in words.
+function libDriverWords(it) {
+  const lib = (typeof mergedLibrary === 'function') ? mergedLibrary() : state.library;
+  const li = lib && lib.items ? lib.items[it.item] : null; if (!li) return '';
+  if (li.qty_expr != null) return 'library formula ' + String(li.qty_expr);
+  if (li.coverage != null) return `library: ÷ ${li.coverage} ${it.condUnit || ''}/${li.unit || 'unit'}`;
+  if (li.density != null) return `library: × ${li.density} ${li.unit || 'unit'}/${it.condUnit || ''}`;
+  if (li.cqty_ref === 'FIXED') return 'fixed allowance';
+  return 'same unit as measured — type a formula to convert';
+}
+function derivCell(it) {
+  if (it.edit === 'plain') return `<td class="deriv"><span class="dsum">measured qty × unit $</span></td>`;
+  if (it.edit !== 'engine') return `<td class="deriv"><span class="dsum">typed qty × unit $</span></td>`;
+  const lvl = derivLevel(it); const d = it.driver || {};
+  const over = lvl === 'LINE' || lvl === 'PROJECT' || lvl === 'QTY';
+  const mark = `<span class="dmark${over ? ' ov' : ''}" data-level="${lvl}" title="${escA(DMARK_TITLE[lvl] || '')}">${escA(DMARK_WORD[lvl] || lvl.toLowerCase())}</span>`;
+  const sum = `<span class="dsum">${escA(derivSummary(it))}</span>`;
+  const gate = it.gate ? `<span class="dgate">${escA(it.status || 'gated')}: ${escA(it.gate)}</span>` : '';
+  if (lvl === 'MANUAL') return `<td class="deriv">${mark}${sum}${gate}</td>`;
+  const lo = (state.assemblyProject.lineOverrides || {})[it.item] || {};
+  const lineExpr = lo.qty_expr != null ? String(lo.qty_expr) : '';
+  const lineParams = paramsText(lo.params);
+  const libParams = d.params && lo.params == null ? paramsText(d.params) : '';
+  // The cells stay quiet when empty (a placeholder on every row read as content); the library's own derivation
+  // is already the summary line above, and the cell's title repeats it in words for the one row under the pointer.
+  const fx = `<input class="recap-edit fx${lineExpr ? ' ov' : ''}" type="text" autocomplete="off" spellcheck="false" data-item="${escA(it.item)}" data-field="qty_expr"`
+    + ` value="${escA(lineExpr)}" placeholder="formula" title="Quantity formula for this line — blank = ${escA(libDriverWords(it))}. Scope: RAW, ADJ, WASTE, Q, your inputs, and ceil floor round abs max min.">`;
+  const fxp = `<input class="recap-edit fxp${lineParams ? ' ov' : ''}" type="text" autocomplete="off" spellcheck="false" data-item="${escA(it.item)}" data-field="params"`
+    + ` value="${escA(lineParams)}" placeholder="inputs" title="Inputs the formula uses, typed on this line as name=value (width=1.25 lbsf=1.156).${libParams ? ' Library inputs: ' + escA(libParams) + ' — one of the same name is replaced by yours.' : ''}">`;
+  return `<td class="deriv">${mark}${sum}${gate}<span class="dedit">${fx}${fxp}</span></td>`;
+}
+// Batch AF (ledger F3.3): what the entry row will DO with what is typed, said before ✓ Add — which funnel, and what a
+// library match activates (every item of the assembly, fixed allowances included, priced by the engine itself).
+function measureForUnit(u) { const s = String(u || '').trim().toUpperCase(); return /^(SF|SQ|SY|SM|M2)$/.test(s) ? 'area' : /^(LF|LY|LM|FT|M)$/.test(s) ? 'linear' : 'count'; }
+function entryFunnelWords(desc) {
+  const lib = libCondByLabel(desc);
+  if (!lib) return { lib: false, text: 'Free line — your own quantity and price; no library formula, no waste. Measure sets whether it is a count, an area or a length.' };
+  const asm = state.library.assemblies[lib.def.assembly] || { items: [], label: lib.def.assembly };
+  const ids = asm.items || []; const fixed = ids.filter((id) => state.library.items[id] && state.library.items[id].cqty_ref === 'FIXED');
+  let sum = 0, unpriced = 0;
+  for (const id of fixed) { const ln = VESASM.resolveItem(state.library.items[id], id, lib.def.assembly, asm.label || lib.def.assembly, { cqty: {}, library: state.library, project: state.assemblyProject }); if (ln && ln.extended != null) sum += ln.extended; else unpriced++; }
+  const active = (typeof assemblyMeasured === 'function') && assemblyMeasured().some((m) => (state.library.conditions[m.condId] || {}).assembly === lib.def.assembly);
+  return { lib: true, text: `Library — the quantity becomes a measurement on “${lib.def.label}” (${lib.def.unit}) and the ${asm.label || lib.def.assembly} assembly prices it: ${ids.length} items, including ${fixed.length} fixed allowance${fixed.length === 1 ? '' : 's'} (${VESCore.fmtMoney(sum)}${unpriced ? `, ${unpriced} unpriced` : ''})${active ? ' — already on this estimate' : ' — added to the estimate with this line'}. Kind, unit and price come from the library.` };
+}
+function refreshEntryMode() {
+  const el = $('geMode'); if (!el) return;
+  const f = entryFunnelWords(($('geDesc') || {}).value || '');
+  el.textContent = f.text; el.classList.toggle('lib', f.lib);
 }
 function renderEstimateGrid() {
   const body = $('estgridBody'); if (!body) return;
@@ -9462,8 +9846,8 @@ function renderEstimateGrid() {
     `<button class="gtab${(state.gridDiv || 'all') === d ? ' on' : ''}" data-div="${escA(d)}" title="${d === 'all' ? 'Every division' : d === '—' ? 'General requirements (no CSI division)' : 'Show only Division ' + escA(d)}">${d === 'all' ? 'All' : d === '—' ? 'General' : 'Div ' + escA(d)}</button>`).join('');
   // R1: waste is EDITABLE HERE and nowhere else — engine material lines only,
   // through the same lineOverrides depth as every other cell (data-item/data-field).
-  const cell = (it, field, disp, ph, pct) => {
-    if (it.edit === 'engine') return recapEditCell({ item: it.item, qtyOverridden: it.qtyOverridden }, field, disp, ph, pct);
+  const cell = (it, field, disp, ph, pct, raw) => {
+    if (it.edit === 'engine') return recapEditCell({ item: it.item, qtyOverridden: it.qtyOverridden }, field, disp, ph, pct, raw);
     if (it.edit === 'plain' && field === 'unit_cost') return recapPlainCostCell(it.condId, disp);
     if (it.edit === 'gen') return `<input class="gen-edit" ${moneyInputAttrs(field, disp)} data-gen="${it.gi}" data-field="${field}" placeholder="${escA(ph || '')}">`;
     return disp == null ? '—' : String(disp);
@@ -9473,10 +9857,10 @@ function renderEstimateGrid() {
   for (const g of shown) {
     const G = byG[g];
     const csiLbl = (G.csi && G.csi !== '—') ? (escA(G.csi) + ' — ' + escA(g)) : escA(g);
-    html += `<tr class="divh"><td colspan="7">${csiLbl}</td></tr>`;
+    html += `<tr class="divh"><td colspan="8">${csiLbl}</td></tr>`;
     for (const it of G.items) {
       const qtyDisp = it.qty == null ? null : +(Math.round(it.qty * 100) / 100);
-      const qtyCell = (it.edit === 'engine' || it.edit === 'gen') ? cell(it, 'qty', qtyDisp, it.unit) : num(it.qty);
+      const qtyCell = (it.edit === 'engine' || it.edit === 'gen') ? cell(it, 'qty', qtyDisp, it.unit, false, it.qty) : num(it.qty);   // Batch AF: edits from the full-precision figure (F1.4 m)
       const wasteCell = (it.edit === 'engine' && it.kind === 'material')
         ? cell(it, 'waste', it.waste != null ? +(it.waste * 100).toFixed(2) : null, '%', true)
         : (it.waste != null ? Math.round(it.waste * 100) + '%' : '—');
@@ -9500,9 +9884,10 @@ function renderEstimateGrid() {
         + `<td class="num">${linkMark}${qtyCell}</td><td${lockT}>${escA(it.unit || '')}</td>`
         + `<td class="num${it.np ? ' np' : ''}">${costCell}</td>`
         + `<td class="num">${wasteCell}</td>`
+        + derivCell(it)   // Batch AF: the Formula column
         + `<td class="num${it.total == null ? ' np' : ''}">${it.total == null ? '—' : money(it.total)}</td></tr>`;
     }
-    html += `<tr class="sub"><td>Subtotal — ${escA(g)}</td><td></td><td></td><td></td><td></td><td></td>`
+    html += `<tr class="sub"><td>Subtotal — ${escA(g)}</td><td></td><td></td><td></td><td></td><td></td><td></td>`
       + `<td class="num${G.partial ? ' np' : ''}">${G.partial ? '≥ ' : ''}${money(G.sub)}</td></tr>`;
   }
   // F18.17: the entry row's library door — a datalist of the loaded library's condition names
@@ -9518,17 +9903,23 @@ function renderEstimateGrid() {
       + '<td><span class="gelabel">New line</span><input id="geDesc" list="geLibOpts" type="text" placeholder="Description" title="A description of the line — or type a library item\u2019s exact name and the library prices it." class="gen-edit ge-wide" autocomplete="off">' + libOpts
       + (typeof geLinkArm === 'object' && geLinkArm ? ' <span class="gelink" title="This line\'s qty follows the source condition\'s measurements — retrace and it moves.">\u26D3 follows ' + escA(geLinkArm.name) + ' <button type="button" id="geUnlink" title="Break the link — keep a frozen copy you type yourself">\u2715</button></span>' : '')
       + ' <input id="geCsi" type="text" placeholder="CSI" class="gen-edit ge-csi"></td>'
-      + '<td><select id="geKind" class="gen-edit ge-sel"><option value="material">material</option><option value="labor">labor</option></select></td>'
+      /* Batch AF (ledger F3.3): the unit chain in the order an estimator thinks it \u2014 description \u2192 measure \u2192
+         quantity \u2192 unit \u2192 price. `geType` (count / area / linear) follows the unit as it is typed and can be
+         changed; a free "LF" line is a LENGTH, never a count wearing an LF label. `geMode` says which funnel
+         the row is in, and what a library match will activate, BEFORE \u2713 Add. */
+      + '<td><select id="geKind" class="gen-edit ge-sel"><option value="material">material</option><option value="labor">labor</option></select> '
+      + '<select id="geType" class="gen-edit ge-sel" title="Measure \u2014 what the quantity counts: pieces (count), an area, or a length. Follows the unit you type; change it here if the unit is unusual."><option value="count">count</option><option value="area">area</option><option value="linear">linear</option></select></td>'
       + '<td class="num"><input id="geQty" type="number" min="0" step="any" inputmode="decimal" placeholder="qty" class="gen-edit"></td>'
-      + '<td><input id="geUnit" type="text" placeholder="unit" title="EA, SF, SQ, LF, DAY \u2026" class="gen-edit ge-unit"></td>'
+      + '<td><input id="geUnit" type="text" placeholder="unit" title="EA, SF, SQ, LF, DAY \u2026 \u2014 SF/SQ/SY set the measure to area, LF/LY to linear" class="gen-edit ge-unit"></td>'
       + '<td class="num"><input id="gePrice" type="number" min="0" step="any" inputmode="decimal" placeholder="$" title="Unit cost \u2014 leave blank and the line stays unpriced (never $0)." class="gen-edit"></td>'
       + '<td class="num">\u2014</td>'
+      + '<td class="deriv"><span id="geMode" class="ge-mode" title="Which funnel this line is in \u2014 said before you add it."></span></td>'
       + '<td class="num"><button id="geAdd" class="gexport" title="Add this line (Enter)">\u2713 Add</button> <button id="geClose" class="quiet" title="Close (Esc)">\u2715</button></td>'
       + '</tr>'
       /* L-A: the refusal cue lives HERE, in the lens, under the row it is about. It is rendered
          always and hidden until there is something to say, because a refusal does NOT re-render
          the grid — the message has to land in a live element. */
-      + '<tr class="gentry gentry-msg" id="geMsgRow" hidden><td colspan="7"><span id="geMsg" class="ge-msg"></span></td></tr>';
+      + '<tr class="gentry gentry-msg" id="geMsgRow" hidden><td colspan="8"><span id="geMsg" class="ge-msg"></span></td></tr>';
   } else if (html) {
     /* ── N3b (Patrick, field notes V2: "i see a way to add on plan screen not estimate screen")
        · The doors EXIST — the ＋ Line entry row (F18.9) and the ＋L add-labor gesture on material
@@ -9536,13 +9927,14 @@ function renderEstimateGrid() {
        shipped. The affordance now sits where an estimator looks for "add a row": the LAST ROW of
        the sheet, in the app's own words, as a real door rather than a label. It opens the same
        entry row the toolbar button opens — one funnel, two doors. ── */
-    html += '<tr class="gaddrow"><td colspan="7">'
+    html += '<tr class="gaddrow"><td colspan="8">'
       + '<button type="button" class="gaddbtn" id="gAddInline">\uFF0B Add a line</button>'
       + '<span class="gaddhint">type a description, quantity, unit and price right here — or a library item\u2019s name to price it from the library. Material rows also carry \uFF0B labor.</span>'
       + '</td></tr>';
   }
-  body.innerHTML = html || '<tr><td colspan="7" style="padding:44px;text-align:center;color:var(--ink-dim)">No priced lines yet — measure a condition in the Plan view, and it appears here.</td></tr>';
+  body.innerHTML = html || '<tr><td colspan="8" style="padding:44px;text-align:center;color:var(--ink-dim)">No priced lines yet — measure a condition in the Plan view, and it appears here.</td></tr>';
   if (renderEstimateGrid.reveal) { const r = renderEstimateGrid.reveal; renderEstimateGrid.reveal = null; revealGridLine(r); }   // F4
+  if (gridEntry) refreshEntryMode();   // Batch AF: the entry row states its funnel from the first render
   /* S3 (B-06): MATERIAL $93,662.12 + LABOR $130,418.67 + O&P $55,437.59 read $279,518.38 under a
      printed SELL of $279,518.37. Two roundings, both individually right: O&P printed
      round(sell - cost) while the true margin between the two ROUNDED figures on the screen is
@@ -9571,18 +9963,144 @@ function renderEstimateGrid() {
 }
 // Plan ⇄ Estimate. The grid is a lens; switching never recomputes — it re-reads.
 function syncViewSegs() {
-  const sp = $('segPlan'), se = $('segEstimate'), ss = $('segSchedule');
-  if (sp) sp.classList.toggle('on', !state.gridView && !state.schedView);
+  const sp = $('segPlan'), se = $('segEstimate'), ss = $('segSchedule'), sl = $('segLibrary');
+  if (sp) sp.classList.toggle('on', !state.gridView && !state.schedView && !state.libView);
   if (se) se.classList.toggle('on', !!state.gridView);
   if (ss) ss.classList.toggle('on', !!state.schedView);
+  if (sl) sl.classList.toggle('on', !!state.libView);
 }
 function showEstimate(on) {
   if (on && state.schedView) showSchedule(false);   // one full-screen lens at a time
+  if (on && state.libView) showLibrary(false);
   state.gridView = !!on;
   document.body.classList.toggle('grid-view', !!on);
   syncViewSegs();
   syncQtyBufferVisibility();   // D-24.8a: no pending quantity survives the lens that hid it
   if (on) renderEstimateGrid();
+}
+
+/* ════ Batch AF · LIBRARY LENS (commission R7) ═══════════════════════════════════════════════════════════
+   "A library you cannot see into cannot be trusted." Every item with its full field set, every assembly's item
+   list and overrides, editable in place. Edits go to state.library → persistLibrary() (this browser's price
+   book; the fingerprint a takeoff file carries moves with it, so AB-2's banner tells another machine). They
+   never touch the project. The three drivers' mutual exclusion and every other schema rule are enforced by
+   VESX.validateLibrary on a clone BEFORE a commit, with its own words — one rule set, the import's. */
+let libFocus = null;
+const LIB_KINDS = ['material', 'labor', 'equipment'], LIB_AUTH = ['OBS', 'INF', 'STD'];
+const LIB_NUM = ['unit_cost', 'coverage', 'density', 'waste', 'production_rate', 'qty', 'crew_size'];
+function libEditValue(field, raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (field === 'params') { const p = parseParamsText(s); return p.error ? { __error: p.error } : p.params; }
+  if (LIB_NUM.indexOf(field) !== -1) { if (s === '') return null; const n = Number(s); return isFinite(n) ? n : { __error: `"${s}" is not a number` }; }
+  return s === '' ? null : s;
+}
+function showLibrary(on) {
+  if (on && state.gridView) showEstimate(false);
+  if (on && state.schedView) showSchedule(false);
+  state.libView = !!on;
+  document.body.classList.toggle('lib-view', !!on);
+  syncViewSegs();
+  syncQtyBufferVisibility();   // D-24.8a
+  if (on) renderLibraryLens();
+}
+// Validate-then-commit: apply `mutate` to a clone, run the import's validator, refuse with ITS words for this item.
+function libraryCommit(itemId, mutate) {
+  const clone = JSON.parse(JSON.stringify(state.library));
+  mutate(clone);
+  const v = VESX.validateLibrary(clone);
+  const mine = (v.errors || []).filter((e) => e && (e.where === `items:${itemId}` || e.where === 'meta'));
+  if (mine.length) return { ok: false, error: mine.map((e) => e.msg).join('; ') };
+  mutate(state.library);
+  persistLibrary();
+  if (typeof renderAssembly === 'function') renderAssembly();
+  if (typeof renderCards === 'function') renderCards();
+  if (state.libView) renderLibraryLens();
+  return { ok: true };
+}
+function libraryEditItem(itemId, field, value) {
+  if (!itemId || itemId === '__proto__' || itemId === 'constructor' || itemId === 'prototype') return { ok: false, error: 'no such item' };
+  if (value && typeof value === 'object' && value.__error) return { ok: false, error: value.__error };
+  const it = state.library.items[itemId]; if (!it) return { ok: false, error: `no library item "${itemId}"` };
+  const allowed = ['kind', 'cqty_ref', 'unit', 'unit_cost', 'coverage', 'density', 'qty_expr', 'params', 'waste', 'production_rate', 'qty', 'csi', 'match_code', 'authority', 'verify', 'desc', 'note'];
+  if (allowed.indexOf(field) === -1) return { ok: false, error: `"${field}" is not an item field` };
+  const r = libraryCommit(itemId, (lib) => { const x = lib.items[itemId]; if (value == null) delete x[field]; else x[field] = value; if (field === 'cqty_ref' && value !== 'FIXED') delete x.qty; });
+  if (r.ok) toast(`Library: ${field.replace(/_/g, ' ')} ${value == null ? 'cleared' : 'set'} on "${it.desc || itemId}" — the price book changed, not this takeoff.`, 'ok');
+  else { const row = document.querySelector(`#libBody tr[data-item="${CSS.escape(itemId)}"]`); const m = row && row.querySelector('.lib-msg'); if (m) m.textContent = r.error; }   // the refusal lands on the row, whichever door asked
+  return r;
+}
+function libraryUpsertItem(asmId, itemId, fields) {
+  const asm = state.library.assemblies[asmId]; if (!asm) return { ok: false, error: `no assembly "${asmId}"` };
+  const id = itemId || (asmId + '.user.' + (state.nextId++));
+  if (id === '__proto__' || id === 'constructor' || id === 'prototype') return { ok: false, error: 'reserved id' };
+  const f = fields && typeof fields === 'object' ? fields : {};
+  if (!f.desc && !itemId) return { ok: false, error: 'the item needs a description' };
+  const item = Object.assign({ kind: 'material', cqty_ref: 'FIXED', unit: 'EA', authority: 'OBS', note: 'estimator-authored' }, f);
+  if (item.cqty_ref === 'FIXED' && item.qty == null) item.qty = 1;
+  const r = libraryCommit(id, (lib) => { lib.items[id] = JSON.parse(JSON.stringify(item)); const a = lib.assemblies[asmId]; a.items = a.items || []; if (a.items.indexOf(id) === -1) a.items.push(id); });
+  if (r.ok) { r.id = id; toast(`Library: "${item.desc || id}" ${itemId ? 'updated' : 'added'} on ${asm.label || asmId}.`, 'ok'); }
+  return r;
+}
+function renderLibraryLens() {
+  const body = $('libBody'); if (!body) return;
+  const lib = state.library; const idn = libraryIdentity(); const prov = (typeof libraryProvenance === 'function') ? libraryProvenance() : {};
+  const meta = lib.meta || {};
+  const seed = prov.source !== 'imported' && !prov.source;
+  const head = $('libHead'); if (head) head.innerHTML =
+    `<b>${escA(idn.name)}</b> · fingerprint <span class="fp">${escA(idn.fingerprint)}</span>`
+    + (seed ? ' · <b>built-in seed library</b> — estimator-authored standards, not quotes' : prov.source === 'imported' ? ' · imported workbook' : ' · edited in this browser')
+    + (meta.note ? ` · ${escA(meta.note)}` : '')
+    + `<br>${Object.keys(lib.assemblies || {}).length} assemblies · ${Object.keys(lib.items || {}).length} items · ${Object.keys(lib.conditions || {}).length} conditions. `
+    + 'Editing here changes the <b>library</b> (kept in this browser; the fingerprint above moves, and a takeoff saved under another book says so when it opens). Editing on the Estimate sheet changes <b>this project</b> only. '
+    + 'One driver per item — coverage (÷), density (×) or a formula; a second is refused. Formula scope: RAW · ADJ · WASTE · Q, the item’s inputs, and ceil floor round abs max min.';
+  const meta2 = $('libMeta'); if (meta2) meta2.textContent = `${Object.keys(lib.items || {}).length} items · ${Object.keys(lib.assemblies || {}).length} assemblies`;
+  const inp = (id, field, val, cls, ph) => `<input class="lib-edit${cls ? ' ' + cls : ''}${val != null && val !== '' ? '' : ''}" type="text" autocomplete="off" spellcheck="false" data-item="${escA(id)}" data-field="${field}" value="${escA(val == null ? '' : String(val))}" placeholder="${escA(ph || '')}">`;
+  const sel = (id, field, val, opts) => `<select class="lib-edit" data-item="${escA(id)}" data-field="${field}">${opts.map((o) => `<option value="${escA(o.v)}"${o.v === val ? ' selected' : ''}>${escA(o.t)}</option>`).join('')}</select>`;
+  let html = '';
+  const asms = Object.entries(lib.assemblies || {});
+  for (const [aid, a] of asms) {
+    const ovW = a.overrides && a.overrides.waste != null ? ` · assembly waste ${Math.round(a.overrides.waste * 1000) / 10}%` : '';
+    const io = a.itemOverrides ? Object.keys(a.itemOverrides).length : 0;
+    html += `<tr class="divh"><td colspan="16">${escA(a.csi || '')} — ${escA(a.label || aid)} <span class="lib-id">${escA(aid)} · ${(a.conditions || []).length} conditions · ${(a.items || []).length} items${ovW}${io ? ` · ${io} item override${io === 1 ? '' : 's'} (assembly layer)` : ''}</span></td></tr>`;
+    const refOpts = [{ v: 'FIXED', t: 'FIXED (allowance)' }].concat((a.conditions || []).map((cid) => ({ v: cid, t: (lib.conditions[cid] || {}).label || cid })));
+    for (const id of (a.items || [])) {
+      const it = lib.items[id]; if (!it) { html += `<tr data-item="${escA(id)}"><td colspan="16"><span class="lib-msg">"${escA(id)}" is listed on this assembly but not defined</span></td></tr>`; continue; }
+      const ref = Array.isArray(it.cqty_ref) ? it.cqty_ref.join('|') : (it.cqty_ref || '');
+      const refCell = Array.isArray(it.cqty_ref) ? inp(id, 'cqty_ref', ref, 't', 'cond|cond') : sel(id, 'cqty_ref', ref, refOpts.some((o) => o.v === ref) ? refOpts : refOpts.concat([{ v: ref, t: ref }]));
+      const ao = a.itemOverrides && a.itemOverrides[id] ? ` <span class="lib-id">assembly override: ${escA(Object.keys(a.itemOverrides[id]).join(', '))}</span>` : '';
+      html += `<tr data-item="${escA(id)}">`
+        + `<td>${inp(id, 'desc', it.desc || '', 't', displayComponent(id.split('.').pop()))}<span class="lib-id">${escA(id)}</span>${ao}<span class="lib-msg"></span></td>`
+        + `<td>${sel(id, 'kind', it.kind, LIB_KINDS.map((k) => ({ v: k, t: k })))}</td>`
+        + `<td>${refCell}${it.cqty_ref === 'FIXED' ? ' ' + inp(id, 'qty', it.qty, '', 'qty') : ''}</td>`
+        + `<td>${inp(id, 'unit', it.unit || '', 't', 'EA')}</td>`
+        + `<td class="num">${inp(id, 'unit_cost', it.unit_cost, '', '$')}</td>`
+        + `<td class="num">${inp(id, 'coverage', it.coverage, '', '÷')}</td>`
+        + `<td class="num">${inp(id, 'density', it.density, '', '×')}</td>`
+        + `<td>${inp(id, 'qty_expr', it.qty_expr || '', 'w', '')}</td>`
+        + `<td>${inp(id, 'params', paramsText(it.params), 'w', '')}</td>`
+        + `<td class="num">${inp(id, 'waste', it.waste, '', '')}</td>`
+        + `<td class="num">${inp(id, 'production_rate', it.production_rate, '', it.kind === 'labor' ? 'u/hr' : '')}</td>`
+        + `<td>${inp(id, 'csi', it.csi || '', 't', a.csi || '')}</td>`
+        + `<td>${sel(id, 'authority', it.authority || 'STD', LIB_AUTH.map((k) => ({ v: k, t: k })))}</td>`
+        + `<td>${inp(id, 'verify', it.verify || '', 't', '')}</td>`
+        + `<td>${inp(id, 'desc', it.desc || '', 't', '')}</td>`
+        + `<td>${inp(id, 'note', it.note || '', 't', '')}</td></tr>`;
+    }
+    // ＋ item, in EDGE order: description → kind → driven by → unit → driver → inputs → unit $ → CSI
+    const nsel = (f, opts) => `<select class="lib-edit" data-new="${f}">${opts.map((o) => `<option value="${escA(o.v)}">${escA(o.t)}</option>`).join('')}</select>`;
+    const ninp = (f, cls, ph) => `<input class="lib-edit${cls ? ' ' + cls : ''}" type="text" autocomplete="off" data-new="${f}" placeholder="${escA(ph)}">`;
+    html += `<tr class="libadd" data-asm="${escA(aid)}">`
+      + `<td>${ninp('desc', 't', '＋ new item — description')}<span class="lib-msg"></span></td>`
+      + `<td>${nsel('kind', LIB_KINDS.map((k) => ({ v: k, t: k })))}</td>`
+      + `<td>${nsel('cqty_ref', refOpts)}</td>`
+      + `<td>${ninp('unit', 't', 'order unit (LB, ROLL …)')}</td>`
+      + `<td class="num">${ninp('unit_cost', '', '$ / unit')}</td>`
+      + `<td colspan="3">${nsel('driverKind', [{ v: 'coverage', t: 'coverage ÷' }, { v: 'density', t: 'density ×' }, { v: 'qty_expr', t: 'formula' }])} ${ninp('driver', 'w', 'value, or a formula; fixed qty for FIXED')}</td>`
+      + `<td>${ninp('params', 'w', 'width=1.25')}</td>`
+      + `<td colspan="2"></td><td>${ninp('csi', 't', a.csi || 'CSI')}</td>`
+      + `<td colspan="4"><button type="button" class="libAddBtn">＋ Add to ${escA(a.label || aid)}</button></td></tr>`;
+  }
+  body.innerHTML = html || '<tr><td colspan="16" style="padding:44px;text-align:center;color:var(--ink-dim)">The library has no assemblies.</td></tr>';
+  if (libFocus) { const want = libFocus; libFocus = null; const el = body.querySelector(`.lib-edit[data-item="${CSS.escape(want.id)}"][data-field="${want.field}"]`); if (el) { el.focus(); if (el.select) el.select(); } }
 }
 
 </script>
@@ -9595,6 +10113,7 @@ function showEstimate(on) {
 const SCHED_PX_DAY = 26;
 function showSchedule(on) {
   if (on && state.gridView) showEstimate(false);
+  if (on && state.libView) showLibrary(false);   // Batch AF: three lenses, one at a time
   state.schedView = !!on;
   document.body.classList.toggle('sched-view', !!on);
   syncViewSegs();
@@ -10100,13 +10619,21 @@ function loadFromData(d) {
    ── NEW-4 + the P0-2 length residue (Batch T3) · TWO GAPS IN THAT SAME PRINCIPLE ──────────
    (a) A field with NO SPEC was passed through untouched, on the reasoning that only numbers
        can be out of domain. `qty_expr` is the counter-example: a STRING that replaces the
-       library's own quantity derivation for a line (`resolveItem` → `resolveExpr`), rendered
-       on NO surface — no cell, no accent, no export — so a well-formed expression in a loaded
-       file silently re-derives a quantity and nothing on screen says so. It is the one
-       override that can rewrite a quantity without touching a number. No UI door writes it
-       into `lineOverrides` / `settings.itemOverrides`; the VALIDATED LIBRARY IMPORT is where
-       expressions belong (they are authored there, against a schema, visible in the workbook).
-       So it is DROPPED here and COUNTED, like every other thing this door refuses.
+       library's own quantity derivation for a line (`resolveItem` → `resolveExpr`). On F18.58
+       through F18.68 it was rendered on NO surface — no cell, no accent, no export — and no UI
+       door wrote it, so the T3 ruling DROPPED it at this door under its own name.
+       ── Batch AF (commission "Estimate sheet depth", rulings R1–R4; LEDGER row AF-R3) REVERSES
+       NEW-4, because both of its premises are now false: the Estimate grid renders the driver,
+       the expression, its parameters and its inputs on every engine row (td.deriv), marks a
+       line-level derivation as such, and the grid's own Formula cell writes it; the exports
+       carry it as trailing columns. A well-formed expression in a loaded file therefore prices a
+       quantity that the sheet SAYS it priced. The key name is REUSED on purpose: F18.68 and
+       earlier keep dropping it under "unsupported override field" with the standing banner —
+       loud beats silent (ledger F5.4). The takeoff `version` does not move.
+       What the door still refuses, typed: `qty_expr` must be a non-empty string of at most 500
+       characters; `params` must be a plain object of at most 50 identifier-named finite numbers
+       (the engine gates a reserved name at evaluation and says which). Anything else is dropped
+       and counted, never clamped — the rule at the top of this block, unchanged.
    (b) There was no key-count or length bound: `dict()` iterated every key of the incoming
        dictionary and `general[]` was copied entry-for-entry. A file is untrusted input; an
        unbounded one is a load-time hang with no ceiling. The caps below are far above any
@@ -10123,11 +10650,28 @@ function sanitizeMoneyStore(ap) {
   // resolveOverride understands — unwrap before judging the domain.
   const numOf = (v) => (v && typeof v === 'object' && !Array.isArray(v) && 'value' in v) ? v.value : v;
   const okNum = (v, min) => { const n = numOf(v); return typeof n === 'number' && isFinite(n) && n >= min; };
+  // Batch AF: typed rules for the two non-numeric override fields. Spec-scoped (a rule string on the
+  // spec, not a key name), so COND_SPEC and the settings scrub are untouched.
+  const MAX_EXPR_CHARS = 500, MAX_PARAMS = 50;
+  const okExpr = (s) => typeof s === 'string' && s.trim().length > 0 && s.length <= MAX_EXPR_CHARS;
+  const cleanParams = (p) => {   // → a rebuilt {name: number} or null when anything in it is malformed
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+    const out = {}; let n = 0;
+    for (const k of Object.keys(p)) {
+      if (++n > MAX_PARAMS || RESERVED_KEY(k) || !VESASM.PARAM_NAME.test(k)) return null;
+      if (typeof p[k] !== 'number' || !isFinite(p[k])) return null;
+      out[k] = p[k];
+    }
+    return out;
+  };
   const scrubFields = (o, spec, forbid) => {
     for (const k of Object.keys(o)) {
       if (RESERVED_KEY(k)) { delete o[k]; drop.fields++; continue; }
       if (forbid && forbid.indexOf(k) >= 0) { delete o[k]; drop.unsupported++; continue; }   // T3(a): its own reason, not "out of range"
-      const min = spec[k];
+      const rule = spec[k];
+      if (rule === 'expr') { if (!okExpr(o[k])) { delete o[k]; drop.fields++; } continue; }
+      if (rule === 'params') { const cp = cleanParams(o[k]); if (cp) o[k] = cp; else { delete o[k]; drop.fields++; } continue; }
+      const min = rule;
       if (min !== undefined) { if (!okNum(o[k], min)) { delete o[k]; drop.fields++; } continue; }
       // any other field: a number that is not finite is invalid everywhere in this engine
       const n = numOf(o[k]);
@@ -10137,11 +10681,13 @@ function sanitizeMoneyStore(ap) {
   };
   /* LINE layer (lineOverrides) and PROJECT layer (settings.itemOverrides) share a domain:
      unit_cost >= 0 (matchDispatch), qty >= 0 (hasQtyOv), waste >= 0 (itemWaste), and the
-     derived-quantity inputs must at least be finite and non-negative to mean anything. */
-  const LINE_SPEC = { unit_cost: 0, qty: 0, waste: 0, coverage: 0, density: 0, production_rate: 0 };
+     derived-quantity inputs must at least be finite and non-negative to mean anything.
+     Batch AF: qty_expr is a bounded string and params a bounded {name: number} object (typed above). */
+  const LINE_SPEC = { unit_cost: 0, qty: 0, waste: 0, coverage: 0, density: 0, production_rate: 0, qty_expr: 'expr', params: 'params' };
   const COND_SPEC = { pitch: 0, waste: 0 };   // engine ignores pitch <= 0; a negative condition waste would SUBTRACT material
-  // T3(a): fields the ITEM-override layers must never carry in from a takeoff file.
-  const LINE_FORBID = ['qty_expr'];
+  // T3(a): fields the ITEM-override layers must never carry in from a takeoff file. Batch AF emptied the list
+  // (NEW-4 reversed, see the block above); the mechanism stays so a future refusal has its own counted reason.
+  const LINE_FORBID = [];
   const dict = (raw, spec, forbid) => {
     const out = {};
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
@@ -10223,7 +10769,7 @@ async function applySnapshot(d) {
       if (d1.over) bits.push(d1.over + ' past the size limit');
       // T3(a): a quantity formula the app cannot show is dropped under its OWN name.
       if (d1.unsupported) bits.push(d1.unsupported + ' unsupported override field' + (d1.unsupported === 1 ? '' : 's'));
-      if (d1.fields) bits.push(d1.fields + ' out-of-range value' + (d1.fields === 1 ? '' : 's'));
+      if (d1.fields) bits.push(d1.fields + ' out-of-range or malformed value' + (d1.fields === 1 ? '' : 's'));   // Batch AF: a formula or parameter set that is not what the door types is "malformed", never silently kept
       /* Carried to applySnapshot's ONE load toast rather than fired here: a toast raised at this
          point is overwritten by the "Takeoff loaded." toast at the tail milliseconds later, and
          a warning nobody can read is the same as no warning. The count rides the load
@@ -10790,7 +11336,7 @@ function printCostSheet() {
   let gc = 0, go = 0, gm = 0, gp = 0, gs = 0, body = '';
   for (const div of Object.keys(groups).sort()) {
     body += `<div class="divblock"><h2>${divTitle(div)}</h2><table><thead><tr>`
-      + ['CSI', 'Description', 'Sheet', 'Qty', 'Unit', 'Unit $', 'Cost', ...(oh ? ['OH'] : []), 'Markup', 'Profit', 'Sell']
+      + ['CSI', 'Description', 'Sheet', 'Qty', 'Unit', 'Unit $ / order unit', 'Cost', ...(oh ? ['OH'] : []), 'Markup', 'Profit', 'Sell']   // Batch AF (R5): a purchasing sheet says what its price is per
         .map((h, i) => `<th${i >= 3 ? ' class="n"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>';   // D-23.8: with OH set, the column appears so line columns SUM to Sell
     let dc = 0, do_ = 0, dm = 0, dp = 0, ds = 0;
     for (const l of groups[div]) {
@@ -11317,18 +11863,23 @@ function exportEstimateXLSX() {
     if (x.omitted) continue;
     const qtyOk = typeof x.qty === 'number' && isFinite(x.qty), ucOk = typeof x.unitCost === 'number' && isFinite(x.unitCost);
     const ext = (x.total == null) ? '' : (qtyOk && ucOk ? { f: `D${r}*F${r}`, v: x.total } : x.total);
-    out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '']);
+    // Batch AF: columns A\u2013H stay exactly where they were (D\u00d7F, G sums); I is the ladder's own Pct cell; J\u2013N the derivation.
+    out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...derivColumns(x)]);
     r++;
   }
   const last = r - 1; const m = recapModel();
   const pct = (v) => (v * 100).toFixed(1).replace(/\.0$/, '') + '%';
   const cRow = r, oRow = r + 1, kRow = r + 2, pRow = r + 3;
-  out.push(['', '', 'Cost (\u03a3 direct)', '', '', '', { f: `SUM(G2:G${last})`, v: m.cost }, '']);
-  out.push(['', '', 'Overhead (' + pct(m.oh) + ')', '', '', '', { f: `G${cRow}*${m.oh}`, v: m.ohAmt }, '']);
-  out.push(['', '', 'Markup (' + pct(m.mk) + ')', '', '', '', { f: `(G${cRow}+G${oRow})*${m.mk}`, v: m.mkAmt }, '']);
-  out.push(['', '', 'Profit (' + pct(m.pf) + ')', '', '', '', { f: `(G${cRow}+G${oRow}+G${kRow})*${m.pf}`, v: m.pfAmt }, '']);
-  out.push(['', '', 'Sell', '', '', '', { f: `G${cRow}+G${oRow}+G${kRow}+G${pRow}`, v: m.sell }, '']);
-  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Qty', 'Unit', 'Unit $', 'Extended', 'Kind'], rows: out }];
+  /* Batch AF (ledger F4.3-4): the ladder percentages were baked into the formula strings as literals, so the
+     workbook could not be re-margined in Excel without editing three formulas. Each ladder row now carries its
+     fraction in column I and the formula multiplies by THAT cell; cached values are the same numbers as before. */
+  const pad = ['', '', '', '', ''];
+  out.push(['', '', 'Cost (\u03a3 direct)', '', '', '', { f: `SUM(G2:G${last})`, v: m.cost }, '', '', ...pad]);
+  out.push(['', '', 'Overhead (' + pct(m.oh) + ')', '', '', '', { f: `G${cRow}*I${oRow}`, v: m.ohAmt }, '', m.oh, ...pad]);
+  out.push(['', '', 'Markup (' + pct(m.mk) + ')', '', '', '', { f: `(G${cRow}+G${oRow})*I${kRow}`, v: m.mkAmt }, '', m.mk, ...pad]);
+  out.push(['', '', 'Profit (' + pct(m.pf) + ')', '', '', '', { f: `(G${cRow}+G${oRow}+G${kRow})*I${pRow}`, v: m.pfAmt }, '', m.pf, ...pad]);
+  out.push(['', '', 'Sell', '', '', '', { f: `G${cRow}+G${oRow}+G${kRow}+G${pRow}`, v: m.sell }, '', '', ...pad]);
+  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Qty', 'Unit', 'Unit $ per order unit', 'Extended', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis'], rows: out }];
   const bytes = VESX.serializeXLSX(tabs);
   saveBlob(projectSlug() + '-estimate.xlsx', bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   toast('Estimate workbook exported (.xlsx) \u2014 live formulas, internal.', 'ok');
@@ -11778,6 +12329,33 @@ document.addEventListener('pointerdown', (e) => {
   const dr = $('drawer'); if (dr && !dr.contains(e.target)) collapseDrawer();
 }, true);
 // Plan ⇄ Estimate lens toggle (the primary view switch)
+// Batch AF: the Library lens door — segment, back button, and the lens's own delegated edit path.
+{ const sl = $('segLibrary'), lb = $('lBack'), lbody = $('libBody');
+  if (sl) sl.addEventListener('click', () => showLibrary(true));
+  if (lb) lb.addEventListener('click', () => showLibrary(false));
+  { const lx = $('lExport'); if (lx) lx.addEventListener('click', () => { if (typeof exportLibraryWorkbook === 'function') exportLibraryWorkbook(); }); }
+  if (lbody) {
+    lbody.addEventListener('change', (e) => {
+      const i = e.target; if (!i || !i.classList || !i.classList.contains('lib-edit') || !i.dataset.item) return;
+      libFocus = { id: i.dataset.item, field: i.dataset.field };
+      const r = libraryEditItem(i.dataset.item, i.dataset.field, libEditValue(i.dataset.field, i.value));
+      if (!r.ok) { const row = i.closest('tr'); const m = row && row.querySelector('.lib-msg'); if (m) m.textContent = r.error; i.classList.add('bad'); toast(r.error, 'warn'); }
+    });
+    lbody.addEventListener('click', (e) => {
+      const b = e.target && e.target.closest && e.target.closest('button.libAddBtn'); if (!b) return;
+      const row = b.closest('tr'); const asm = row && row.dataset.asm; if (!asm) return;
+      const v = (f) => { const el = row.querySelector(`[data-new="${f}"]`); return el ? el.value : ''; };
+      const fields = { kind: v('kind') || 'material', cqty_ref: v('cqty_ref') || 'FIXED', unit: v('unit').trim() || 'EA', desc: v('desc').trim() };
+      const num = (f) => { const s = v(f).trim(); return s === '' ? null : Number(s); };
+      if (fields.cqty_ref === 'FIXED') fields.qty = num('driver') != null ? num('driver') : 1;
+      else { const dk = v('driverKind'); const dv = num('driver'); if (dk === 'coverage' && dv != null) fields.coverage = dv; else if (dk === 'density' && dv != null) fields.density = dv; else if (dk === 'qty_expr' && v('driver').trim()) fields.qty_expr = v('driver').trim(); }
+      const p = parseParamsText(v('params')); if (p.error) { toast(p.error, 'warn'); return; } if (p.params) fields.params = p.params;
+      if (num('unit_cost') != null) fields.unit_cost = num('unit_cost');
+      if (v('csi').trim()) { fields.csi = v('csi').trim(); fields.match_code = v('csi').trim(); }
+      const r = libraryUpsertItem(asm, null, fields);
+      if (!r.ok) { const m = row.querySelector('.lib-msg'); if (m) m.textContent = r.error; toast(r.error, 'warn'); }
+    });
+  } }
 { const ss = $('segSchedule'), sb = $('sBack'), sv = $('schedBody');
   if (ss) ss.addEventListener('click', () => showSchedule(true));
   if (sb) sb.addEventListener('click', () => showSchedule(false));
@@ -11858,7 +12436,7 @@ renderResumeList();   // D1: the landing list is live from boot
      false flag to false and nothing moved. The Estimate pill worked from Schedule only because
      showEstimate(true) closes the schedule itself (one lens at a time). The pill that says Plan
      now goes to Plan from EVERY lens — closing whichever one is open. ── */
-  if (sp) sp.addEventListener('click', () => { if (state.schedView) showSchedule(false); showEstimate(false); });
+  if (sp) sp.addEventListener('click', () => { if (state.schedView) showSchedule(false); if (state.libView) showLibrary(false); showEstimate(false); });
   if (gb) gb.addEventListener('click', () => showEstimate(false)); }
 $('tabSummary').addEventListener('click', () => setRecapTab('summary'));
 $('tabEstimate').addEventListener('click', () => setRecapTab('estimate'));
@@ -11870,6 +12448,31 @@ $('tabExceptions').addEventListener('click', () => setRecapTab('exceptions'));
 /* Recap rows are editable through the SAME path as the card depth: engine lines →
    editLine() → lineOverrides (library pristine); plain conditions → their own unit
    cost. Delegated so it survives the recap's innerHTML re-render. Never an aggregate. */
+// Batch AF: `width=1.25 lbsf=1.156` (pairs split on spaces, commas or semicolons) → { width: 1.25, lbsf: 1.156 }.
+// Names follow the engine's own rule (VESASM.PARAM_NAME, not a reserved name); values are finite numbers.
+// Empty text → null (the override key is deleted). A bad pair is NAMED in the error; nothing is written.
+function parseParamsText(text) {
+  const s = String(text || '').trim();
+  if (!s) return { params: null };
+  const params = {};
+  for (const pair of s.split(/[\s;,]+/).filter(Boolean)) {
+    const eq = pair.indexOf('=');
+    if (eq <= 0) return { error: `"${pair}" is not name=value — write the inputs as width=1.25 lbsf=1.156` };
+    const k = pair.slice(0, eq).trim(), vRaw = pair.slice(eq + 1).trim();
+    if (!VESASM.PARAM_NAME.test(k)) return { error: `"${k}" is not a name — letters, digits and _ only` };
+    if (VESASM.RESERVED_NAMES.indexOf(k) !== -1) return { error: `"${k}" is reserved (${VESASM.SCOPE_NAMES.join(', ')} and the functions ${Object.keys(VESASM.FUNCS).join(', ')})` };
+    const v = Number(vRaw);
+    if (vRaw === '' || !isFinite(v)) return { error: `"${k}" needs a number (got "${vRaw}")` };
+    params[k] = v;
+  }
+  return { params };
+}
+// Batch AF: after a formula or parameter commit, the row is re-rendered by editLine; if the engine gated the
+// line, the lens cue says the engine's own reason (never lose the estimator's text, never price it as $0).
+function afterFormulaEdit(itemId) {
+  const line = (resolveAssembly().lines || []).find((l) => l.item === itemId);
+  if (line && line.gate) sayHere(`${lineDisplayName(itemId)}: ${line.matchStatus} — ${line.gate}. The line is flagged and left out of the total until the formula evaluates.`, 'warn');
+}
 // F10: ONE money-edit path for BOTH surfaces (recap drawer + Estimate grid).
 // Same classes, same data-attrs, same editLine → lineOverrides depth (R1/R3).
 function handleMoneyEdit(e) {
@@ -11880,6 +12483,19 @@ function handleMoneyEdit(e) {
     setGeneralField(+i.dataset.gen, i.dataset.field, i.value); return;
   }
   if (!i || !i.classList || !i.classList.contains('recap-edit')) return;
+  /* ── Batch AF · THE FORMULA CELL AND ITS INPUTS ARE TEXT, NOT MONEY ──────────────────────────
+     Two grid cells carry strings: the line's quantity formula (`qty_expr`, the DSL as typed) and its
+     parameters (`params`, `name=value` pairs). They must never meet the money strip below — it deletes
+     commas and whitespace and refuses anything that is not a number ≥ 0. Same delegated path, same
+     editLine depth, same gridFocus caret restore; a malformed pair is named and nothing is written. */
+  if (i.dataset.item && (i.dataset.field === 'qty_expr' || i.dataset.field === 'params')) {
+    if (fromGrid) gridFocus = { id: i.dataset.item, field: i.dataset.field };
+    const text = i.value.trim();
+    if (i.dataset.field === 'qty_expr') { editLine(i.dataset.item, 'qty_expr', text === '' ? null : text); afterFormulaEdit(i.dataset.item); return; }
+    const parsed = parseParamsText(text);
+    if (parsed.error) { toast(parsed.error, 'warn'); lensCue(parsed.error, 'warn'); renderCards(); return; }
+    editLine(i.dataset.item, 'params', parsed.params); afterFormulaEdit(i.dataset.item); return;
+  }
   const raw = i.value.trim().replace(/[$,\s]|%$/g, '');   // W2-06: "$1,500" and "12%" parse as typed
   const val = raw === '' ? null : Number(raw) / (i.dataset.pct ? 100 : 1);
   if (raw !== '' && !(isFinite(val) && val >= 0)) { toast('Enter a number ≥ 0 (or blank to clear).'); renderCards(); return; }
@@ -12059,7 +12675,7 @@ function commitGridEntry() {
       });
     }
   } else {
-    ok = addManualLine({ desc: $('geDesc').value, type: 'count', unit: $('geUnit').value,
+    ok = addManualLine({ desc: $('geDesc').value, type: ($('geType') && $('geType').value) || measureForUnit($('geUnit').value), unit: $('geUnit').value,   // Batch AF: the measure the row asked for, never a forced count
       kind: $('geKind').value, csi: $('geCsi').value, qty: $('geQty').value, price: $('gePrice').value,
       qtyLink: link ? link.cid : null });
   }
@@ -12102,7 +12718,7 @@ $('gAddLine').addEventListener('click', () => {
    as ids rather than as "whatever is tabbable inside the row" so a decorative control (the
    ⛓ unlink ✕, the ✓ Add button) cannot insert itself mid-row, and so a field the library
    has LOCKED (disabled) is stepped over instead of swallowing the keystroke. */
-const GENTRY_WALK = ['geDesc', 'geCsi', 'geKind', 'geQty', 'geUnit', 'gePrice'];
+const GENTRY_WALK = ['geDesc', 'geCsi', 'geKind', 'geType', 'geQty', 'geUnit', 'gePrice'];   // Batch AF: geType joins the walk (D-25.3b: a field off this list is unreachable by Tab)
 $('estgridBody').addEventListener('keydown', (e) => {
   if (!(e.target.closest && e.target.closest('tr.gentry'))) return;
   if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commitGridEntry(); }
@@ -12120,14 +12736,18 @@ $('estgridBody').addEventListener('keydown', (e) => {
 // F18.17: live hint — while the typed name matches a library condition, the fields
 // the library owns (kind / unit / $ / CSI) lock, so nothing typed there is silently ignored.
 $('estgridBody').addEventListener('input', (e) => {
-  if (!e.target || e.target.id !== 'geDesc') return;
+  if (!e.target) return;
+  // Batch AF: the unit decides the measure as it is typed (SF → area, LF → linear); the select stays editable.
+  if (e.target.id === 'geUnit') { const t = $('geType'); if (t) t.value = measureForUnit(e.target.value); return; }
+  if (e.target.id !== 'geDesc') return;
   const mLib = libCondByLabel(e.target.value);
-  for (const id of ['geKind', 'geUnit', 'gePrice', 'geCsi']) {
+  for (const id of ['geKind', 'geType', 'geUnit', 'gePrice', 'geCsi']) {
     const el = $(id); if (!el) continue;
     el.disabled = !!mLib;
     el.title = mLib ? 'Library item — kind, unit, and price come from the library.' : '';
   }
   const p = $('gePrice'); if (p) p.placeholder = mLib ? 'library' : '$';   // F10: "$ or bla" — the sentence lives in the title, which does not clip
+  refreshEntryMode();   // Batch AF: the row says which funnel it is in, before ✓ Add
 });
 let geLinkArm = null;   // F18.21: pending measurement-link for the entry row (set by \uFF0BL, cleared on commit/close)
 $('estgridBody').addEventListener('click', (e) => {
@@ -12437,7 +13057,7 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = 'F18.68';  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
+const VES_BUILD = 'F18.69';  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
 // F18.56: Batch R (P-CODE pass 1 fixes: P0-1/P0-2/P0-3 + HIGH-1/HIGH-2 + MED-1/4/5/6 + MED-2 removal; rulings D-26.1 + D-26.2) — MONEY IS PRICED BY THE ENGINE ONLY, AND A DISPLAYED QUANTITY IS THE QUANTITY THE MONEY WAS COMPUTED ON. Pitch lived in two stores read by four implementations, so the proposal Scope list, its legend, and the rail card printed a library condition's FLAT quantity beside money computed on the PITCHED one (a client back-computing $/unit landed 11.8-41.4% high on the line they check most); one shared dispQtyOf/condPitchFactor helper now applies pitch exactly once for every display/export consumer of rollup().quantity. Four separate copies of the General/Equipment pricing rule (engine, Equipment tab, grid, rail footer) disagreed about qty-0 and negative unit costs — the tab printed a firm $0.00 for a line every other surface excluded, and a negative unit cost from a loaded file printed real negative money with the firm dot; all read VESASM.resolveGeneral now. applySnapshot took the ENTIRE money-override layer verbatim from the takeoff file (the one artifact that travels between machines) — it now validates at the door: reserved keys refused, engine numeric domains enforced, invalid values DROPPED never clamped, everything counted into the ONE load toast. A failed pdf.js page render was an unhandled rejection: blank/stale raster under CORRECT overlays, wrong GEOMETRY with no signal — renderPane now badges the pane head, veils the sheet ('do not measure on it'), toasts once per episode, clears only on a raster that LANDS. renderCardsNow rebuilt the open Estimate grid TWICE per pass (both predicates held) — once now. Autosave quota is named AS quota with a standing red save-dot (visible drawer-closed) and re-warns per episode. A failed proposal plan-snapshot prints a marked placeholder instead of silently not existing. Three dead VESCore exporters (buildWarnings/toRollupCSV/toAuditCSV, wrong money model, zero callers) removed; the state literal now declares every money store. D-26.2: makeCQty refuses a negative condition waste (parity with itemWaste — adj = raw*(1+w) SUBTRACTED silently). Gates: G0 4/4 golden-identical, probe-w2r 175/175 both engines (RED-first 72/173 + 2 new D-26.2 rows RED on the pre-guard build), w2q 95/95, w2e, print-pdf, e2e-smoke. F18.55: Batch Q (D-25.3a/b/c + the P-FRESH MED/LOW rows) — THE DOOR NEXT TO THE GUARDED ONE. D-25.3a (P0): a complete priced takeoff died on a document load with no confirmation before and no notice after, while the New button ONE POSITION LEFT guarded the identical consequence with a modal. The trigger is the LOAD, not the click (the persona's title says "clicking Open PDF destroyed"; a real-pointer click destroys nothing — it opens a file picker), so the guard sits at openDocument, the funnel the picker, drag-drop, the landing list's PDF cards, the F18.5 JSON re-entry and the test seam all land in, and it asks BEFORE anything is cleared — a refusal leaves the session byte-identical. The saved-takeoff door (loadFromData) got the same question: a matching identity, or a Path-A grid takeoff, applied straight over live work with no gate at all, because the identity modal only ever fires on a MISMATCH and reviews the DOCUMENT, not the loss. The autosave story was worse than the finding knew: the supersession rule tested only the OLD key, so a grid→PDF swap DELETED the grid slot on the very next flush — measured, 'ves:auto:grid:recon-job' with 2 measurements gone within a second of the load, and the landing list with it. Supersession is now a within-family rule, the swap flushes BEFORE it asks (so "your work is autosaved" is true at the moment it is offered), and the post-load toast names the door the work went to. D-25.3b: the new-line entry row's five inputs carry `gen-edit` but no data-item/-cond/-gen, so the money grid's Tab handler read their row key as undefined and treated them as one row of the committed grid — the kind <select> is not an `input` and was invisible to the walk, and the commit branch (written for cells that RE-RENDER, where gridFocus carries the caret) blurred the field and focused nothing. One Tab out of a field you had typed into dropped focus to <body> and every keystroke after it was silently discarded. The row has its own stated walk now: Description → CSI → kind → qty → unit → $, Enter commits, locked fields stepped over. D-25.3c: fixedAllowanceNote() — the ONE sentence both money faces already share — fires as the standard toast the first time fixed allowances reach half the sell on a takeoff (a call site, not a second definition; journalReset is the takeoff boundary), and the landing hint says the tools are at the edges. F5 (CLIENT PAPER): the Amount column summed a penny off the printed subtotal and the subtotals a penny off the Total, because each line printed round(exact) and each total printed round(sum of exacts). The rounding pennies are apportioned largest-remainder onto the biggest lines, so the printed rows sum to the printed subtotal and the subtotals to the Total — while the Total stays byte-identical to the recap's sell, which naive round-then-sum would have moved a penny off the screen. Presentation only: G0 and every on-screen figure untouched. F6: ＋ labor names its line "<material> — labor" and every paper face appended a second " — labor"; one suffixKind() states the kind once, for the bid, the cost sheet and the not-included list. F7: the grand Total was the only money figure outside the money column. F8: the signature page identifies the bid it signs, and Terms keeps it company. F4: a line added through the entry row is scrolled into view and the toast names the section it landed in (reveal + name — regrouping is Wave-3). F9: measured, not assumed — with a draft open NOTHING on screen carries the word Esc (the pill's is a title attribute, #toolMsg is collapsed by the F18.22 rest rule), so the pill says it while body.drafting; the arming grammar is untouched. F10: the file:// banner was five flex items (every bare text run its own column, cutting through the one sentence that states the data-safety story), the price placeholder read "$ or bla", the Prepared-by placeholders were a real person and a real LLC, the welcome said the recap was at the bottom, and the confidence dots had no legend. probe-w2q-guarded-doors, proven RED on F18.54 first, both engines, with the paper lanes on rendered PDF bytes.  // F18.54: Batch P (D-25.2a/b/c + the D-25.1 orphans) — THE THIRD HEAD OF THE HYDRA DIES. D-25.2a: a gesture that changes money is either ON the undo stack with a name, or Ctrl+Z says plainly that it cannot undo it — it never reaches past silently. The Estimate grid's edit funnels (editLine unit price/qty/waste, setLineOmit, addManualLine, setGeneralField, the plain-condition cost cell, the entry row's library door) journal with named undo/redo; the margin inputs and the pitch multiplier ride the stated FALLBACK (per-keystroke input handlers, no commit grammar) and mark themselves, so the first Ctrl+Z refuses, names what it cannot take back and names what the next press will. The undo/redo name lands in the Estimate lens through Batch O's L-A cue idiom, as a pointer-transparent band above the money footer. D-25.2b: a pending typed quantity is dropped, and said, when a trace begins. D-25.2c: the not-included list disambiguates a still-billed sibling ("Primer — material") and the OFF toggle says what stays priced. N3b: the grid's add doors are a row of the sheet. N4: the internal cost sheet carries the material/labor cost split. One export-layer number rule (no thousands separators, unit-appropriate rounding). N-2 Plan pill, N-3 Condition sets (opened BEHIND Setup), N-6 split (the dead 372px was a percentage read against the window), N-7 margin labels, N-8 sticky total column, N-9 reserved scrollbar gutter, N-10 Esc, N-11 MEASURING, N-14 local timestamps, N-16 allowances out of the supplier RFQ. F18.53: Batch O (D-24.10 pass-2 remainder + C-N1) — TEN SURFACES STOP LYING OR HIDING. C-N1 (C2 REACHABILITY): the summoned recap panel rendered 390px ABOVE the viewport. #drawerBody has been position:absolute bottom:100% since the §4d summoned-panel ruling, anchored to the resident summary strip; R1 later set #drawer to position:static, which took it out of the containing-block chain, so bottom:100% resolved against #dock — whose top IS the top of the pane. Measured at 1440x900: dock [1080,24,360,852], panel [1081,-390,359,414], and the three client-document buttons at y -209 / -165 / -121, unreachable by any pointer; the M-8 fixed-allowance sentence the recap carries could not be read either. #drawer is position:relative again; nothing else moves (relative with no offsets changes no layout) and z-index:21, dead on a static box, finally means something. Reaching the panel was only half of it: .recap-summary is a 1fr+280px grid written for the pre-R1 full-width drawer, and its own narrow fallback reads the VIEWPORT, so inside a 360px dock it never fires — Chrome laid the three client-document buttons 27px past the window and Gecko, which will not shrink a table below min-content, laid them 75px past it. A container query on #drawerBody asks the PANEL's width instead of the window's, with minmax(0,1fr) so the single track is the panel's width in both engines. The division table's own horizontal overflow inside the panel is pre-existing and recorded as C-O1, not widened into. A correctly-placed panel then exposed a collision the defect had been hiding: it floats up over the condition-detail panel, and elementFromPoint at the pitch input's own centre returned a recap table cell — a live editor behind a surface you read. One line, one principle: the surface being EDITED wins over the surface being READ (#depthPanel.show takes the higher stacking level — z-index alone, since it is a flex item, so D-24.5f's "static sibling" refutation stays literally true). Residual, stated: an expanded detail panel covers part of the recap ladder, and its own ✕ is always on top. M-A: the Plan bar's four figures ARE labelled on intent and the OH/MU/PR inputs ARE reachable on intent — measured, both already true on F18.52, and the persona compared two at-rest screenshots without hovering, so those halves of the finding are refuted and gated as controls. What was true: the allowance figure read "Incl. fixed", which names nothing, and T-H6's ruling — that this figure is DELIBERATELY narrower than the Rollup CSV's PROJECT-LEVEL line — lived on the LEDGER and nowhere in the product, so the persona's $550 gap looked like a disagreement. The label now says "Fixed allowances" and fixedAllowanceNote(), the ONE function both faces share, states the boundary in one sentence. No figure moved. M-B: a toast that expired moved the whole condition list ~41px under the pointer — #toast was flex:1 1 100% in the drawer strip (D-24.6c, so a warning wraps), so every appearance and every 4.2s expiry changed #drawer's height and #cards absorbed it. Measured with the list scrolled to the bottom: #drawer 150->190px, #cards clientHeight 668->628, scrollTop clamped 316->356, every card's ⌖ 40px up, then 40px back down on expiry — and the ◉ disable control sits in that band. The messages moved OUT of the flex line into an overlay band anchored above the strip, pointer-events:none, so geometry is invariant by construction; accepted trade, stated: a message paints over the bottom ~40px of the list for 4.2s and clicks pass straight through. M-C (CLIENT PAPER): the proposal spent two of four pages on white space — PLAN SNAPSHOT over an empty page 1 with the snapshot on page 2, SCOPE orphaned at the foot of page 2, a footer-only page 4. Two causes, both at the print layer: an <img> is atomic and at width:100% a 1128x1173 canvas renders 7.28in tall, a few pixels more than the page box could hold beside its own heading; and nothing told the paginator that a heading belongs with what follows. max-height:6.5in plus break-after/break-inside/break-before rules. Judged on rendered PDF bytes. M-D: the grid CSV was the one export writing raw floats (122.50000000000013, footers at 70420.64488286857) while the BOM, rollup and audit have always stated their precision — money on cents, unit cost on four places; the on-plan inspector printed the raw engine float beside its own formatted money ("11.150921261240814 SQ  $1,672.64") and now goes through VESCore.fmtQty like every other quantity face. FORMATTING LAYER ONLY: state untouched, G0 goldens identical, and the sum of the rounded rows still equals the rounded footer — delta 0.0000 across three assemblies at 22 / 42 / 65 rows, gated. M-E: the disarm toast named one condition and counted the whole takeoff ("Disarmed Slate — ridge — 2 measurements kept" when ridge had one). It counts that condition's. L-A: ✓ Add with an empty description did nothing — but NOT silently: addManualLine refused and toast()ed the reason into #toast, which the Estimate lens (#gridview, fixed inset:0 z-index:30) paints straight over; measured, elementFromPoint at the toast's own centre returns #estgridFoot. The reason is not restated — the funnel is asked and whatever it said lands on a cue row inside the lens, one definition of the refusal on two surfaces. L-B: a CSI code is one token — "07 31 26" broke across two lines in the internal cost sheet's eleven-column table; td.csi is nowrap on both documents. L-C: the expanded tool rail (:focus-within or :hover, 36->62px, overlaying the stage by design) covered 16px of the sheet header — "…eet [1] A-2.500"; the header reserves that band CONSTANTLY rather than sliding sideways when the pointer passes, because a header that moves under the pointer is M-B in a second place. L-D: the proposal keeps "Plan page N of M · measured markup as of DATE" and drops the source PDF's file name — the sheet reference is the client's business, the estimator's filing is not. probe-w2o-faces2, proven RED on F18.52 first, both engines, with the paper lanes on rendered PDF bytes and the proposal lane on the real fixture plan.  // F18.52: Batch N (D-24.9a/b/c + D-24.10 endgame rulings) — THE UNDO THAT ATE THE TAKEOFF, AND THE CLIENT PROPOSAL THAT PRINTED NOTHING. D-24.9a (P0, MONEY): commitQtyBuffer forked the typed-quantity commit on whether the armed condition was a LIBRARY one, and the library fork called addManualQuantity, which is "not itself journaled" — so after any assembly load (when EVERY condition is a library condition) a typed quantity went on the money with nothing on the journal. Ctrl+Z did not fail; it worked perfectly on the wrong entry, eating the estimator's last trace, then the one before it, while a mistyped 7,419,017,419 SF sat untouched: four presses, a bare canvas and a $215B total still on screen. Measured 3/3 across nine cells — library door journaled 0/3, plain door 3/3. The fork now journals at the CALLER, the narrow boundary: the money door's own contract is unchanged, and undo restores the state BEFORE the gesture — if the typed quantity created the condition (addManualQuantity makes one when none carries that libRef) the undo removes the condition too, so no orphan card is left on the rail; redo remakes both. The other two un-journaled doors (the Estimate-grid entry row and addManualLine) are recorded as still open rather than quietly widened into. D-24.9b (CLIENT PAPER): the proposal printed one blank page — window.open makes the OPENER hidden, proposalHTML was at that moment awaiting a pdf.js canvas render whose continuation rides the opener's requestAnimationFrame, and a hidden page gets no frames, so the await never returned and the window that was already open was never written to. No error, no toast, no title. 6/6 with a real plan on every build back to F18.41, 0/12 without one — structurally invisible to every PDF-free gate. The snapshot now renders with pdf.js intent:'print', the flag that turns the rAF continuation off (useRequestAnimationFrame:!intentPrint), so the render finishes whether the app window is on top or not; plus a write-verification toast, labelled in the code as a NET and not a cure, because a blank page that looks like a successful export is the thing that gets emailed to a client. The await-first/open-second reordering was REJECTED by ruling: it trades a silent blank for a popup-blocked path on a transient-activation timing constant we do not control. D-24.9c: Files & exports was pinned into the 24px rest sliver for the Estimate and Schedule lenses and NOT for the Plan lens — the document door was reachable at rest on every screen except the one where the takeoff happens. Pinned for the Plan lens too, with the expanded bar reserving its band so a wrapped row cannot paint under it. F-C1: while the exports menu is open a scrim takes the next click — it closes the menu and never lets it reach the money cell underneath (the persona's own misaimed-click path); menu items, the button and Esc are untouched. T-J3 + D-24.7e: all six print-return release sites route through ONE releasePrintDoc() helper beside identityGate, and a released latch now carries a placeholder that says what happened instead of printing a blank sheet — one greppable place the policy can change. probe-w2j-printlatch's "latch empty" assertions were updated to "holds only the placeholder, and no internal margin word" — a sanctioned gate change, reported with RED and GREEN, never quiet. C-K1: #recapClientBtn is bound to printProposal and was labelled "Client review…" — relabelled to what it does; printClientReview stays dead. T-5: reachability established first — printClientReview and clientReviewHTML are dead code, but exportClientReviewXLSX IS reachable from the recap ladder and named no scope at all, so it now shares notIncludedNames() with the bid and the proposal: client paper tells one story. probe-w2n-endgame, proven RED on F18.51 first, both engines, with the proposal lane on a real plan fixture.  // F18.51: Batch M (D-24.8a P0 + D-24.8b) — THE TYPED-QUANTITY DOOR EXISTS ONLY WHERE IT CAN BE SEEN, AND ONE MARGIN TRUTH AT EVERY INSTANT. P0 CLOSED: D-24.5d built the typed door exactly as ruled — "digit keys feed a visible entry buffer IN the banner" — and the banner only exists over the Plan sheet, so everywhere else the same key handler was a SILENT GLOBAL KEYSTROKE SINK POINTED AT MONEY. A seasoned estimator clicked a few pixels outside a grid input in the ESTIMATE lens, typed four digits with focus on <body>, pressed Enter once, and committed 7,419,017,419 SF — a takeoff of $215,434,861,792.31 — with no on-screen representation of the buffer anywhere. The door is NOT reverted (the banner promised it long before Batch F and the estimator wants it): it is SCOPED. Digits accumulate, and Enter commits, only while the slot that carries them is genuinely on screen — hit-tested against its own rect at 15 sample points, so ANY occluder closes it (a lens overlay, a modal scrim, the split dock, one added years from now) without being named in the code. Occlusion is the whole point and the reason the cheap tests do not work: inside the lens the banner is still display:flex with a live 519×46 rect, hidden is false and Element.checkVisibility() returns TRUE. A refused digit is silent and cannot re-arm a card (D-24.5c holds); a pending quantity never outlives the surface that showed it (cleared at the lens/split doors and by every disarm door, not just disarmCondition). ACCEPTED TRADE: the door also closes in SPLIT mode, where #measurebar and #keyInput paint over two thirds of the buffer chip (5 of 15 sample points reach it) — the key-entry box is the typed door there. ONE MARGIN TRUTH AT EVERY INSTANT: Batch E fixed WHERE margins live; the margin input handler still called renderHud() alone, so the Estimate footer AND the recap sat on the OLD sell until something else re-rendered them — the estimator read SELL $81,335.84 on screen while the client's bid printed $88,730.01, a $7,394.17 gap between the screen and the paper (reproduced here at a $28,565.00 gap). Margins now propagate through renderCards(), the app's existing full re-read, so a surface added later is covered without being enumerated. No arithmetic moved: G0 goldens and probe-w2e-margins are penny-identical. probe-w2m-typedqty, proven RED on F18.50 first (30 failures, 52 controls passing so the RED discriminates), both engines.  // F18.50: Batch F (D-24.5a/c/d/e + H-3) — INTERACTION SAFETY: the measuring mode can be LEFT. Esc now walks outward (typed-quantity buffer → in-progress draft → DISARM), the measuring pill is a control with a visible ✕ and disarms on click (it was pointer-events:none, so every click aimed at it fell through to the sheet), and a second click on the armed card's ⌖ disarms it — toggle symmetry. Disarm never discards a committed measurement; it ends the mode. Before this, an armed condition had NO exit: Esc, the pill, the card body and the card's ⌖ were each inert, the arm outlived an Estimate-lens visit and a BOM export, and the persona's next stray click put a second $12,000 count on the wrong condition (recap +$6,000). The typed-quantity door now works where the banner promises it: while ARMED, digits feed a visible buffer IN the pill carrying the condition's own unit, Enter commits through addManualQuantity (L-02, append semantics) and 1–9 no longer re-arm other cards — one meaning per keyboard state (the persona typed "128" into an armed ridge and watched the digits arm cards 1, 2 and 8). ⌖ reads as a control on every card and the ◉ hide-on-plan toggle shrinks to a corner affordance, says what it did, and rides the journal (it was the WIDEST target on an unmeasured card and fired silently); the card name's right reserve grew 48→96px so a long name stops painting straight through ⌖ and ◉. ONE TOOLBAR PER LENS: while the Estimate or Schedule lens is open the top row is frozen — Plan controls do not render, the bar never changes height for hover/focus/an open menu, and only the lens door and the project-wide Files & exports door remain; before this the sheet-live bar hover-expanded to position:absolute z-index:70 OVER the lens, painting #btnZoomOut across the ESTIMATE · CSI band and, with the menu open, #btnProject across #gExportGrid's own centre. D-24.5b and D-24.5f are REFUTED on this build with evidence (the toolbar is never removed in measuring mode — it is the F18.22 sheet-live sliver, hittable at six widths while armed; the condition-detail panel is a static sibling in the dock, overlap with the rail 0 px² at three widths in both its states). probe-w2f-interaction, proven RED on F18.49 first (23 failures, 22 controls passing so the RED discriminates), both engines.  // F18.49: D-24.7d — the latch policy covers ALL SIX live print returns, not the four the ruling happened to enumerate: printProposal's nothing-to-propose (9134) and popup-blocked (9140) now release #printDoc too. Before this, asking for a proposal with nothing priced — or having the browser block the popup — left the internal cost sheet latched, and the next print put INTERNAL/Markup/Profit/Total sell on paper (proven on rendered bytes, 4 assertions RED on F18.48). Census in the findings file: six live returns, all six release; printClientReview's two are dead code (no caller anywhere).  // F18.48: Batch J (D-24.7a P0 + D-24.7c) — THE PRINT LATCH AND THE DEAD OVERLAY. P0 LEAK CLOSED: #printDoc is the whole page on any print (print CSS 699-700) and nothing ever cleared it, so a print path that returned early left the PREVIOUS document on the paper — an estimator who printed the internal cost sheet, then asked for the client bid and hit F18.46's identity gate, got INTERNAL/Markup/Profit/Total sell on the paper they asked to be a bid (reproduced on rendered PDF bytes, twice, independently). All four early returns now empty the latch on the way out: printBidDoc's identity gate + nothing-priced bail, printCostSheet's bail, printProposal's deferral. A deferral now prints a blank sheet rather than someone else's document. DEAD OVERLAY FIXED: renderPane capped the raster canvas at MAX_PIXELS but sized the overlay canvas uncapped, so past the browser's 2^28 canvas-area limit the allocation failed silently and painted an opaque white box with a broken-image glyph OVER a perfectly good raster, surviving every later resize including fit — on a HiDPI screen a 30x42 sheet died at 321% zoom, ordinary working depth. The overlay now takes the raster's own outScale and drawOverlay draws at pane.oScale (accepted trade: softer overlay ink at extreme zoom, the same trade the raster already makes — soft beats invisible). probe-w2j-printlatch, proven RED on F18.47 first (17 failures, 15 controls passing so the RED discriminates).  // F18.47: Batch H (D-24.6, persona M-5+M-8+M-4+M-6+L-1+L-2+L-4) — HONEST FACES: the Setup LIVE BILL OF MATERIALS now reads the same record its own BOM CSV does (COMPONENT names on library rows, not just manual ones; OFF rows read OFF instead of 'Priced'; the totals state the OFF difference in the CSV's own words — the $785 Solder divergence had nothing on screen saying why). Fixed allowances are STATED where the total first appears (recap ladder + HUD, one shared fixedAllowanceNote() sentence carrying sell AND cost so two surfaces cannot quote two numbers) — a statement only, no figure moves: G0 and probe-w2e-margins penny-identical. Rail prose wraps or fits at the docked width so a warning sentence never truncates (the persona's 5 sites were natural-width layout cut by a 360px dock, NOT ellipsis clipping — M-4's title is wrong, T-H1). Division chips derive from the divisions the meta line counts, and the grid filter moved to collection time so a Div 02 chip cannot open an empty grid — the screen now filters rows like exportGridCSV always did, despite the comment claiming it already did (T-H3). Pitch Enter commits through the app's own binding and the caret stays put (a physical Enter already committed via the UA default but ejected focus to body — T-H2). Sticky header flush at the scrollport top (6px band). The sheet label opens the EXISTING sheet picker. probe-w2h-faces, proven RED on F18.46 first (20 failures).  // F18.46: Batch G (D-24.4, persona H-5+H-6+M-3) — CLIENT PAPER: identity routing (first bid/proposal print with no company AND no name opens the existing Project info modal ONCE per document class, one-line reason + 'Save & print' / 'Print anyway' — never blocks, never nags twice); ONE shared notIncludedNames() list names, deduped and in client words, the scope a client does not get — loaded-but-unmeasured conditions, lines toggled OFF, and excluded/unpriced lines — on BOTH the bid ('Not included in this bid') and the proposal, which previously had no such section at all and printed a literal 'Exclusions: ______' fill-in blank (now gone; 'conditions' left the client sentence too, D-23.6); proposal plan snapshot frames what will actually PAINT (orphan measurements no longer win the page pick or set the bbox — a page of blank plan) and the bbox now includes the value-label chips, not just the geometry, so labels stop clipping at the frame edge (measured: src rendered label ink to maxX 215 of a 216px frame). probe-w2g-clientpaper, proven RED on F18.45 first (19 failures).  // F18.45: Batch E (D-24.3, persona P0-1+H-1+M-11) — ONE margin authority: assemblyProject.settings; Setup mkPct/pfPct and the drawer strip are two views of it (both write, both reflect); bidCollect's print-time DOM fallback + dead shadow-writes removed. Proposal Total investment == bid Total == cost-sheet Total sell == recap sell == footer Sell, both doors, save/reload intact (probe-w2e-margins, proven RED on F18.44 first). -0 qty collapses.  // F18.44: W2-05/06 — estimate grid: display-formatted/edit-raw money cells (focus swaps to raw, defaultValue follows, commit re-formats; $-and-comma input parses; grid spinners gone) + loud locks (engine rows say WHY name/kind/unit edit in the library). Verified real-pointer+keys both engines.  // F18.43: W2-02/03/04 (D-24.2) — the bid split: client bid prints SELL only (CSI/Description/Sheet/Qty/Unit/Unit price/Amount, division+grand totals, exclusions in words, terms + acceptance block, identity from Project info preparedBy — the 'Contractor: ___ · Prepared with VES' jargon line is gone, zero-qty rows dropped with a toast, colliding names disambiguated by system); margins moved to the new internal Cost sheet PDF (full Cost/OH/Markup/Profit/Sell + flags detail + INTERNAL mark). Client Total == cost-sheet Total sell == recap sell, asserted on rendered PDF bytes in both engines. Print body forced white so the dark shell never bleeds onto paper.  // F18.42: W2-01 — print CSS flattens the app shell (html/body height:auto overflow:visible display:block) so Gecko paginates the bid; before this Firefox printed page 1 of 1 and every total fell off the paper. Gated by probe-print-pdf.mjs in BOTH engines from this build on.  // F18.22c: L-07c — the lens control (Plan/Estimate/Schedule) leaves the toolbar's flex line in sheet-live and is pinned at one position, identical at rest and hovered. Before this it was a 34px control inside a 24px overflow:hidden bar (visible, not clickable — the real hit-test gave the click to #toolbar) that then wrapped 50px DOWN out from under the pointer at any viewport under ~1700px. Verified with real Input.dispatchMouseEvent at 1280/1366/1440/1600/1920/2560 — rest-click and hover-click PASS at all six, dy 0. The stamp is bumped because F18.22b shipped in two different files with the same stamp and no way to tell them apart on screen.  // F18.22b+: plain rows carry kind 'material' (recapData always priced them so; the kind cell now says it) and the F18.10 gesture gate opens to plain material rows — ＋L reaches the manual family, lzero stays engine-labor-only by ternary order. // F18.22b: rest polish — hud labels hidden at rest (values + risk bar only; labels return on intent), sell ladder (OH/MU/PR) intent-only, tucked Conditions pill dropped below the pane header (MEASURING badge collision found in the rendered rest-state screenshot).  // F18.22: CONSOLE RESHAPE — the old ≤8%-at-rest chrome rule OBTAINED, not relaxed: sheet-live compresses toolbar/statusbar to 24px glanceable slivers (brand + lens segs up top; SELL/Material/Labor/risk bar below) and the rack to 36px icons; each piece expands on its own hover/focus OVER the stage (negative margin — the sheet never reflows); empty screen keeps full chrome for the novice; measured at rest 1440×900 and 1600×900 by the rendered audit.  // F18.21: LINKED QUANTITIES (E3 answered — "conditional linked to measurements"): ＋L arms a live link — the labor line's qty follows the source condition's rollup (pitched per F18.19, pending-aware) through ONE interception in assemblyMeasured; the frozen measurement stays as the deleted-source fallback; ⛓ marks linked rows, the entry row carries a "follows <name>" chip with ✕, the ✎ editor has the Unlink door (freezes at the current followed value); goldens: unlinked assemblyMeasured byte-identical.  // F18.20: rail card name↔glyph collision — .card .name right-reserve 22→48px (eye + ✎ both live there since F18.14; long names ran beneath them — caught by the rendered layout audit, all 8 stress cards)  // F18.19: PITCH LANDS ON THE PLAIN PATH (Patrick's field report — the F18.3 door wrote cond.pitch but VESCore.rollup never read it; the engine path always did). Per-line frozen-region diff: rollup gains `pitch` (engine grammar: factor, counts immune, invalid→1) and quantity/extended become measured×pitch; rollup CSV gains additive trailing Pitch column; audit toast states raw-vs-pitched reconcile. Money goldens: unpitched output field-identical pre/post.  // F18.18: uniformity + persistence pass — BOM CSV marks OFF lines (additive Off column + reconcile foot; the BOM stays the whole engine record); Rollup/Audit toasts name OFF conditions still included (takeoff record vs estimate face, stated); recap summary carries the same "N off" note as the grid meta; eye/fills state rides raw beside the D2 view through all four load paths (hidden ids filtered to live conditions); estimator-word titles on the eleven ambiguous doors (ft-grid pickers, excluded chip, HUD mode/ledger, load-anyway, merge/replace/reset, manual path)  // F18.17: entry row reaches the library — type/pick a library condition name and addManualQuantity prices it through the engine (kind/unit/$/CSI lock while matched)  // F18.16: line ON/OFF — a checkbox on every estimate row; OFF = kept + struck + not counted, filtered at consumption only (recap · HUD · grid foot · bid · client review · CSV); flag `omit` rides lineOverrides (saves + adhoc re-synth carry it); the word is "off" — "excluded" stays the flags' word  // F18.15: snap tolerance constant in screen px — zoom no longer changes the feel  // F18.14: plan legibility — per-condition hide/show eye (visibility only, money untouched) + Fills/Faint/No-fill cycle in the rack  // F18.13: plan shapes use condition color, not confidence color  // F18.12: file:// banner tells the truth — conditional wording, auto-clears the moment a PDF actually loads  // F18.11: one pricing face — engine rolled cost wins on assembly cards + HUD; stale per-cond prices from old saves never paint  // F18.10: grid line-kind gestures — ⌀ zero a labor line, ＋L add labor to a material (prefilled entry row)  // F18.9: Estimate grid — inline ＋Line entry row, no modal; same addManualLine funnel  // F18.8: Estimate grid — Kind column (material/labor/equipment) visible per line, field report  // F18.6: two-blues unify — R1's stray #3d9be9 tints (armed rack, dock grip) conform to the --accent #2E75B6 family
 // F18.2: the corner chip reads VES_BUILD live — it was frozen at a hand-typed 'F17.4'
 // while four builds shipped under it. The stamp comment promises "the cold run confirms
@@ -12503,6 +13123,10 @@ window.VESApp = {
   openCalModal, applyCalEntry, openAudit,
   parseScale, applyScaleCalibration, applyScalePreset,
   pageLabel, AP,
+  // Batch AF (commission: "no door — cell, button, or VESApp export — lets an estimator put a formula on a line"):
+  // the line door, the condition-waste door, the Library lens and its edit doors, the grid's exports.
+  editLine, isLineOverridden, setConditionWaste, showLibrary, renderLibraryLens, libraryEditItem, libraryUpsertItem,
+  exportGridCSV, exportEstimateXLSX, estimateRows, parseParamsText,
 };
 
 // P0.1: keep the floating islands clear of the floating toolbar at any width and after
