@@ -59,7 +59,7 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 
 | id | what | status |
 |---|---|---|
-| U1 | Unlink freeze writes flat + two false comments assert it safe (P-CODE pass 3, HIGH) | open, Batch U charter |
+| U1 | Unlink freeze writes flat + two false comments assert it safe (P-CODE pass 3, HIGH) | **closed in F18.67** (Batch U; probe-u U1a–U1f; READINESS_ad07fff §2) |
 | U2 | conditions/measurements arrays unvalidated at the file door | **closed in F18.59** (Batch V; probe-v V3a–c) |
 | U3 | apportionCents total guard | open, Batch U charter |
 | U4 | printBidDoc's inline F5 walk unified onto the hardened helper, cent-identical or stop (was T-Q1) | open |
@@ -70,6 +70,7 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | C-R2 | the build-log comment line (34 KB) | parked; the split (F18.60) leaves it in the `boot` block |
 | F-C1 · F-C2 · W2M-C3 · T-K3 · C-K1 · C-H1/2/3 · T-3 · T-5 · C-O1/C-O2 | design candidates, none built | parked |
 | F1 · N5 · N6 · D-24.7b | owner's blocking set (price/license; headed print-latch bench (Chrome + Firefox) — still open; CI runs headless Chrome only| Patrick's call |
+| R-1 → F1 | owner (2026-09-04, READINESS_ad07fff §0) | The price half of F1 is ruled: there is no price; donations are accepted. The license half (R-2 extent) is not ruled. Recorded against F1 | recorded, row stands |
 | sweep F-01 | GitHub Pages serves `src/VES_PM.html` publicly | ruling pending |
 | freeze manifest | `node tools/ves-verify.mjs --write-manifest` on an accepted build | Patrick's act |
 | tag f18.55 | still on the remote, points at retired history | Patrick deletes (`git push origin --delete f18.55`) |
@@ -139,6 +140,8 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | M-05 | P-MARKET | T2's 2 s first-raster figure is met best-of-3 but missed on single loads in a loaded VM; the input-never-blocked half held every run | INF — the 2 s bar is the seat's choice; the buyer's complaint is blocked input (met) |
 | M-06 | P-MARKET | T1 met on landing and README | holds |
 | M-07 | P-MARKET | README/landing say "copy the file to any machine and it works there" while LICENSE grants no right to copy or use | (d) tension recorded — F1 price/license is Patrick's open call; the copy is not changed by the seat |
+| R-1 → M-07 | owner (2026-09-04, READINESS_ad07fff §0) | VES will not be sold; donations are accepted; the price half of F1 is ruled. Recorded against M-07; the license half (R-2 extent) is not ruled and the copy is unchanged | recorded, row M-07 stands |
 | M-08 | P-MARKET | VES claims less than it does: the audit trail (Audit CSV with identity rows, calibration and warning status; the bid's Sheet column), per-item quantity formulas and per-location breakdown are named nowhere on landing or README | (b) FIXED F18.65 (Batch AB-4) — one sentence on the landing and in the README (probe-ab AB4) |
 | M-09 | P-MARKET | Tablet row: nothing observed either way | — |
 | M-10 | P-MARKET | Price-creep row: no pricing text exists beyond the four absences | — (F1) |
+| R-1 → M-10 | owner (2026-09-04, READINESS_ad07fff §0) | There is no price (R-1). Recorded against M-10 | recorded, row M-10 stands |

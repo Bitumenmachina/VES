@@ -6,7 +6,16 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.66** — sha256 `95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998`,
+- **src = F18.67** — sha256 `b7ec3c5d98b5581eaba3a0430a4acd5a11da44f754744ea1f26089067a7e2dcf`, 3,563,029 bytes. **Batch U landed 2026-09-04**
+  (READINESS_ad07fff ship-line item 2, owner-approved in the handoff): the card editor's Unlink froze the source's
+  store-A flat quantity where the link had priced the line on `dispQtyOf(source)` (store-B pitch applied) — on a 6/12
+  library source 1,118.03 SF priced, 1,000 frozen, sell 80,506.89 → 80,138.80, silent, unjournaled, Ctrl+Z took the
+  whole line. The freeze now writes the priced quantity, the toast names it and the source, the gesture is on the
+  journal under its own name; the qty-link comment tells the truth. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) ·
+  probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress. `research/READINESS_ad07fff.md` is the accepted record
+  (merged to `main` 2026-09-04); R-1 (no sale, donations) recorded against M-07/M-10; R-2's extent unruled — the
+  license copy is unchanged; the §8 after-list is the after-list.
+- **F18.66 = Batch AD, landed 2026-09-02** — sha256 `95bfbfd0ac0e3fbde8f0906ad7aa3bf537fcba7d7718f8f5aa4c9960e78ed998`,
   3,560,089 bytes. **Batch AD landed 2026-09-02** (the personas' cheap candidates + bar M2's internal half, under
   the owner's standing word): an internal **Estimate .xlsx** with every line's Qty × Unit as a live formula, Cost as
   SUM, the ladder as formulas and Sell as their sum (values cached); the exports menu carries it and the client
@@ -130,7 +139,7 @@ truth first, history compressed.
 8. ✅ **P-CODE pass 3 DONE — 7/7 DEAD** (NEW-1/2/4/5/7 + both residues; egress re-proven).
    4 new rows (1 HIGH: the Unlink freeze writes flat + two false comments assert it safe;
    1 MED: conditions/measurements arrays unvalidated at the door; 2 LOW). Triage in LEDGER.
-9. **Batch U — STOPPED MID-DEVELOPMENT 2026-09-01 (operator interrupt; agent killed cleanly,
+9. ✅ **Batch U LANDED — F18.67 (2026-09-04): U1 closed (see State).** U3 / U4 stay open in LEDGER — READINESS_ad07fff §1 shows neither can put a wrong number on paper from the UI on HEAD; both are after-list. History: **Batch U — STOPPED MID-DEVELOPMENT 2026-09-01 (operator interrupt; agent killed cleanly,
    src untouched at F18.58).** COLD PICKUP: charter = LEDGER.md §Open items (U1 freeze truth + both false-comment corrections · ✅ U2 landed in Batch V ·
    U3 apportionCents total guard · U4 bid walk unified, cent-identical or stop). The pass-3 findings file and the
    partial Batch U scratch were never pushed; U1/U3/U4 restart from the charter text with fresh red-first probes. Then **P-CODE pass 4** (scoped) → **P-BUYER
