@@ -26,6 +26,8 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
                                                # Batch AD gate — Estimate workbook with formulas, menu doors, print toasts, keyboard peek, persistence (5 checks)
     node tools/sweep/probe-u.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD"
                                                # Batch U gate — the Unlink freeze keeps the priced quantity, says so, undoes (8 checks; RED-first 2/8 on F18.66)
+    node tools/sweep/probe-ae.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf "$PWD"
+                                               # Batch AE gate — Print takeoff: the plan as measured, nothing priced (5 checks; RED-first 1/5 on F18.67)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out

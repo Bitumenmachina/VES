@@ -70,6 +70,7 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 | C-R2 | the build-log comment line (34 KB) | parked; the split (F18.60) leaves it in the `boot` block |
 | F-C1 · F-C2 · W2M-C3 · T-K3 · C-K1 · C-H1/2/3 · T-3 · T-5 · C-O1/C-O2 | design candidates, none built | parked |
 | F1 · N5 · N6 · D-24.7b | owner's blocking set (price/license; headed print-latch bench (Chrome + Firefox) — still open; CI runs headless Chrome only| Patrick's call |
+| AE · Print takeoff | owner (2026-09-04, chat: "it should be print takeoff only … you choose") | A Print takeoff door: the marked-up sheet with its legend and every measured quantity, nothing priced; the shape was the seat's choice under the owner's word. **landed in F18.68** (Batch AE; probe-ae AE1–AE5; RED-first 1/5 on F18.67) | landed |
 | R-1 → F1 | owner (2026-09-04, READINESS_ad07fff §0) | The price half of F1 is ruled: there is no price; donations are accepted. The license half (R-2 extent) is not ruled. Recorded against F1 | recorded, row stands |
 | sweep F-01 | GitHub Pages serves `src/VES_PM.html` publicly | ruling pending |
 | freeze manifest | `node tools/ves-verify.mjs --write-manifest` on an accepted build | Patrick's act |
@@ -80,6 +81,7 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
 - `MOBILE_FEASIBILITY_68c8e23.md` — phone/tablet measurements and the ROI frame.
 - `FIELD_LANE.md` — the field-lane charter, interior lane included.
 - Batch V (F18.59) and Batch W (F18.60) — see NOTES.md §State and the build-stamp chain in `src/VES_PM.html`.
+- Batch U (F18.67, U1) and Batch AE (F18.68, Print takeoff) — see NOTES.md §State and the build-stamp chain.
 
 ## PASS_2026-09 — findings on record (triage: NOTES.md rubric; owner rules)
 

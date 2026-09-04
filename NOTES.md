@@ -6,7 +6,14 @@ truth first, history compressed.
 
 ## State
 
-- **src = F18.67** — sha256 `b7ec3c5d98b5581eaba3a0430a4acd5a11da44f754744ea1f26089067a7e2dcf`, 3,563,029 bytes. **Batch U landed 2026-09-04**
+- **src = F18.68** — sha256 `494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760`, 3,570,752 bytes. **Batch AE landed 2026-09-04** (owner's word in chat: a Print
+  takeoff door, shape the seat's): Files & exports → Print takeoff… (and the command palette) prints the plan as measured —
+  the proposal's own plan snapshot and legend (proposalVisualHTML), every condition with the quantity the estimate uses
+  (traced × pitch, the factor shown), every measurement with sheet, points and calibration — and nothing priced: no $
+  figure and no money word (probe-ae AE3 asserts it on the rendered text). Typed-only takeoffs print their tables without
+  a snapshot; nothing measured releases the latch and says so; the toast names the print. Gates: probe-ae 5/5 (RED-first
+  1/5 on F18.67) · probe-u 8/8 · probe-v 17/17 · G0 4/4 · verifier PASS 0 new egress.
+- **F18.67 = Batch U, landed 2026-09-04** — sha256 `b7ec3c5d98b5581eaba3a0430a4acd5a11da44f754744ea1f26089067a7e2dcf`, 3,563,029 bytes. **Batch U landed 2026-09-04**
   (READINESS_ad07fff ship-line item 2, owner-approved in the handoff): the card editor's Unlink froze the source's
   store-A flat quantity where the link had priced the line on `dispQtyOf(source)` (store-B pitch applied) — on a 6/12
   library source 1,118.03 SF priced, 1,000 frozen, sell 80,506.89 → 80,138.80, silent, unjournaled, Ctrl+Z took the
