@@ -20,6 +20,33 @@ every cost export, and opens a Library lens where every item and assembly is vis
 own validation. The coil case — LF measured, LB bought, `RAW * width * lbsf` with the width typed on the line — prices,
 shows, exports, saves, reloads to the cent, and reverts to the library when cleared.
 
+## 0. Pickup for the next seat (written 2026-09-05, this session at its limit)
+
+State on the branch, from bytes: `src/VES_PM.html` = **F18.72** (Batch AI), 3,657,712 bytes, sha256
+`d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, commit `d95c830`, pushed. `main` is still `b191423`
+(F18.68). Nothing has been pushed to `main`. The freeze manifest is not written (Patrick's act).
+
+The loop under Patrick's word ("run persona pass; if accepted finalize build and push to main; run in loop") has used its
+three fix iterations: pass 1 → Batch AG (F18.70), pass 2 → Batch AH (F18.71), pass 3 → Batch AI (F18.72). Every finding and
+its triage is in `LEDGER.md` §Batch AG / AH / AI; every product change in `CHANGE_LEDGER.md`; probe rows AF1–AF40 in
+`tools/sweep/probe-af.mjs`, each batch RED-first on the prior bytes. **Pass 4 (the acceptance pass) was launched on
+F18.72 but its four reports are NOT on record** — the session ended with the agents in flight. Treat pass 4 as not run.
+
+What the next seat does, in order:
+1. Verify the bytes: `sha256sum src/VES_PM.html` must print the sha above; `node tools/ves-verify.mjs` → RESULT PASS;
+   `VES_CHROME=<chrome> node gate/g0.mjs check src/VES_PM.html` → G0 GREEN; probe-af per `tools/sweep/README.md` → 40/40.
+2. Read the CI run on `d95c830` (run 54, `.github/workflows/verify.yml`, three jobs) and record its conclusion here.
+3. Patrick's own test is §3 below (the coil case, cold, no document). His word decides acceptance — not a persona pass.
+4. If Patrick accepts: NOTES.md §State names `main = F18.72`; CLAUDE.md §Identity names `main`; LEDGER carries the
+   acceptance line quoting his word; then
+   `git checkout main && git merge --ff-only claude/estimate-sheet-depth-vrhnf6 && git push origin main` and
+   `git push origin claude/estimate-sheet-depth-vrhnf6`. No PR. Read the CI run on `main`.
+5. If he wants a persona pass 4 first: launch the four `.claude/agents/p-*.md` personas on F18.72 by absolute path with
+   the sha above, each re-checking its §Batch AI rows; the cap of three fix batches is spent, so a new (a)/(b) P0/HIGH is
+   Patrick's call to build or to carry as an open row.
+
+Open, recorded, not built: C-AG1…C-AG13 (LEDGER), §7 below.
+
 ## 2. Identity of what was built
 
 | item | value |
