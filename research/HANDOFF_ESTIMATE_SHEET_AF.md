@@ -22,6 +22,8 @@ shows, exports, saves, reloads to the cent, and reverts to the library when clea
 
 ## 0. Pickup for the next seat (written 2026-09-05, this session at its limit)
 
+Read `research/WHATS_NEW_F18.72.md` first — the plain-language version of this section and the Opus work list.
+
 State on the branch, from bytes: `src/VES_PM.html` = **F18.72** (Batch AI), 3,657,712 bytes, sha256
 `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, commit `d95c830`, pushed. `main` is still `b191423`
 (F18.68). Nothing has been pushed to `main`. The freeze manifest is not written (Patrick's act).

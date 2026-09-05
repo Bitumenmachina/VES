@@ -6,6 +6,9 @@ truth first, history compressed.
 
 ## State
 
+> Plain-language summary of the test build, what changed build by build, and what the next seat can work on:
+> `research/WHATS_NEW_F18.72.md` — read it first. The entries below are the seat's record.
+
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
