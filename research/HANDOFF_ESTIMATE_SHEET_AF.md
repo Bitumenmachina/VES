@@ -47,6 +47,14 @@ What the next seat does, in order:
 
 Open, recorded, not built: C-AG1…C-AG13 (LEDGER), §7 below.
 
+Pass-4 reports that did land before the session closed (the others did not): **P-SEAT** — every pass-3 row DEAD; verifier
+PASS and selftest 12/12 re-run by it on the bytes; eight new items, all register wording, none on the product: CHANGE_LEDGER
+AI-1 / AI-3 / AI-5 / AI-6 / AI-7 evidence cells claim a little more than AF36–AF39 drive (a negative density, the `.`/`!`
+seam cases, a six-decimal value, a fourth waste decimal, "computed once" — each "by inspection"); NOTES "36 items" and
+"40 ids" are not derivable from the LEDGER tables (31 and 30 ids); NOTES's refutation tally omits AH-M14; the harness
+worktree guard also refuses non-git compound commands (not a repo hook — no register names it). The next seat words those
+cells and counts when it next touches the registers; nothing gates on them.
+
 ## 2. Identity of what was built
 
 | item | value |
