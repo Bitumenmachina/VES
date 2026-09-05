@@ -1,11 +1,11 @@
-# CHANGE_LEDGER — Batches AF · AG · AH (F18.69 → F18.71, TEST BUILD on `claude/estimate-sheet-depth-vrhnf6`)
+# CHANGE_LEDGER — Batches AF · AG · AH · AI (F18.69 → F18.72, TEST BUILD on `claude/estimate-sheet-depth-vrhnf6`)
 
 Every product byte moved by this batch, keyed to the finding it answers in
 `research/FINDINGS_ESTIMATE_SHEET_b191423.md` (the recon ledger; line numbers there are against F18.68) and to the
 commission's rulings R1–R7. Anchors are function names — the durable handle; no line numbers are carried here.
 Evidence column names the probe check (`tools/sweep/probe-af.mjs`) that proves the change on the bytes.
 Batch AG (F18.70) rows follow the AF table, keyed to LEDGER.md §Batch AG (persona pass 1); Batch AH (F18.71) rows follow
-those, keyed to LEDGER.md §Batch AH (persona pass 2). An evidence cell names only what the check asserts; a claim the
+those, keyed to LEDGER.md §Batch AH (persona pass 2); Batch AI (F18.72) rows follow, keyed to §Batch AI (pass 3). An evidence cell names only what the check asserts; a claim the
 check does not reach says "by inspection".
 Synthetic aliases only. No client, project, address, or job dollar figure.
 
@@ -49,7 +49,7 @@ Standing: branch, never `main`. Acceptance is Patrick's cold run of the coil cas
 | AG-10 | AG-M2 · AG-T9 · AG-T11 | grid | derivation words carry the item waste; a FIXED formula reads "fixed Q"; "line value" vs "line formula"; the Formula cell title says what Q is; the Waste header says item waste; card and cell titles say "this takeoff's line value" | `derivSummary` · `derivCell` · thead · `recapEditCell` · `overrideInput` | AF21 (item waste in the words; the Waste header); "fixed Q", "line value", the Q title and the card/cell titles by inspection |
 | AG-11 | AG-G6 · AG-G7 · AG-G8 · AG-T12 | entry row | measure select after the unit (markup + `GENTRY_WALK`); funnel line in the description cell; empty-row text; closest-name hint; case/dash-forgiving name match | entry-row markup · `libNameKey` · `libCondByLabel` · `libCondClosest` · `entryFunnelWords` | AF22 |
 | AG-12 | AG-G12 · AG-T13 | waste door | non-number sentence; a refused value never stays in the box | `setConditionWaste` · `buildCondWasteRow` | AF23 |
-| AG-13 | AG-T2 · AG-G16 | exports | qty needed numeric in the workbook; ladder labels "(× Pct)"; BOM trailing headers in Title Case | `exportEstimateXLSX` · `exportBOMCSV` | AF26 (numeric qty needed, "(× Pct)"); AF4 reads the BOM headers case-insensitively, so Title Case is by inspection |
+| AG-13 | AG-T2 · AG-G16 | exports | qty needed numeric in the workbook; ladder labels "(× Pct)"; BOM trailing headers in Title Case | `exportEstimateXLSX` · `exportBOMCSV` | AF26 (numeric qty needed; a label carrying "Pct" and no "%" — the exact "(× Pct)" text by inspection); AF4 reads the BOM headers case-insensitively, so Title Case is by inspection |
 | AG-14 | AG-M5 · AG-M10 · AG-T16 | landing · sheet foot · README | the derivation, the line formula and the Library lens are named; the scope is on the sheet foot | landing `.empty-safe` · `.gaddhint` · README | AF27 |
 | AG-15 | AG-S2 | CI | probe-af fetches the F18.68 bytes by full sha; exit captured; step renamed | `.github/workflows/verify.yml` | CI run on the push |
 | AG-16 | — | build stamp | `VES_BUILD = 'F18.70'` with the batch entry | `VES_BUILD` | — |
@@ -59,18 +59,34 @@ Standing: branch, never `main`. Acceptance is Patrick's cold run of the coil cas
 | # | LEDGER row | surface | what moved | anchor | evidence |
 |---|---|---|---|---|---|
 | AH-1 | AH-T2 · AH-M12a | engine | a number literal is digits with at most one point; anything else throws `bad number "…"` (was parseFloat's silent truncation) | `tokenize` (engine fence) | AF30 |
-| AH-2 | AH-M12b | engine | `FUNC_ARITY`: ceil / floor / round / abs take exactly one argument; max / min one or more; a wrong count throws | `resolveExpr` `parseFactor` (engine fence) | AF30 |
+| AH-2 | AH-M12b | engine | `FUNC_ARITY`: ceil / floor / round / abs take exactly one argument; max / min one or more; a wrong count throws | `resolveExpr` `parseFactor` (engine fence) | AF30 (round/ceil with two arguments refused; max with two evaluates); the zero-argument guard is Batch AF's, by inspection |
 | AH-3 | AH-M10 | engine · library | the unit gate prints "(no unit)" for a missing unit; `validateLibrary` refuses an empty unit and a production rate ≤ 0 | `resolveItem` UNIT_GATE · `validateLibrary` rule 3 | AF32 |
 | AH-4 | AH-T1 | write door | a qty edit on a line carrying `qty_expr` calls `afterFormulaEdit` — the cue follows the row | `handleMoneyEdit` (numeric branch) | AF31 |
 | AH-5 | AH-T3 | new takeoff | the reset clears the lens cue | `newTakeoff` | AF31 |
-| AH-6 | AH-M6 | Library lens | `sel()` carries the seed-diff accent and title like `inp()`; `seedText` joins a pipe-list ref as shown; CSS `select.lib-edit.ov` | `renderLibraryLens` · CSS | AF32 |
-| AH-7 | AH-M9 · AH-T6 · AH-G4 | waste words · waste box | `pctWord` (two decimals) at the derivation, item-waste, journal, toast and assembly-waste sites; the box's `change` path toasts `wasteSaid` as Enter does | `pctWord` · `derivSummary` · `setConditionWaste` · `buildCondWasteRow` · `renderLibraryLens` | AF33 |
-| AH-8 | AH-G9 | toolbar (phone) | under 720 px the four document-door pins read `right: 184px`; the Plan bar's expanded padding 250 px; `#btnDataMenu` never wraps | CSS media block after the pins | AF34 |
+| AH-6 | AH-M6 | Library lens | `sel()` carries the seed-diff accent and title like `inp()`; `seedText` joins a pipe-list ref as shown; CSS `select.lib-edit.ov` | `renderLibraryLens` · CSS | AF32 (the driven-by select); the pipe-list join by inspection |
+| AH-7 | AH-M9 · AH-T6 · AH-G4 | waste words · waste box | `pctWord` (two decimals) at the derivation, item-waste, journal, toast and assembly-waste sites; the box's `change` path toasts `wasteSaid` as Enter does | `pctWord` · `derivSummary` · `setConditionWaste` · `buildCondWasteRow` · `renderLibraryLens` | AF33 (row words, journal, blur toast); the item-waste and assembly-waste sites by inspection |
+| AH-8 | AH-G9 | toolbar (phone) | under 720 px the four document-door pins read `right: 184px`; the Plan bar's expanded padding 250 px; `#btnDataMenu` never wraps | CSS media block after the pins | AF34 (the door's rect at 390 px, Estimate lens; AF40 in AI covers all four lenses at 390 and 720); the padding literal by inspection |
 | AH-9 | AH-G2 | toolbar | `#segPlan` title; `aria-label` on all four segments | markup | AF34 |
-| AH-10 | AH-G1 | grid | `tr.gated` on a gated row; tint + left bar | `renderEstimateGrid` · CSS `.estgrid tr.gated` | AF35 |
+| AH-10 | AH-G1 | grid | `tr.gated` on a gated row; tint + left bar | `renderEstimateGrid` · CSS `.estgrid tr.gated` | AF35 (the class); the tint rule by inspection |
 | AH-11 | AH-G6 | Library lens | `button.libAddBtn` in the coarse-pointer rule | CSS `@media (pointer: coarse)` | AF35 (asserted where the emulation reports coarse) |
-| AH-12 | AH-G7 | Library lens | `keydown` on `#libBody`: Escape reverts to `defaultValue`, blurs, toasts, stops; Enter commits via the change path with `libFocus` set so the re-render refocuses; Enter on the ＋ Add row clicks ＋ Add | lens key listener (boot) | AF35 |
+| AH-12 | AH-G7 | Library lens | `keydown` on `#libBody`: Escape reverts to `defaultValue`, blurs, toasts, stops; Enter commits via the change path with `libFocus` set so the re-render refocuses; Enter on the ＋ Add row clicks ＋ Add | lens key listener (boot) | AF35 (Escape reverts; Enter on a unit-cost cell commits and refocuses); Enter on the ＋ Add row by inspection |
 | AH-13 | — | build stamp | `VES_BUILD = 'F18.71'` with the batch entry | `VES_BUILD` | — |
+
+## Batch AI — persona pass 3 fixes (F18.72)
+
+| # | LEDGER row | surface | what moved | anchor | evidence |
+|---|---|---|---|---|---|
+| AI-1 | AI-T1 · AI-M4 | engine · library | a density resolving to 0 gates `ZERO_QTY` (negative stays `BAD_DRIVER`); `validateLibrary` refuses density ≤ 0 | `resolveItem` (density branch, engine fence) · `validateLibrary` rule 3 | AF36 |
+| AI-2 | AI-M2 | library | `validateLibrary` parses `qty_expr` against `ANY_NAME_SCOPE` (a Proxy answering 1 for any name); only the grammar's own refusals refuse | `validateLibrary` · `ANY_NAME_SCOPE` | AF37 ("RAW *" refused, "RAW * width" kept) |
+| AI-3 | AI-M1 | identity | `libraryIdentity` names the seed when the fingerprint equals the seed's (`seedFp`, computed once); returns `seed`; the lens header's seed test reads it | `libraryIdentity` · `renderLibraryLens` | AF37 (name and header after change-and-back) |
+| AI-4 | AI-M3 | Flags · grid | the Flags list falls back to `lineDisplayName`; `tr.gated` also on `NO_MATCH` rows | `renderAssembly` flags block · `renderEstimateGrid` | AF37 |
+| AI-5 | AI-M5 · AI-M12 | waste | `pctWord` at four decimals; the box redisplays through it; `aria-label` on the box | `pctWord` · `buildCondWasteRow` | AF38 (journal, row, box value, aria); the toast sentence unchanged since AH (AF33) |
+| AI-6 | AI-T4 · AI-T5 | exports | `basisOf(scope)` — six-decimal numbers, waste as percent — used by every branch incl. manual lines with a scope | `n6` · `basisOf` · `derivColumnsOf` | AF38 (grid CSV basis for a library line and a linked labor line); BOM and .xlsx share the writer, by inspection |
+| AI-7 | AI-T6 · AI-M7 | engine · cue | a punct token where a factor is expected → `unexpected "*" — expected a number, a name or "("`; unknown token / function with a case-insensitive match → "names are case-sensitive; did you mean …"; the cue strips a trailing `.?!` before its own sentence | `resolveExpr` `parseFactor` (engine fence) · `afterFormulaEdit` | AF39 |
+| AI-8 | AI-G3 | Library lens | Escape: an input with a draft reverts and says so; an untouched input or a select blurs silently; the key never reaches the window layer | lens key listener (boot) | AF39 (untouched cell silent; select keeps the lens — a control, the lens stayed open before too) |
+| AI-9 | AI-G5 | toolbar (phone) | `body.sheet-live #brand small { display: none }` and `nowrap` under 720 px | CSS phone media block | AF40 (door clear of brand and segments, four lenses, 390 and 720 px) |
+| AI-10 | AI-M8 | landing · README | "a library-priced line can carry its own formula and inputs (a free line is priced as typed)" | landing `.empty-safe` · README | AF40 |
+| AI-11 | — | build stamp | `VES_BUILD = 'F18.72'` with the batch entry | `VES_BUILD` | — |
 
 ## What did not move (commission §6)
 G0's twelve recap keys and eight line keys (4/4 on every commit) · probe-v V2 demo sell 64,620.46 · probe-u's four

@@ -6,11 +6,31 @@ truth first, history compressed.
 
 ## State
 
-- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.71, Batch AH — persona pass 2 on F18.70, answered** — sha256
+- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
+  `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
+  cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
+  AG-T11/T12 rows P-TRADE could not re-run in pass 2 are now DEAD by its own run; the coil case holds end to end through
+  save and reload. Pass 3 filed 36 items; 11 built, 4 refuted or re-refuted with evidence (Flags list, free-line cell,
+  Formula header title, lens-select Escape), the rest CANDIDATE/recorded (LEDGER §Batch AI). Fixed here (RED-first rows
+  AF36–AF40, 5/5 red on F18.71): a library density of 0 is refused at the book and gates ZERO_QTY on the line (it priced
+  an included, unflagged $0 — the case AG closed for formulas was open for the density driver); the book refuses a formula
+  that cannot parse (a per-line input name stays legal); a book equal to the seed reads as the seed after a change-and-back
+  (and the lens header's seed test, never true before, now follows the identity); the Flags list names an unpriced line
+  instead of "undefined" and its row is tinted; waste words at four decimals (0.001 % read "0%" beside a figure CEIL moved);
+  the basis column carries clean numbers and the waste as a percent, and a linked labor line carries its basis; the parser
+  names a stray operator ("RAW ** 2") and a case mismatch ("RAW*WIDTH", "ROUND"); the cue's "?." seam; lens Escape says
+  nothing when nothing was typed; on a phone the brand's suffix ran under the document door in three lenses — hidden under
+  720 px; the waste box has an aria-label; landing and README say a LIBRARY-priced line carries a formula (a free line is
+  priced as typed). Registers: P-SEAT's pass-3 wording rows. Gates: probe-af 40/40 · probe-v 17/17 · probe-u 8/8 ·
+  probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x 5/5 · probe-y 4/4 · probe-aa 5/5 · probe-ac 5/5 ·
+  G0 4/4 · verifier PASS 0 new egress · selftest 12/12. Pass 4 (the acceptance pass of iteration 3) re-runs the four
+  personas on these bytes; zero new (a)/(b) P0/HIGH → `main` moves by fast-forward; otherwise the loop stops here with
+  the open rows on record and no push to `main`.
+- **F18.71 = Batch AH — persona pass 2 on F18.70, answered** — sha256
   `4e7be4b2bc81ed34dcac4237342d72d91d9eb8adb9cc8f61f1581af77d6fee90`, 3,652,594 bytes (2026-09-05, cloud seat, the same owner's word: run the persona pass
   in a loop, finalize on acceptance). Pass 2 re-ran all four personas on the F18.70 bytes: every pass-1 fix held on the
   filing persona's re-run except AG-M6's dropdowns (the lens selects carried no seed mark) and AG-G8's ✓ Add position (as
-  recorded); AG-G3's refutation was agreed. Pass 2 filed 39 items; the seat verified each on the bytes — 12 built, 4 refuted
+  recorded); AG-G3's refutation was agreed. Pass 2 filed 40 ids (39 findings — M12 counted once); the seat verified each on the bytes — 12 built, 4 refuted
   with evidence, the rest CANDIDATE/recorded (LEDGER §Batch AH). Fixed here (RED-first rows AF30–AF35, 6/6 red on F18.70):
   a malformed number literal (`1.2.3` priced as 1.2, silent) and a wrong function arity (`round(x, 1)` dropped the 1) gate
   the line with the reason; the Library lens refuses an empty unit and a zero production rate, and the unit gate never

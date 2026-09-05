@@ -7,7 +7,8 @@ network egress. Open the file in a browser; that is the whole install. **No seat
 device limit, no login** — copy the file to any machine and it works there. Every quantity is auditable: the Audit CSV
 records who measured it, on which sheet, at what calibration; the bid prints the sheet beside each line. Every priced
 line shows how its quantity was derived (the measurement, the library's coverage / density / formula, the inputs, the
-ordered figure) and can carry its own formula and inputs; the Library lens shows and edits the whole price book; the
+ordered figure); a library-priced line can carry its own formula and inputs, a free line is priced as typed; the
+Library lens shows and edits the whole price book; the
 Estimate workbook carries the derivation and a live ladder.
 
 **The product is `src/VES_PM.html`** — the build stamp in the app's own chrome (`VES_BUILD`, shown in the
@@ -31,7 +32,7 @@ not the badge. `bash test/selftest.sh` proves the verifier's exit-code contract 
 Drives the app's own functions over CDP and diffs money output byte-for-byte against ratified
 goldens (`gate/README.md` has the contract). It runs anywhere a Chromium exists — Claude cloud sessions
 (`VES_CHROME=/opt/pw-browsers/chromium-*/chrome-linux/chrome`), a laptop, and on every push as the `gate`
-job of `.github/workflows/verify.yml`; the `probes` job runs the batch gate `tools/sweep/probe-v.mjs` the same
+job of `.github/workflows/verify.yml`; the `probes` job runs every batch gate in `tools/sweep/` (probe-v … probe-af) the same
 way. Read the job summaries alongside `verify`.
 
 ## Working here

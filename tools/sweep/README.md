@@ -32,8 +32,8 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
     node tools/sweep/probe-af.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" /tmp/VES_F18.68.html
                                                # Batch AF gate — estimate sheet depth: the coil case end to end, the derivation on every row and export,
                                                # the old build's loud drop (needs the F18.68 bytes, 4th arg), add-a-line funnel, condition waste, Library lens
-                                               # (35 checks: AF1–15 RED-first 1/15 on F18.68; AF16–29 = Batch AG persona-pass-1 fixes, RED-first 16/29 on F18.69;
-                                               #  AF30–35 = Batch AH persona-pass-2 fixes, RED-first 29/35 on F18.70)
+                                               # (40 checks: AF1–15 RED-first 1/15 on F18.68; AF16–29 = Batch AG persona-pass-1 fixes, RED-first 16/29 on F18.69;
+                                               #  AF30–35 = Batch AH persona-pass-2 fixes, RED-first 29/35 on F18.70; AF36–40 = Batch AI pass-3 fixes, RED-first 35/40 on F18.71)
     node tools/sweep/probe3.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/out
                                                # ingress, injection sinks, print colors, autosave, negative margin
     node tools/sweep/probe4.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" /tmp/plan.pdf /tmp/plan-dense.pdf /tmp/out

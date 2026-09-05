@@ -39,9 +39,9 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-05, cloud seat, branch claude/estimate-sheet-depth-vrhnf6 — a TEST BUILD, not main)
 - canonical file: src/VES_PM.html
-- build: F18.71 (Batch AH — persona pass 2 on F18.70, answered; F18.70 = Batch AG — persona pass 1 answered; F18.69 = Batch AF — Estimate sheet depth: the sheet renders what it computes, and a formula can live on the line)
-- bytes: 3652594
-- sha256: 4e7be4b2bc81ed34dcac4237342d72d91d9eb8adb9cc8f61f1581af77d6fee90
+- build: F18.72 (Batch AI — persona pass 3 on F18.71, answered; F18.71 = Batch AH — pass 2 answered; F18.70 = Batch AG — pass 1 answered; F18.69 = Batch AF — Estimate sheet depth: the sheet renders what it computes, and a formula can live on the line)
+- bytes: 3657712
+- sha256: d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70
 - on `main`: F18.68 (Batch AE), 3570752 bytes, sha256 494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760 — the line that moves forward until Patrick accepts this branch.
 - priors: see NOTES.md §State (F18.67 Batch U · F18.66 Batch AD · F18.65 Batch AB · F18.64 Batch AC · F18.63 Batch AA · F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
 - history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The

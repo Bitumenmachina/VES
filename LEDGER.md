@@ -176,7 +176,43 @@ RED-first on F18.70 (6 of 6 red).
 | AH-S4 · S5 · S6 · S7 | P-SEAT | CHANGE_LEDGER AG-10 / AG-7 / AG-13 / AG-8 evidence cells cited checks that assert less than the row (fixed Q, line value, provenance-once, Title Case, the 720 px breakpoint) | (b) FIXED — the cells now say which claims are asserted and which are by inspection |
 | AH-S10 | P-SEAT | the agent definitions say "read CLAUDE.md, NOTES.md and LEDGER.md first" while a worktree is cut from `origin/main` | (b) FIXED — each definition says: read the build and the registers from the main checkout by absolute path, verify the sha first |
 | AH-S11 | P-SEAT | the guard hook blocks an invocation-shaped string inside quotes (a false positive) and lets `sh -c` / a variable through (S7, recorded) | (d) recorded — hardening is a hook change, Patrick's (C-AG7) |
-| AH-S12 · S13 · S15 · S16 | P-SEAT | hooks vs the protocol, probe README vs argv, counts across NOTES/LEDGER/handoff: nothing found; `.claude/loop.md` step 1 needs GitHub access the seat may lack | (c) recorded; README's selftest count corrected to 12 |
+| AH-S12 · S13 · S14 · S15 · S16 | P-SEAT | hooks vs the protocol, probe README vs argv, counts across NOTES/LEDGER/handoff: nothing found; `.claude/loop.md` step 1 needs GitHub access the seat may lack | (c) recorded; README's selftest count corrected to 12 |
+
+## Batch AI — persona pass 3 on F18.71 (TEST BUILD F18.72 on the same branch — iteration 3 of 3)
+
+All four personas re-ran on the F18.71 bytes (sha verified by each; main checkout, absolute paths). Pass-2 rows on the
+filing persona's re-run: every fixed row DEAD (AH-T1/T2/T3/T6, AH-M6/M9/M10/M12a/M12b, AH-G1/G2/G4/G6/G7/G9, AH-S1…S10);
+the refutations AH-T5, AH-M13, AH-M14, AH-G10 agreed by their filers; AG-T11 and AG-T12 now DEAD by P-TRADE's own run;
+AG-T14/T15 alive as candidates. Product rows: `CHANGE_LEDGER.md` AI-1…; probe rows AF36–AF40 RED-first on F18.71 (5 of 5
+red). P-GAME's four-lens phone sweep could not assemble under the worktree guard — AF40 is the seat's, run on the bytes.
+
+| id | persona | finding (what was SEEN) | disposition |
+|---|---|---|---|
+| AI-T1 · AI-M4 | P-TRADE · P-MARKET | a library density of 0 was accepted (coverage 0 is refused) and the line priced MATCHED, included, $0.00, no flag — the AG-T5 rule (never an included $0) was open for the density driver; CHANGE_LEDGER AG-1 had said "library drivers unchanged" | (a) FIXED F18.72 — `validateLibrary` refuses density ≤ 0 as it does coverage; a density resolving to 0 at any layer gates ZERO_QTY (AF36) |
+| AI-M3 | P-MARKET | with a library unit cost cleared, the Flags list read `undefined — no library match — needs price` and the excluded row carried no tint | (a) FIXED F18.72 — the list names the line; NO_MATCH rows carry `tr.gated` (AF37). Clearing a unit cost stays legal: "needs price" is a true state, said |
+| AI-M2 | P-MARKET | the book stored `RAW *` (no other driver) and every takeoff from it would gate that line | (b) FIXED F18.72 — the validator parses a library formula against a scope answering 1 for any name; the grammar's own refusals refuse, an unknown name (a per-line input) does not (AF37) |
+| AI-M1 | P-MARKET | after a change and a change-back the header read "edited in this browser · fingerprint 7e4e6a2a" — the seed's fingerprint under the edited word; the seed header never said "built-in seed library" (its test `!prov.source` was never true) | (b) FIXED F18.72 — `libraryIdentity` names the seed when the fingerprint is the seed's; the lens header follows the identity (AF37) |
+| AI-M5 | P-MARKET | waste 0.001 % read "0%" in the toast, journal and row while CEIL moved 100 → 101 LF | (b) FIXED F18.72 — four decimals, trailing zeros dropped, at every site and in the box (AF38) |
+| AI-T4 · AI-T5 | P-TRADE | the basis column wrote `ADJ=418.68749999999994;WASTE=0.015`; a linked ＋ labor line wrote no basis | (b) FIXED F18.72 — one writer: six-decimal numbers, waste as a percent, a manual line with a scope carries it (AF38) |
+| AI-T6 · AI-M7 | P-TRADE · P-MARKET | `RAW ** 2` gated as `unknown token "*"`; `RAW*WIDTH` / `ROUND(RAW)` said nothing of case; the cue read "between them?. The line is flagged" | (b) FIXED F18.72 — a stray operator is named as unexpected; a name matching a known one in another case says so; the cue strips the seam (AF39). `007` evaluating as 7 is recorded, not changed |
+| AI-G3 | P-GAME | Escape in an untouched Library cell still said "Reverted" | (b) FIXED F18.72 — nothing typed, nothing said (AF39) |
+| AI-G1 | P-GAME | (SRC/INF) Escape on a Library `<select>` would fall through to the window layer and close the lens | REFUTED-with-evidence — a real Escape on the kind select leaves the lens open (AF39, now a control); the handler stops at the cell anyway |
+| AI-G5 | P-GAME | the four-lens phone sweep at 390 / 720 px was not measured (harness) | seat's run (AF40): the document door was clear of the segments in every lens, but at 390 px the BRAND ran 157 px under it in the Estimate / Schedule / Library lenses and wrapped to two lines on Plan — (b) FIXED F18.72: the brand's suffix hides under 720 px with a sheet live |
+| AI-M8 | P-MARKET | landing and README: "every priced line … can carry its own formula and inputs" — a free line has no formula cells (by ruling AF-6: a manual line has no library formula) | (b) FIXED F18.72 — both say a library-priced line carries one; a free line is priced as typed (AF40) |
+| AI-M12 | P-MARKET | the waste box had no programmatic name (label is a sibling div) | (b) FIXED F18.72 — `aria-label` (AF38) |
+| AI-T2 | P-TRADE | a library unit cost of 0 prices an included $0.00 line with "unit cost set" as the only word | (c) recorded — a free item is legal (`unit_cost ≥ 0`); the row shows $0.00 and the derivation |
+| AI-T3 | P-TRADE | the printed cost sheet carries the ordered quantity and no basis (1,032 LF at 150 % waste with nothing between it and 412.5 measured) | (c) CANDIDATE C-AG11 — the internal cost sheet joins the recap drawer (AG-T14) as a surface without the derivation; the grid and every export carry it |
+| AI-T7 | P-TRADE | the grid CSV writes a formula starting with `-` as `'-RAW * width` | recorded — csvSafe's formula-injection guard, stated in CHANGE_LEDGER AF-12 |
+| AI-G2 | P-GAME | segments go wordless at ≤ 720 px while the rail's rest-collapse uses ≤ 719 px | (c) CANDIDATE C-AG12 — one pixel, two rules |
+| AI-G4 | P-GAME | the cue leads with the status code ("EXPR_ERROR — unknown token …") | (c) recorded — the row reads the same way; taste |
+| AI-M6 | P-MARKET | the waste box takes `1e1` (JS Number) while the formula cell refuses `1e3` | (c) recorded — two grammars for two doors; the formula's is closed on purpose |
+| AI-M9 | P-MARKET | three vocabularies for one field across headers, refusals and toasts (`Prod. rate` / `production_rate` / `production rate`) | (c) CANDIDATE C-AG13 |
+| AI-M10 | P-MARKET | a refused lens draft stays in the cell (`.bad`, message, focus) while the book keeps its value | (c) recorded — by design: the draft stays for correction, marked; Escape reverts it |
+| AI-M11 | P-MARKET | a blank description is accepted; the sheet shows the id-derived name | (c) recorded — the same fallback every seed item without a desc uses |
+| AI-S1 | P-SEAT | the CLAUDE.md a worktree persona is handed in its context carried the F18.70 identity while the file on disk read F18.71 and the worktree's copy F18.68 | (d) recorded — the injected copy is the SESSION's CLAUDE.md as loaded at session start (harness), neither file; the seat read the three worktrees' CLAUDE.md: all F18.68. The definition's rule (read by absolute path, verify the sha) is the right guard |
+| AI-S2 · S4 | P-SEAT | six AH evidence cells and AG-13's "(× Pct)" claimed more than their checks assert | (b) FIXED in CHANGE_LEDGER — worded to the assertions, "by inspection" where so |
+| AI-S3 · S5 · S6 | P-SEAT | handoff title and §5 still described pass 1; README named one probe where the job runs eleven; "39 items" vs 40 ids; S14 missing from the P-SEAT row | (b) FIXED in the registers |
+| AI-S7 | P-SEAT | handoff §4 checklist rows 1–5, 7 re-run on the bytes: all match | nothing found |
 
 ## Sweep and batch records
 - `SWEEP_68c8e23.md` — the live-repo sweep (findings F-01…F-14, proposals P-01…P-12).

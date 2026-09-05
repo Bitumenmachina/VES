@@ -1,4 +1,4 @@
-# HANDOFF — Batch AF · Estimate sheet depth · test build F18.69 on `claude/estimate-sheet-depth-vrhnf6`
+# HANDOFF — Batches AF · AG · AH · AI · Estimate sheet depth · test build F18.72 on `claude/estimate-sheet-depth-vrhnf6`
 
 Companion to `CHANGE_LEDGER.md` (every product byte moved, keyed to the recon ledger) and to the recon pair
 `research/FINDINGS_ESTIMATE_SHEET_b191423.md` / `research/HANDOFF_ESTIMATE_SHEET_b191423.md` (cherry-picked onto this
@@ -24,14 +24,14 @@ shows, exports, saves, reloads to the cent, and reverts to the library when clea
 
 | item | value |
 |---|---|
-| product | `src/VES_PM.html` · **F18.71** · 3,652,594 bytes · sha256 `4e7be4b2bc81ed34dcac4237342d72d91d9eb8adb9cc8f61f1581af77d6fee90` (F18.70 = Batch AG was 3,646,306 · `dea73046…`, commit `82652fa`; F18.69 = Batch AF 3,633,084 · `0ba7e3c4…`, commit `a63af32`) |
-| build | F18.71 · Batch AF + Batch AG (persona pass 1 answered) + Batch AH (persona pass 2 answered) · branch `claude/estimate-sheet-depth-vrhnf6` (base `b191423` = F18.68 on `main`) |
+| product | `src/VES_PM.html` · **F18.72** · 3,657,712 bytes · sha256 `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70` (F18.71 = Batch AH was 3,652,594 · `4e7be4b2…`, commit `d49ec56`; F18.70 = Batch AG 3,646,306 · `dea73046…`, commit `82652fa`; F18.69 = Batch AF 3,633,084 · `0ba7e3c4…`, commit `a63af32`) |
+| build | F18.72 · Batch AF + AG (pass 1 answered) + AH (pass 2 answered) + AI (pass 3 answered) · branch `claude/estimate-sheet-depth-vrhnf6` (base `b191423` = F18.68 on `main`) |
 | verifier on those bytes | `RESULT PASS` · `EGRESS 7 matches; baseline 7 entries; 0 new, 0 gone` · `FREEZE 2 regions; manifest absent` · exit 0 |
 | G0 on those bytes | `G0 GREEN` 4/4 · exit 0 |
-| batch gate | `tools/sweep/probe-af.mjs` 35/35 · exit 0 — AF1–AF15 **RED-first 1/15 on the F18.68 bytes**; AF16–AF29 (Batch AG) **RED-first 16/29 on the F18.69 bytes** (13 of the 14 new rows red; AF19 a control); AF30–AF35 (Batch AH) **RED-first 29/35 on the F18.70 bytes** (all 6 new rows red) |
+| batch gate | `tools/sweep/probe-af.mjs` 40/40 · exit 0 — AF1–AF15 **RED-first 1/15 on the F18.68 bytes**; AF16–AF29 (Batch AG) **RED-first 16/29 on the F18.69 bytes** (13 of the 14 new rows red; AF19 a control); AF30–AF35 (Batch AH) **RED-first 29/35 on the F18.70 bytes** (all 6 new rows red); AF36–AF40 (Batch AI) **RED-first 35/40 on the F18.71 bytes** (all 5 new rows red) |
 | the CI probe list, run by the seat on those bytes (not a CI result) | probe-v 17/17 · probe-x 5/5 · probe-y 4/4 · probe-z 6/6 · probe-aa 5/5 · probe-ac 5/5 · probe-ab 4/4 · probe-ad 5/5 · probe-u 8/8 · probe-ae 5/5 |
-| CI on the branch | run 51 (`a63af32`, F18.69): verify ✓ · gate ✓ · **probes ✗** — the probe-af step fetched the F18.68 bytes by an abbreviated sha, which `git fetch` does not accept on a shallow checkout (P-SEAT pass 1 finding 2); fixed in Batch AG. Run 33940876949 (`82652fa`, F18.70): verify ✓ · gate ✓ · probes ✓ (read by the seat through the GitHub API). The run on the F18.71 push is the next to read. |
-| registers | `CHANGE_LEDGER.md` (new, 18 AF + 16 AG + 13 AH rows) · `LEDGER.md` §Batch AF (7 rows) + §Batch AG (persona pass 1, 35 rows) + §Batch AH (persona pass 2, 26 rows) · `NOTES.md` §State · `CLAUDE.md` §Identity · `tools/sweep/README.md` · `.github/workflows/verify.yml` (probe-af in the probes job) |
+| CI on the branch | run 51 (`a63af32`, F18.69): verify ✓ · gate ✓ · **probes ✗** — the probe-af step fetched the F18.68 bytes by an abbreviated sha, which `git fetch` does not accept on a shallow checkout (P-SEAT pass 1 finding 2); fixed in Batch AG. Run 33940876949 (`82652fa`, F18.70): verify ✓ · gate ✓ · probes ✓ (read by the seat through the GitHub API). Run 33970096369 (`d49ec56`, F18.71): verify ✓ · gate ✓ · probes ✓. The run on the F18.72 push is the next to read. |
+| registers | `CHANGE_LEDGER.md` (new, 18 AF + 16 AG + 13 AH + 11 AI rows) · `LEDGER.md` §Batch AF (7 rows) + §Batch AG (pass 1, 35 rows) + §Batch AH (pass 2, 26 rows) + §Batch AI (pass 3, 25 rows) · `NOTES.md` §State · `CLAUDE.md` §Identity · `tools/sweep/README.md` · `.github/workflows/verify.yml` (probe-af in the probes job) |
 
 If `src/VES_PM.html` no longer carries that sha256, this identity block is stale; `CHANGE_LEDGER.md` carries function
 names, not line numbers, so its anchors survive.
@@ -91,9 +91,11 @@ Run from the repo root on the branch. `VES=src/VES_PM.html`.
 
 ## 5. What was not done, stated plainly
 
-- **Persona pass 1 ran on F18.69** (P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic); every finding and its
-  disposition is in `LEDGER.md` §Batch AG; the (a)/(b) rows are fixed in F18.70 with RED-first probe rows AF16–AF29.
-  Pass 2 re-runs the filing personas; a finding closes only by their re-run.
+- **Three persona passes ran** (P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic): pass 1 on F18.69 → Batch AG
+  (LEDGER §Batch AG, AF16–AF29); pass 2 on F18.70 → Batch AH (§Batch AH, AF30–AF35); pass 3 on F18.71 → Batch AI (§Batch AI,
+  AF36–AF40). Every fixed row was re-run DEAD by its filing persona in the following pass. The owner's cap is three fix
+  iterations; pass 4 on F18.72 is the acceptance pass — zero new (a)/(b) P0/HIGH moves `main`; otherwise the loop stops
+  with the open rows on record.
 
 - **The freeze fence gated nothing.** `tools/freeze-manifest.json` does not exist; the `engine` region was edited on
   purpose (D1, D2) and the verifier reports `manifest absent`. Patrick writes the manifest by hand on the accepted
@@ -123,6 +125,9 @@ Run from the repo root on the branch. `VES=src/VES_PM.html`.
 
 ## 7. Follow-ons — OPEN, not done
 
+- From persona pass 3 (LEDGER §Batch AI): the internal cost sheet without the derivation (C-AG11, with the recap drawer);
+  the 720/719 px breakpoint pair (C-AG12); one vocabulary per field across the lens (C-AG13); `007` as a literal; the waste
+  box's JS number grammar; a refused lens draft that stays for correction.
 - From persona pass 2 (LEDGER §Batch AH, CANDIDATE rows): live quantity math in the workbook (the ladder is live; the
   quantities are literals) — C-AG8; ordering the lens's refusals (two-driver vs parse) — C-AG9; one header casing across
   the three exports — C-AG10; the lens's 2,193 px table and the rest-state ruling; the guard hook's quoted-text false
@@ -147,8 +152,8 @@ Run from the repo root on the branch. `VES=src/VES_PM.html`.
 ## 8. Files on this branch (beyond `main`)
 
 ```
-src/VES_PM.html                                  F18.71 (the product)
-tools/sweep/probe-af.mjs                         the batch gate (35 checks; 4th arg = the F18.68 bytes)
+src/VES_PM.html                                  F18.72 (the product)
+tools/sweep/probe-af.mjs                         the batch gate (40 checks; 4th arg = the F18.68 bytes)
 tools/sweep/README.md · .github/workflows/verify.yml
 CHANGE_LEDGER.md                                 new
 LEDGER.md · NOTES.md · CLAUDE.md                 registers

@@ -2,7 +2,7 @@
 // Commission: research/HANDOFF_ESTIMATE_SHEET_b191423.md §5 (the coil case) · rulings R1–R7 · ledger findings
 // F1.4(m), F2.1, F2.3, F3.3, F3.4, F4.1-1..5, F4.3-4, F5.4. RED-first on F18.68 (b191423).
 //   node tools/sweep/probe-af.mjs <ves.html> <demo.json> <repo root> <old ves.html (F18.68 bytes, for AF7)>
-//   AF16–AF29: Batch AG (persona pass 1) · AF30–AF35: Batch AH (persona pass 2)
+//   AF16–AF29: Batch AG (persona pass 1) · AF30–AF35: Batch AH (persona pass 2) · AF36–AF40: Batch AI (persona pass 3)
 //   exit 0 pass / 1 findings / 2 harness
 import { spawn } from 'node:child_process'; import { mkdtempSync, readFileSync } from 'node:fs'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
 const CHROME = process.env.VES_CHROME; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const [VES, DEMO, ROOT, OLD] = process.argv.slice(2);
@@ -369,4 +369,74 @@ await tryEv(`libraryEditItem('ssmr.clips', 'unit_cost', ${JSON.stringify(1)}); 1
 check('AF35 a gated row carries tr.gated (a priced one does not); on a coarse pointer the Library ＋ Add button is ≥ 40 px tall (asserted only where the emulation reports pointer: coarse); Escape in a Library cell reverts the draft, keeps the stored value, says so, and the lens stays open; Enter commits and focus stays in the lens',
   !af35a.error && af35a.gated && af35a.plain === false && !af35b.error && (af35b.coarse ? af35b.btnH >= 40 : true) && !af35c.error && af35c.lensOpen && af35c.value !== '9.99' && af35c.stored === seedClips && /Reverted/.test(af35c.toast)
   && !af35d.error && af35d.lensOpen && af35d.stored === 8.88 && af35d.activeInLens, { a: af35a, b: af35b, c: af35c, d: af35d, seedClips });
+// ═══ Batch AI — persona pass 3 fixes (RED-first on F18.71 = d49ec56; the 1st arg is the build under test) ═══
+// AF36 — a density of 0 is refused at the book and gates on the line; never an included $0 (P-TRADE 3-T1, P-MARKET 3-M4)
+await nav(VES, true);
+const af36 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.coil', 'qty_expr', null); editLine('ssmr.coil', 'params', null); await wait(120);
+  const r1 = libraryEditItem('ssmr.eavedrip', 'density', 0); const libKept = VESApp.state.library.items['ssmr.eavedrip'].density == null;
+  const before = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.coil'); editLine('ssmr.coil', 'density', 0); await wait(150);
+  const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.coil'); const m = VESApp.recapModel(); const cell = document.querySelector('input.fx[data-item="ssmr.coil"]'); const tr = cell && cell.closest('tr');
+  editLine('ssmr.coil', 'density', null);
+  return { r1: r1.error || 'ok', libKept, beforeOrdered: before.ordered, status: l.matchStatus, gate: l.gate, included: l.included, extended: l.extended, excluded: (m.excluded || []).some(x => x.item === 'ssmr.coil'), gatedClass: !!(tr && tr.classList.contains('gated')) }; })()`);
+check('AF36 density 0 is refused in the Library lens (density must be > 0) and a line-level density 0 gates ZERO_QTY — flagged, excluded, the row tinted — never an included $0; density 1.5 still prices 619',
+  !af36.error && /density must be > 0/.test(af36.r1) && af36.libKept && af36.beforeOrdered === 619 && af36.status === 'ZERO_QTY' && /density 0/.test(af36.gate || '') && af36.included === false && af36.extended === null && af36.excluded && af36.gatedClass, af36);
+// AF37 — the Flags list names an unpriced line and its row is tinted; the book refuses a formula that cannot parse but keeps one naming a per-line input; a change-and-back reads as the seed (P-MARKET 3-M3/M2/M1)
+await nav(VES, true);   // a clean browser: the book IS the seed here
+const af37 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} const seedName = libraryIdentity().name; const fp0 = libraryIdentity().fingerprint;
+  libraryEditItem('ssmr.eavedrip', 'cqty_ref', 'ssmr.rake'); const midName = libraryIdentity().name; libraryEditItem('ssmr.eavedrip', 'cqty_ref', 'ssmr.eave'); const backName = libraryIdentity().name; const fp1 = libraryIdentity().fingerprint;
+  showLibrary(true); await wait(200); const head = (document.getElementById('libHead') || {}).textContent || ''; showLibrary(false);
+  const rBad = libraryEditItem('ssmr.eavedrip', 'qty_expr', 'RAW *'); const keptBad = VESApp.state.library.items['ssmr.eavedrip'].qty_expr == null;
+  const rOk = libraryEditItem('ssmr.eavedrip', 'qty_expr', 'RAW * width'); const keptOk = VESApp.state.library.items['ssmr.eavedrip'].qty_expr === 'RAW * width'; libraryEditItem('ssmr.eavedrip', 'qty_expr', null);
+  libraryEditItem('ssmr.underlayment', 'unit_cost', null); VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.field', 1000); await wait(120); VESApp.showEstimate(true); VESApp.renderEstimateGrid(); await wait(150);
+  renderAssembly(); const flags = (document.getElementById('asmFlags') || {}).textContent || ''; const und = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.underlayment');
+  const tr = [...document.querySelectorAll('#estgridBody tr')].find(t => t.querySelector('input.fx[data-item="ssmr.underlayment"]')); VESApp.showEstimate(false);
+  return { seedName, midName, backName, sameFp: fp0 === fp1, head: head.slice(0, 140), rBad: rBad.error || 'ok', keptBad, rOk: rOk.error || 'ok', keptOk, flags: flags.slice(0, 160), undStatus: und.matchStatus, undIncluded: und.included, gatedClass: !!(tr && tr.classList.contains('gated')) }; })()`);
+check('AF37 a library edit changed back reads as the seed again (name and header); "RAW *" is refused by the book as not parsing while "RAW * width" (a per-line input) is kept; a library line with no unit cost is named in the Flags list (no "undefined") and its row is tinted',
+  !af37.error && af37.midName !== af37.seedName && af37.backName === af37.seedName && af37.sameFp && /built-in seed/.test(af37.head) && !/edited in this browser/.test(af37.head)
+  && /unexpected end of expression/.test(af37.rBad) && af37.keptBad && af37.rOk === 'ok' && af37.keptOk && /HT Underlayment/.test(af37.flags) && !/undefined/.test(af37.flags) && af37.undStatus === 'NO_MATCH' && af37.undIncluded === false && af37.gatedClass, af37);
+// AF38 — waste words never say 0 % while the figure moves; the basis column carries clean numbers and a percent; a linked labor line carries its basis; the waste box has a name (P-MARKET 3-M5/M12, P-TRADE 3-T4/T5)
+await nav(VES, true);
+const af38 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.eave', 100); VESApp.addManualQuantity('ssmr.field', 1000); await wait(120);
+  const r = setConditionWaste('ssmr.eave', 0.001); const toast = document.getElementById('toast').textContent; const jl = VESApp.state.journal.undo[VESApp.state.journal.undo.length - 1].label;
+  VESApp.showEstimate(true); VESApp.renderEstimateGrid(); await wait(150); const cell = document.querySelector('input.fx[data-item="ssmr.eavedrip"]'); const words = cell ? cell.closest('tr').querySelector('td.deriv').textContent.replace(/\\s+/g, ' ') : '';
+  setConditionWaste('ssmr.eave', 1.5); await wait(120); gridEntry = false; VESApp.renderEstimateGrid(); await wait(120);
+  const lab = document.querySelector('button.laddm[data-lab="Standing Seam Panel"]'); if (!lab) return { error: 'no ＋ labor button' }; lab.click(); await wait(150); document.getElementById('gePrice').value = '2.5'; commitGridEntry(); await wait(200);
+  window.__blobs.length = 0; exportGridCSV(); await wait(150); const b = window.__blobs.find(x => /estimate-grid\\.csv$/.test(x.name)); const rows = (typeof b.bytes === 'string' ? b.bytes : new TextDecoder().decode(new Uint8Array(b.bytes))).split(/\\r?\\n/);
+  const hdr = rows[0].split(','); const bi = hdr.indexOf('basis'); const drip = rows.find(x => /Eave Drip/.test(x)) || ''; const labRow = rows.find(x => /Standing Seam Panel — labor/.test(x)) || '';
+  const dripBasis = drip.split(',')[bi] || ''; const labBasis = labRow.split(',')[bi] || ''; VESApp.showEstimate(false);
+  const src = VESApp.state.conditions.find(x => x.libRef === 'ssmr.eave'); VESApp.state.expandedCondId = src.id; VESApp.renderCards(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 250)));
+  const inp = document.querySelector('#depthPanel input.cond-waste') || document.querySelector('input.cond-waste');
+  return { stored: r.waste, journal: jl, words: words.slice(0, 120), dripBasis, labBasis, aria: inp ? inp.getAttribute('aria-label') : null, boxVal: inp ? inp.value : null }; })()`);
+check('AF38 waste 0.001 % reads "0.001%" in the journal and the row (never "0%" beside a moved figure); the box redisplays 1.5 as typed; the basis column reads RAW=100;ADJ=101.5;WASTE=1.5% with no float noise; a linked ＋ labor line carries its basis; the waste box carries an aria-label',
+  !af38.error && near(af38.stored, 0.00001, 1e-12) && af38.boxVal === '1.5' && /0\.001%/.test(af38.journal) && /0\.001% waste/.test(af38.words) && af38.dripBasis === 'RAW=100;ADJ=101.5;WASTE=1.5%' && /^RAW=1000;ADJ=1000;WASTE=0%$/.test(af38.labBasis) && /Waste/.test(af38.aria || ''), af38);
+// AF39 — refusal words name the cause; the cue has no "?." seam; Escape on a lens dropdown stays in the lens; Escape with nothing typed says nothing (P-TRADE 3-T6, P-MARKET 3-M7, P-GAME 3-G1/G3)
+const af39a = await tryEv(`(() => { const sc = { RAW: 412.5, ADJ: 412.5, WASTE: 0, Q: 412.5, width: 1.25 }; const t = (e) => { try { return String(VESASM.resolveExpr(e, sc)); } catch (x) { return 'ERR ' + x.message; } }; return { dbl: t('RAW ** 2'), upper: t('RAW*WIDTH'), fn: t('ROUND(RAW)'), ok: t('RAW*width') }; })()`);
+const af39b = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} await wait(150); ${setCell('input.fx[data-item="ssmr.coil"][data-field="qty_expr"]', 'RAW width')}; await wait(150); const cue = (document.getElementById('gridCue') || {}).textContent || ''; ${RESET} return { cue: cue.slice(0, 200) }; })()`);
+await sleep(2000);
+await tryEv(`(async () => { showLibrary(true); await new Promise(r => setTimeout(r, 250)); const s = document.querySelector('#libBody select.lib-edit[data-item="ssmr.clips"][data-field="kind"]'); s.focus(); return 1; })()`);
+await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
+const af39c = await tryEv(`(() => ({ lensOpen: !!VESApp.state.libView }))()`);
+await tryEv(`(async () => { if (!VESApp.state.libView) showLibrary(true); await new Promise(r => setTimeout(r, 250)); document.getElementById('toast').textContent = ''; const i = document.querySelector('#libBody input.lib-edit[data-item="ssmr.clips"][data-field="unit_cost"]'); i.focus(); return 1; })()`);
+await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
+const af39d = await tryEv(`(() => { const r = { lensOpen: !!VESApp.state.libView, toast: document.getElementById('toast').textContent }; showLibrary(false); return r; })()`);
+check('AF39 "RAW ** 2" is refused as an unexpected "*", "RAW*WIDTH" and "ROUND(RAW)" say names are case-sensitive and name the match; the cue after a gate ending in "?" has no "?." seam; Escape on a Library dropdown leaves the lens open; Escape in an untouched Library cell says nothing',
+  !af39a.error && /unexpected "\*"/.test(af39a.dbl) && /case-sensitive/.test(af39a.upper) && /"width"/.test(af39a.upper) && /case-sensitive/.test(af39a.fn) && /"round"/.test(af39a.fn) && af39a.ok === '515.625'
+  && !af39b.error && /missing an operator/.test(af39b.cue) && !/\?\./.test(af39b.cue) && !af39c.error && af39c.lensOpen === true && !af39d.error && af39d.lensOpen === true && af39d.toast === '', { a: af39a, b: af39b, c: af39c, d: af39d });
+// AF40 — the document door on a phone in all four lenses at 390 and 720 px; the landing and README say which lines carry a formula (P-GAME 3-G5, P-MARKET 3-M8)
+await tryEv(`VESApp.loadFromData(window.__demo); 1`); await sleep(400);
+const af40 = {};
+for (const w of [390, 720]) {
+  await c.send('Emulation.setDeviceMetricsOverride', { width: w, height: 844, deviceScaleFactor: 2, mobile: true }); await sleep(250);
+  af40[w] = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); const out = {}; const lenses = { plan: () => { showLibrary(false); showSchedule(false); VESApp.showEstimate(false); }, estimate: () => VESApp.showEstimate(true), schedule: () => showSchedule(true), library: () => showLibrary(true) };
+    for (const [k, go] of Object.entries(lenses)) { go(); await wait(200); const b = document.getElementById('btnDataMenu').getBoundingClientRect(); const v = document.querySelector('.viewtoggle').getBoundingClientRect(); const br = (document.getElementById('brand') || { getBoundingClientRect: () => ({ right: 0 }) }).getBoundingClientRect();
+      out[k] = { left: Math.round(b.left), right: Math.round(b.right), h: Math.round(b.height), overlapSeg: Math.max(0, Math.min(b.right, v.right) - Math.max(b.left, v.left)), overlapBrand: Math.max(0, Math.min(b.right, br.right) - Math.max(b.left, br.left)), vis: b.width > 0 }; }
+    lenses.plan(); return out; })()`);
+}
+await c.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }); await sleep(250);
+const af40w = await tryEv(`(() => ({ landing: (document.querySelector('.empty-safe') || {}).textContent || '' }))()`);
+const readme2 = readFileSync(join(ROOT, 'README.md'), 'utf8');
+const doorOk = (o) => o && !o.error && Object.values(o).every((r) => r.vis && r.left >= 0 && r.h <= 26 && r.overlapSeg === 0 && r.overlapBrand === 0);
+check('AF40 on a 390 px and a 720 px phone with a sheet live, in every lens (Plan, Estimate, Schedule, Library) the document door is on screen, one line tall, clear of the segments and the brand; landing and README say a LIBRARY-priced line carries its own formula and inputs',
+  doorOk(af40[390]) && Object.values(af40[390]).every((r) => r.right <= 390) && doorOk(af40[720]) && Object.values(af40[720]).every((r) => r.right <= 720)
+  && /library-priced line/.test(af40w.landing || '') && /library-priced line/.test(readme2), { p390: af40[390], p720: af40[720], landing: /library-priced line/.test(af40w.landing || ''), readme: /library-priced line/.test(readme2) });
 const fails = results.filter((r) => !r.ok).length; console.log(`\nprobe-af: ${results.length - fails}/${results.length} passed, ${fails} failed`); c.close(); chrome.kill('SIGKILL'); process.exit(fails ? 1 : 0);
