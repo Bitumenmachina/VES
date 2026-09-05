@@ -9,6 +9,9 @@ truth first, history compressed.
 > Plain-language summary of the test build, what changed build by build, and what the next seat can work on:
 > `research/WHATS_NEW_F18.72.md` — read it first. The entries below are the seat's record.
 > Next seat's charge (Patrick, 2026-09-05): `research/HANDOFF_FABLE_NEXT.md` — is this ready to go, and what drifted.
+> Answered from bytes 2026-09-05: `research/READINESS_F18.72.md` — gates green, coil case 9/9 through the doors, every
+> synthetic takeoff prices identically on F18.68 and F18.72; one ruling for Patrick (a seed library formula at zero
+> quantity now gates ZERO_QTY and prints under "Not included"); drift is in the record, not the product.
 
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
