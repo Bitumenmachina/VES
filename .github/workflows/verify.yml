@@ -69,7 +69,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-      - name: probe-v batch gate
+      - name: sweep probes (probe-v … probe-af)
         shell: bash
         env:
           VES_CHROME: google-chrome
@@ -97,14 +97,20 @@ jobs:
           code9=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code9
           node tools/sweep/probe-ae.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan.pdf" "$PWD" 2>&1 | tee -a probes.txt
           code10=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code10
-          # Batch AF: probe-af needs the F18.68 bytes (b191423) to prove the old build drops a line formula LOUDLY (AF7).
-          # The checkout is shallow, so the one commit is fetched by SHA; the file never enters the working tree.
-          git fetch --no-tags --depth=1 origin b191423 2>&1 | tee -a probes.txt
-          git show b191423:src/VES_PM.html > "$RUNNER_TEMP/VES_F18.68.html"
-          node tools/sweep/probe-af.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" "$RUNNER_TEMP/VES_F18.68.html" 2>&1 | tee -a probes.txt
-          code11=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code11
+          # Batch AF: probe-af needs the F18.68 bytes to prove the old build drops a line formula LOUDLY (AF7).
+          # The checkout is shallow, so the one commit is fetched by its FULL sha (git fetch takes a full object name,
+          # never an abbreviation — Batch AG, P-SEAT pass 1 finding 2); the file never enters the working tree.
+          OLD_SHA=b1914230a48a6f0fb8a7d0a3dfd67955a14c1721
+          git fetch --no-tags --depth=1 origin "$OLD_SHA" 2>&1 | tee -a probes.txt
+          if git show "$OLD_SHA:src/VES_PM.html" > "$RUNNER_TEMP/VES_F18.68.html" && [ -s "$RUNNER_TEMP/VES_F18.68.html" ]; then
+            node tools/sweep/probe-af.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" "$RUNNER_TEMP/VES_F18.68.html" 2>&1 | tee -a probes.txt
+            code11=${PIPESTATUS[0]}
+          else
+            echo "HARNESS FAIL: could not materialise the F18.68 bytes ($OLD_SHA) for probe-af" | tee -a probes.txt; code11=2
+          fi
+          [ "$code" = 0 ] && code=$code11
           {
-            echo '## probe-v'
+            echo '## sweep probes'
             echo
             echo '```'
             cat probes.txt

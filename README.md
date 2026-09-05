@@ -5,7 +5,10 @@ calibration, traced measurement), condition-based pricing, assemblies, margins/O
 client documents (bid, proposal, cost sheet) — no build step, no package manager, no runtime
 network egress. Open the file in a browser; that is the whole install. **No seat fee, no report fee, no
 device limit, no login** — copy the file to any machine and it works there. Every quantity is auditable: the Audit CSV
-records who measured it, on which sheet, at what calibration; the bid prints the sheet beside each line.
+records who measured it, on which sheet, at what calibration; the bid prints the sheet beside each line. Every priced
+line shows how its quantity was derived (the measurement, the library's coverage / density / formula, the inputs, the
+ordered figure) and can carry its own formula and inputs; the Library lens shows and edits the whole price book; the
+Estimate workbook carries the derivation and a live ladder.
 
 **The product is `src/VES_PM.html`** — the build stamp in the app's own chrome (`VES_BUILD`, shown in the
 corner) is the authority; `CLAUDE.md` §Identity carries the current hash. The repo around it

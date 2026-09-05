@@ -2,8 +2,9 @@
 
 Every product byte moved by this batch, keyed to the finding it answers in
 `research/FINDINGS_ESTIMATE_SHEET_b191423.md` (the recon ledger; line numbers there are against F18.68) and to the
-commission's rulings R1–R7. Anchors are function names — the durable handle — with the F18.69 line as of this write.
+commission's rulings R1–R7. Anchors are function names — the durable handle; no line numbers are carried here.
 Evidence column names the probe check (`tools/sweep/probe-af.mjs`) that proves the change on the bytes.
+Batch AG (F18.70) rows follow the AF table, keyed to LEDGER.md §Batch AG (persona pass 1).
 Synthetic aliases only. No client, project, address, or job dollar figure.
 
 Standing: branch, never `main`. Acceptance is Patrick's cold run of the coil case (commission §5); nothing here is
@@ -29,6 +30,27 @@ Standing: branch, never `main`. Acceptance is Patrick's cold run of the coil cas
 | AF-16 | F2.1 (desc lost on round-trip) | interchange | `COLS.items` gains `desc` and `params` (`kv` column, `name=value|…`); `tabsToLibrary` reads both; `validateLibrary` checks params (identifier names, not reserved, finite) and `qty_expr` type | `COLS` · `libraryToTabs` `cell()` · `tabsToLibrary` · `validateLibrary` rule 3 | AF12 (`rtDesc`, `rtParams`) |
 | AF-17 | commission ("no … VESApp export") | VESApp | additive: `editLine, isLineOverridden, setConditionWaste, showLibrary, renderLibraryLens, libraryEditItem, libraryUpsertItem, exportGridCSV, exportEstimateXLSX, estimateRows, parseParamsText` | `window.VESApp` | (probes call the globals; the doors exist) |
 | AF-18 | — | build stamp | `VES_BUILD = 'F18.69'` with the batch entry; hotkey card row for `L`; seed `tildes` comment states the scope | `VES_BUILD` · `openHotkeys` · `VES_LIBRARY.tildes` | — |
+
+## Batch AG — persona pass 1 fixes (F18.70)
+
+| # | LEDGER row | surface | what moved | anchor | evidence |
+|---|---|---|---|---|---|
+| AG-1 | AG-T5 | engine | a line formula evaluating to exactly 0 gates `ZERO_QTY` (flagged, excluded, said); library drivers unchanged | `resolveItem` (after the BAD_QTY gate) | AF16 |
+| AG-2 | AG-T8 | engine | the parser names the unexpected token and the one before it | `resolveExpr` | AF29 |
+| AG-3 | AG-T7 · AG-G5 | write door | after a commit: the cue clears on a good line; with a typed qty the dormant formula is evaluated against the row's inputs and the cue says the typed qty stands and the verdict | `afterFormulaEdit` | AF20 · AF28 |
+| AG-4 | AG-M1 | library | authored-item ids from the library's own counter; the Setup form too | `nextLibraryUserId` · `libraryUpsertItem` · `addAssemblyItem` | AF17 |
+| AG-5 | AG-M7 | library | blank CSI / match code default to the assembly's | `libraryUpsertItem` | AF24 |
+| AG-6 | AG-T10 | library | edit toast: the book changed, every takeoff priced from it follows, no project override written; desc fallback | `libraryEditItem` | AF29 |
+| AG-7 | AG-M6 · AG-M9 · AG-G10 · AG-G9 | Library lens | per-cell accent vs the built-in seed (`.ov`, title carries the seed's value); "authored here" on non-seed items; match-code column instead of a second Description; ＋ Add beside the description; coarse-pointer rule; provenance said once | `renderLibraryLens` · CSS `.libgrid` | AF25 |
+| AG-8 | AG-G1 · AG-G2 | toolbar | document-door pin `right: 342px` (three sites); segments drop their words under 720 px; the control's title says four lenses | CSS `#dataMenuWrap` pins · `.viewtoggle` media rule · markup | AF18 |
+| AG-9 | AG-G3 | grid | Escape in a cell reverts, blurs, stops at the cell, says "Reverted" | `moneyCellKeys` | AF19 (control) |
+| AG-10 | AG-M2 · AG-T9 · AG-T11 | grid | derivation words carry the item waste; a FIXED formula reads "fixed Q"; "line value" vs "line formula"; the Formula cell title says what Q is; the Waste header says item waste; card and cell titles say "this takeoff's line value" | `derivSummary` · `derivCell` · thead · `recapEditCell` · `overrideInput` | AF21 |
+| AG-11 | AG-G6 · AG-G7 · AG-G8 · AG-T12 | entry row | measure select after the unit (markup + `GENTRY_WALK`); funnel line in the description cell; empty-row text; closest-name hint; case/dash-forgiving name match | entry-row markup · `libNameKey` · `libCondByLabel` · `libCondClosest` · `entryFunnelWords` | AF22 |
+| AG-12 | AG-G12 · AG-T13 | waste door | non-number sentence; a refused value never stays in the box | `setConditionWaste` · `buildCondWasteRow` | AF23 |
+| AG-13 | AG-T2 · AG-G16 | exports | qty needed numeric in the workbook; ladder labels "(× Pct)"; BOM trailing headers in Title Case | `exportEstimateXLSX` · `exportBOMCSV` | AF26 · AF4 |
+| AG-14 | AG-M5 · AG-M10 · AG-T16 | landing · sheet foot · README | the derivation, the line formula and the Library lens are named; the scope is on the sheet foot | landing `.empty-safe` · `.gaddhint` · README | AF27 |
+| AG-15 | AG-S2 | CI | probe-af fetches the F18.68 bytes by full sha; exit captured; step renamed | `.github/workflows/verify.yml` | CI run on the push |
+| AG-16 | — | build stamp | `VES_BUILD = 'F18.70'` with the batch entry | `VES_BUILD` | — |
 
 ## What did not move (commission §6)
 G0's twelve recap keys and eight line keys (4/4 on every commit) · probe-v V2 demo sell 64,620.46 · probe-u's four

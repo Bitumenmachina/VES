@@ -203,4 +203,96 @@ const af15 = await tryEv(`(() => { VESApp.state.conditions = []; VESApp.state.me
 check('AF15 control: a verify-flagged line paints the "estimated" dot, an OBS-priced line the "manual" dot, a STD line the firm dot (holds on F18.68)',
   !af15.error && af15.clips === 'var(--est)' && af15.panel === 'var(--assumed)' && af15.und === 'var(--firm)', af15);
 
+// ═══ Batch AG — persona pass 1 fixes (RED-first on F18.69 = a63af32; the 1st arg is the build under test, the 4th the F18.68 bytes) ═══
+const RESET = `VESApp.state.conditions = []; VESApp.state.measurements = []; VESApp.newTakeoff();`;
+const COILBUILD = `${RESET} VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.eave', 412.5); const proj = VESApp.state.assemblyProject; proj.settings = proj.settings || {}; proj.settings.overheadPct = 10; proj.settings.markupPct = 8; proj.settings.profitPct = 5;
+  if (!VESApp.state.library.items['ssmr.coil']) libraryUpsertItem('ssmr', 'ssmr.coil', ${JSON.stringify(COIL)});
+  editLine('ssmr.coil', 'qty_expr', 'RAW * width * lbsf'); editLine('ssmr.coil', 'params', { width: 1.25, lbsf: 1.156 }); VESApp.showEstimate(true); VESApp.renderEstimateGrid();`;
+// AF16 — a formula that evaluates to 0 is a gate, never a silent $0 (P-TRADE 5)
+const af16 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} await wait(150);
+  editLine('ssmr.coil', 'params', { width: 0, lbsf: 1.156 }); await wait(150); const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.coil'); const m = VESApp.recapModel();
+  const cell = document.querySelector('input.fx[data-item="ssmr.coil"]'); const row = cell && cell.closest('tr'); const txt = row ? row.querySelector('td.deriv').textContent : '';
+  return { status: l.matchStatus, gate: l.gate, included: l.included, extended: l.extended, excluded: (m.excluded || []).some(x => x.item === 'ssmr.coil'), rowText: txt.replace(/\\s+/g, ' ').slice(0, 200) }; })()`);
+check('AF16 a line formula that evaluates to 0 gates the line (ZERO_QTY) — flagged, excluded, said on the row — never an included $0',
+  !af16.error && af16.status === 'ZERO_QTY' && /evaluated to 0/.test(af16.gate || '') && af16.included === false && af16.extended === null && af16.excluded === true && /ZERO_QTY/.test(af16.rowText || ''), af16);
+// AF17 — the authored-item id comes from the library, so a fresh takeoff's counter never replaces yesterday's item (P-MARKET 1)
+const af17 = await tryEv(`(() => { ${RESET} VESApp.state.nextId = 1; const a = libraryUpsertItem('ssmr', null, { desc: 'First (synthetic)', cqty_ref: 'FIXED', unit: 'EA', unit_cost: 1 }); VESApp.state.nextId = 1;
+  const b = libraryUpsertItem('ssmr', null, { desc: 'Second (synthetic)', cqty_ref: 'FIXED', unit: 'EA', unit_cost: 2 }); const it = VESApp.state.library.items;
+  return { idA: a.id, idB: b.id, firstKept: !!(it[a.id] && it[a.id].desc === 'First (synthetic)'), secondKept: !!(it[b.id] && it[b.id].desc === 'Second (synthetic)') }; })()`);
+check('AF17 two ＋ Adds with the takeoff counter reset between them (a reload) give two items — the first is kept', !af17.error && af17.idA !== af17.idB && af17.firstKept && af17.secondKept, af17);
+// AF18 — the fourth segment does not cover the document door; on the phone the segments shed their words (P-GAME 1)
+const af18 = await tryEv(`(() => { const r = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }; const vt = document.querySelector('.viewtoggle'), fb = document.getElementById('btnDataMenu');
+  const fr = fb.getBoundingClientRect(), vr = vt.getBoundingClientRect(); const overlap = Math.max(0, Math.min(fr.right, vr.right) - Math.max(fr.left, vr.left)); const hit = document.elementFromPoint(fr.left + fr.width / 2, fr.top + fr.height / 2);
+  return { vt: r(vt), files: r(fb), overlap, hitIsDoor: !!(hit && (hit.id === 'btnDataMenu' || hit.closest('#dataMenuWrap'))), title: vt.title }; })()`);
+await c.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true }); await sleep(300);
+const af18m = await tryEv(`(() => { const vt = document.querySelector('.viewtoggle').getBoundingClientRect(); const br = (document.getElementById('brand') || document.querySelector('#brand')); const b = br ? br.getBoundingClientRect() : { right: 0 }; return { vtW: vt.width, vtLeft: vt.left, brandRight: b.right, overlapBrand: Math.max(0, b.right - vt.left) }; })()`);
+await c.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }); await sleep(300);
+check('AF18 at 1440 the Files & exports button is not under the lens segments and is the element at its own centre; the segment title says four lenses; on a 390 px phone the segments are under 200 px wide and clear of the brand',
+  !af18.error && af18.overlap === 0 && af18.hitIsDoor && /four lenses/.test(af18.title || '') && !af18m.error && af18m.vtW < 200 && af18m.overlapBrand === 0, { desktop: af18, phone: af18m });
+// AF19 — Escape in a grid cell reverts the cell and leaves the lens open (P-GAME 3) — a real key through CDP
+await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} await wait(150); const fx = document.querySelector('input.fx[data-item="ssmr.coil"]'); fx.focus(); fx.value = 'RAW * 9'; return 1; })()`);
+await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
+const af19 = await tryEv(`(() => { const fx = document.querySelector('input.fx[data-item="ssmr.coil"]'); return { lensOpen: !!VESApp.state.gridView, value: fx ? fx.value : null, stored: (VESApp.state.assemblyProject.lineOverrides['ssmr.coil'] || {}).qty_expr }; })()`);
+check('AF19 control: a real Escape in the Formula cell reverts the draft, keeps the stored formula, and the Estimate lens stays open (holds on F18.69 — P-GAME pass 1 finding 3 is refuted by its own body class; AG adds the cue and stops the key at the cell)', !af19.error && af19.lensOpen && af19.value === 'RAW * width * lbsf' && af19.stored === 'RAW * width * lbsf', af19);
+// AF20 — the lens cue clears after a good commit (P-GAME 5)
+const af20 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} await wait(150);
+  ${setCell('input.fx[data-item="ssmr.coil"][data-field="qty_expr"]', 'RAW * widht')}; await wait(150); const cueBad = (document.getElementById('gridCue') || {}).textContent || '';
+  ${setCell('input.fx[data-item="ssmr.coil"][data-field="qty_expr"]', 'RAW * width * lbsf')}; await wait(150); const cue = document.getElementById('gridCue');
+  return { cueBad: cueBad.slice(0, 80), cueAfter: (cue.textContent || '').slice(0, 80), hidden: cue.hidden }; })()`);
+check('AF20 a bad formula puts its reason in the lens cue; fixing it clears the cue', !af20.error && /widht/.test(af20.cueBad) && af20.cueAfter === '' && af20.hidden === true, af20);
+// AF21 — item waste is in the derivation words (P-MARKET 2)
+const af21 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.eavedrip', 'waste', 0.10); await wait(150);
+  const cell = document.querySelector('input.fx[data-item="ssmr.eavedrip"]'); const txt = cell ? cell.closest('tr').querySelector('td.deriv').textContent.replace(/\\s+/g, ' ') : ''; const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.eavedrip');
+  return { txt: txt.slice(0, 160), ordered: l.ordered, wasteTitle: (document.querySelector('.estgrid thead th:nth-child(6)') || {}).title || '' }; })()`);
+check('AF21 the derivation says the item waste that turns needed into ordered (412.5 + 10% item waste → 454 LF) and the Waste header says it is item waste',
+  !af21.error && /10% item waste/.test(af21.txt) && af21.ordered === 454 && /Item waste/.test(af21.wasteTitle), af21);
+// AF22 — entry row: the funnel line sits under the description, the measure select follows the unit, the matcher forgives case and dash, a partial names the closest name (P-GAME 6/7/8, P-TRADE 12)
+const af22 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.field', 1000); await wait(100); gridEntry = false; VESApp.showEstimate(true); VESApp.renderEstimateGrid(); await wait(150); document.getElementById('gAddInline').click(); await wait(150);
+  const mode = document.getElementById('geMode'); const inFirstCell = mode.closest('td') === mode.closest('tr').firstElementChild; const ids = [...document.querySelectorAll('tr.gentry input, tr.gentry select')].map(e => e.id).filter(Boolean);
+  const desc = document.getElementById('geDesc'); const t = () => mode.textContent; const empty = t();
+  desc.value = 'ssmr ea'; desc.dispatchEvent(new Event('input', { bubbles: true })); await wait(50); const partial = t();
+  desc.value = 'ssmr - eave'; desc.dispatchEvent(new Event('input', { bubbles: true })); await wait(50); const loose = t();
+  return { inFirstCell, order: ids.join(','), empty: empty.slice(0, 60), partial: partial.slice(-90), loose: loose.slice(0, 40) }; })()`);
+check('AF22 the funnel line is in the description cell; the walk is desc, csi, kind, qty, unit, measure, price; an empty row explains both paths; a partial names the closest library name; "ssmr - eave" matches the library name',
+  !af22.error && af22.inFirstCell && /geDesc,geCsi,geKind,geQty,geUnit,geType,gePrice/.test(af22.order) && /^Type a description/.test(af22.empty) && /Closest library name/.test(af22.partial) && /^Library/.test(af22.loose), af22);
+// AF23 — a refused waste value never stays in the box; a non-number gets its own sentence (P-GAME 12, P-TRADE 13)
+const af23 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.eave', 100); await wait(100); VESApp.showEstimate(false);
+  const src = VESApp.state.conditions.find(x => x.libRef === 'ssmr.eave'); VESApp.state.expandedCondId = src.id; VESApp.renderCards(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 250)));
+  const inp = document.querySelector('#depthPanel input.cond-waste') || document.querySelector('input.cond-waste'); if (!inp) return { error: 'no waste input' };
+  inp.value = 'abc'; inp.dispatchEvent(new Event('change', { bubbles: true })); await wait(100); const toastAbc = document.getElementById('toast').textContent; const valAbc = inp.value;
+  inp.value = '-1'; inp.dispatchEvent(new Event('change', { bubbles: true })); await wait(100); const valNeg = inp.value; const store = VESApp.state.assemblyProject.conditionOverrides['ssmr.eave'];
+  return { toastAbc, valAbc, valNeg, store: store || null }; })()`);
+check('AF23 "abc" in the waste box is refused as not a number and the box returns to what it showed; "-1" likewise; nothing is stored',
+  !af23.error && /is not a number/.test(af23.toastAbc) && af23.valAbc === '' && af23.valNeg === '' && af23.store === null, af23);
+// AF24 — a new library item with no CSI lands under the assembly's code (P-MARKET 7)
+const af24 = await tryEv(`(() => { ${RESET} const r = libraryUpsertItem('ssmr', null, { desc: 'No-CSI (synthetic)', cqty_ref: 'FIXED', unit: 'EA', unit_cost: 1 }); const it = VESApp.state.library.items[r.id]; return { csi: it && it.csi, match: it && it.match_code, asm: VESApp.state.library.assemblies.ssmr.csi }; })()`);
+check('AF24 a new item added without a CSI carries the assembly\'s CSI and match code', !af24.error && af24.csi === af24.asm && af24.match === af24.asm && !!af24.asm, af24);
+// AF25 — the Library lens marks a cell that differs from the seed, carries match code, and its ＋ Add button sits by the description (P-MARKET 6/9, P-GAME 10)
+const af25 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} libraryEditItem('ssmr.eavedrip', 'unit_cost', 4.25); showLibrary(true); await wait(200);
+  const edited = document.querySelector('#libBody input.lib-edit.ov[data-item="ssmr.eavedrip"][data-field="unit_cost"]'); const plain = document.querySelector('#libBody input.lib-edit[data-item="ssmr.clips"][data-field="unit_cost"]');
+  const mc = document.querySelector('#libBody [data-item="ssmr.clips"][data-field="match_code"]'); const addBtn = document.querySelector('#libBody tr.libadd[data-asm="ssmr"] button.libAddBtn'); const inFirst = addBtn && addBtn.closest('td') === addBtn.closest('tr').firstElementChild;
+  const coilRow = document.querySelector('#libBody tr[data-item="ssmr.coil"]'); const authored = coilRow ? /authored here/.test(coilRow.textContent) : null; showLibrary(false);
+  return { edited: !!edited, plainOv: !!(plain && plain.classList.contains('ov')), matchCode: !!mc, addInFirst: !!inFirst, authored }; })()`);
+check('AF25 Library lens: an edited seed value reads in the accent, an untouched one does not; match code is a column; ＋ Add sits in the description cell; an item the seed lacks says "authored here"',
+  !af25.error && af25.edited && af25.plainOv === false && af25.matchCode && af25.addInFirst && af25.authored === true, af25);
+// AF26 — the workbook's qty-needed cell is numeric and the ladder labels do not bake a percentage (P-TRADE 2a/2b)
+const af26 = await tryEv(`(async () => { ${COILBUILD} await new Promise(r => setTimeout(r, 150)); window.__blobs.length = 0; exportEstimateXLSX(); const f = window.__blobs.find(x => /estimate.*\\.xlsx$/.test(x.name)); return { bytes: f ? f.bytes : null }; })()`);
+let af26ok = false, af26d = {};
+if (!af26.error && af26.bytes) { const rows = cells(sheets(af26.bytes)[0] || ''); const coil = rows.find((r) => r.C && /coil/i.test(r.C.t || '')) || {}; const oh = rows.find((r) => r.C && /^Overhead/.test(r.C.t || '')) || {};
+  af26d = { M: coil.M, ohLabel: oh.C && oh.C.t, ohF: oh.G && oh.G.f }; af26ok = !!(coil.M && typeof coil.M.v === 'number' && Math.abs(coil.M.v - 596.0625) < 1e-9 && coil.M.t === null && /Pct/.test(af26d.ohLabel || '') && !/%/.test(af26d.ohLabel || '') && /I\d+/.test(af26d.ohF || '')); }
+check('AF26 the Estimate .xlsx writes Qty needed as a number cell and labels the ladder rows by the Pct cell, not a baked percentage', af26ok, af26d);
+// AF27 — landing, README and the sheet say what the batch does (P-MARKET 5/10, P-TRADE 16)
+const af27 = await tryEv(`(() => { const land = (document.querySelector('.empty-safe') || {}).textContent || ''; ${RESET} VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.field', 1000); gridEntry = false; VESApp.showEstimate(true); VESApp.renderEstimateGrid(); const hint = (document.querySelector('.gaddhint') || {}).textContent || ''; VESApp.showEstimate(false); return { landing: /how its quantity was derived/.test(land) && /Library lens/.test(land), hint: /RAW \\(measured\\)/.test(hint) && /ceil floor round/.test(hint) }; })()`);
+const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+check('AF27 the landing and the README name the derivation on every line and the Library lens; the sheet foot names the formula scope', !af27.error && af27.landing && af27.hint && /how its quantity was derived/.test(readme) && /Library lens/.test(readme), { ...af27, readme: /Library lens/.test(readme) });
+// AF28 — a formula typed while a qty is typed is checked and the cue says the typed qty stands (P-TRADE 7)
+const af28 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.coil', 'qty', 600); await wait(150);
+  ${setCell('input.fx[data-item="ssmr.coil"][data-field="qty_expr"]', 'RAW * widht')}; await wait(150); const cue = (document.getElementById('gridCue') || {}).textContent || ''; const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.coil');
+  return { cue: cue.slice(0, 200), ordered: l.ordered, status: l.matchStatus }; })()`);
+check('AF28 with a typed qty on the row, a bad formula is still checked: the cue says the typed 600 stands and that the formula does NOT evaluate; the line prices on 600', !af28.error && /typed quantity 600/.test(af28.cue) && /does NOT evaluate/.test(af28.cue) && af28.ordered === 600 && af28.status === 'MATCHED', af28);
+// AF29 — a dropped operator names the token (P-TRADE 8); the Library toast says the takeoff follows the book (P-TRADE 10)
+const af29 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.coil', 'qty_expr', 'RAW width'); await wait(100); const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.coil');
+  libraryEditItem('ssmr.eavedrip', 'unit_cost', 4.5); const toast = document.getElementById('toast').textContent; return { gate: l.gate, toast }; })()`);
+check('AF29 "RAW width" gates as unexpected "width" after "RAW" — missing an operator; a library edit\'s toast says every takeoff priced from the book follows',
+  !af29.error && /unexpected "width" after "RAW"/.test(af29.gate || '') && /every takeoff priced from it/.test(af29.toast || ''), af29);
 const fails = results.filter((r) => !r.ok).length; console.log(`\nprobe-af: ${results.length - fails}/${results.length} passed, ${fails} failed`); c.close(); chrome.kill('SIGKILL'); process.exit(fails ? 1 : 0);

@@ -39,9 +39,9 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-04, cloud seat, branch claude/estimate-sheet-depth-vrhnf6 — a TEST BUILD, not main)
 - canonical file: src/VES_PM.html
-- build: F18.69 (Batch AF — Estimate sheet depth: the sheet renders what it computes, and a formula can live on the line)
-- bytes: 3633084
-- sha256: 0ba7e3c4c95b9a88f900902612d47fc867354b8b657d81926402db1eea177661
+- build: F18.70 (Batch AG — persona pass 1 on F18.69, answered; F18.69 = Batch AF — Estimate sheet depth: the sheet renders what it computes, and a formula can live on the line)
+- bytes: 3646306
+- sha256: dea73046e5206a0c76d74a2acf30fb26cdcab7ce6c2ccf2703508ea239d65895
 - on `main`: F18.68 (Batch AE), 3570752 bytes, sha256 494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760 — the line that moves forward until Patrick accepts this branch.
 - priors: see NOTES.md §State (F18.67 Batch U · F18.66 Batch AD · F18.65 Batch AB · F18.64 Batch AC · F18.63 Batch AA · F18.62 Batch Z · F18.61 Batch X · F18.60 Batch W · F18.59 Batch V = fresh root `4920c35`).
 - history: the public line was restarted from a fresh root on 2026-09-01 (Patrick's ruling after the C3 scrub). The

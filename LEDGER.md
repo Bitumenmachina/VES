@@ -93,6 +93,52 @@ you can't trust it"); each is his to veto — a veto is a row here, not a redesi
 | AF-P | **Price unit** (R5): out of scope, not added; every surface showing a unit cost now says "per order unit". Follow-on named in the handoff. | headers | open (follow-on) |
 | AF-F | **Freeze fence**: the `engine` region was edited on purpose. The manifest does not exist, so the fence gated nothing on F18.68 and gates nothing here; the verifier reports `manifest absent`. Patrick writes the manifest on the accepted pre-batch build before this branch is reviewed for merge. | — | Patrick's act |
 
+## Batch AG — persona pass 1 on F18.69 (TEST BUILD F18.70 on the same branch)
+
+Owner's word 2026-09-04: "You may run persona pass if accepted finalize build and push to main run in loop." Four
+read-only personas ran on the F18.69 bytes (main checkout, absolute paths; synthetic fixtures). The seat triaged by the
+NOTES.md rubric: (a) money-honesty → fixed · (b) bar-backed → fixed if P0/HIGH · (c) taste → CANDIDATE · (d) contradicts a
+ruling → tension. A finding closes only by the filing persona's re-run (pass 2). Product rows are in `CHANGE_LEDGER.md`
+(AG-1…); probe rows AF16–AF29 are RED-first on F18.69 (13 of 14 red; AF19 a control).
+
+| id | persona | finding (what was SEEN) | disposition |
+|---|---|---|---|
+| AG-T5 | P-TRADE | `width=0` in a line formula priced the coil as $0, included, unflagged — sell down by the whole line with nothing in Flags | (a) FIXED F18.70 — a formula evaluating to 0 gates `ZERO_QTY` (excluded, said on the row); library drivers keep their standing behaviour (AF16) |
+| AG-T7 | P-TRADE | with a typed Qty on the row, `RAW * widht` was stored silently; the typo surfaced only when the Qty was cleared | (a) FIXED F18.70 — the formula is checked against the row's inputs at commit; the cue says the typed qty stands and whether the dormant formula evaluates (AF28) |
+| AG-T8 | P-TRADE | `RAW width` gated as "trailing tokens in expression" — a parser word naming no token | (b) FIXED F18.70 — `unexpected "width" after "RAW" — missing an operator` (AF29) |
+| AG-M1 | P-MARKET | Library ＋ new item after a reload reused `ssmr.user.1` and silently replaced the first item (id from the takeoff's counter) | (a) FIXED F18.70 — id from the library's own counter (`nextLibraryUserId`); the Setup form uses it too (AF17) |
+| AG-G1 | P-GAME | the fourth lens segment painted over Files & exports at every scale and on the phone (regression from F18.68) | (a) FIXED F18.70 — the document-door pin moved with the wider control; segments shed their words under 720 px (AF18) |
+| AG-M2 | P-MARKET | the derivation read "as is = 433.13 → 477 LF" — the 10 % item waste between needed and ordered was in no words | (a) FIXED F18.70 — `= 433.13 + 10% item waste → 477 LF`; the Waste header says it is item waste (AF21) |
+| AG-T10 · AG-G10 | P-TRADE · P-GAME | the Library toast said "not this takeoff" while the open takeoff's sell moved by the edit | (a) FIXED F18.70 — "every takeoff priced from it (this one included) now reads that value; no project override was written" (AF29) |
+| AG-G5 | P-GAME | the lens cue kept the last error after a good commit | (b) FIXED F18.70 — cleared on a good commit (AF20) |
+| AG-G3 | P-GAME | Escape in a Formula cell "closed the whole Estimate lens" | REFUTED-with-evidence — the persona's own output carries `body: "… grid-view …"`, i.e. the lens stayed open; the draft revert is the designed Escape (D-25.2a). AG still stops the key at the cell and says "Reverted" (AF19, a control) |
+| AG-G6 · AG-T12 | P-GAME · P-TRADE | the measure select sat before the unit in the Tab walk, and the unit typed after it overwrote it | (b) FIXED F18.70 — measure follows the unit in the row and the walk (AF22) |
+| AG-G7 | P-GAME | the funnel line said "Free line" before anything was typed; the library funnel needed exact case and the em dash | (b) FIXED F18.70 — an empty row explains both paths; a partial names the closest library name; the name match forgives case and dash (AF22) |
+| AG-G8 | P-GAME | phone: the funnel line and ✓ Add were three screens to the right of the description | (b) FIXED F18.70 — the funnel line sits in the description cell (AF22); ✓ Add stays in the Total column (recorded) |
+| AG-G9 | P-GAME | Library lens cells 26 px tall on the phone; segments 20 px | (b) FIXED F18.70 for the lens cells (coarse-pointer rule); the 20 px segments sit in a 24 px bar — queued with G-08 for the Field lens |
+| AG-G10 | P-GAME | Library lens ＋ Add button 1,721 px to the right; 164 rows re-render in 218 ms per edit | (b) FIXED F18.70 — the button sits by the description (AF25); the re-render cost is a CANDIDATE (C-AG1) |
+| AG-M6 | P-MARKET | the Library lens had no seed-vs-edited colouring per cell | (b) FIXED F18.70 — a cell that differs from the built-in seed reads in the accent with the seed's value in its title; an item the seed lacks says "authored here" (AF25) |
+| AG-M7 | P-MARKET | a new item with a blank CSI exported under the division only and printed "—" | (b) FIXED F18.70 — blank CSI lands under the assembly's code (AF24); the grid's group header borrowing its first row's CSI is pre-existing — CANDIDATE (C-AG2) |
+| AG-M9 | P-MARKET | the lens listed `desc` twice and lacked `match_code` | (b) FIXED F18.70 (AF25) |
+| AG-M5 | P-MARKET | the formula scope names were tooltip-only on the sheet | (b) FIXED F18.70 — the sheet foot names RAW · ADJ · WASTE · Q (by kind) · inputs · the six functions (AF27) |
+| AG-T9 | P-TRADE | `Q` changes meaning by kind (RAW for labor, ADJ for material) and the title did not say; a FIXED formula showed "RAW 1 · ADJ 1  =" | (b) FIXED F18.70 — the cell title says it; a FIXED formula reads "fixed Q 1" (AF29 area, by inspection) |
+| AG-T11 | P-TRADE | the chip said "line formula" for any LINE-level number; card titles said "project override" for the same record | (b) FIXED F18.70 — "line value" for a line-level number, "line formula" for a formula; card and cell titles say "this takeoff's line value" |
+| AG-G12 · AG-T13 | P-GAME · P-TRADE | the waste box kept "-1" after refusal and gave "abc" the negative-number sentence | (b) FIXED F18.70 (AF23) |
+| AG-T2 | P-TRADE | workbook: qty needed written as a string; ladder labels bake "(10%)" beside a live Pct cell | (b) FIXED F18.70 — number cell; labels "(× Pct)" (AF26) |
+| AG-G16 | P-GAME | BOM CSV header mixed Title Case and lowercase | (c) FIXED F18.70 — Title Case |
+| AG-M10 · AG-T16 | P-MARKET · P-TRADE | landing and README said nothing of the derivation, the line formula or the Library lens (VES claims less than it does); the lens header said "edited in this browser" twice | (b) FIXED F18.70 (AF27); header said once |
+| AG-S2 | P-SEAT | CI's probe-af step fetched `b191423` (an abbreviation) on a shallow checkout — git fetch takes a full object name; the branch's first run (51) was red on the probes job | (a) FIXED F18.70 — full sha, exit captured, the step and summary renamed "sweep probes" |
+| AG-S3 | P-SEAT | handoff checklist row 4 `head -3` could not show the three users it claimed; row 6 gave no route to the F18.68 bytes | (b) FIXED in the handoff |
+| AG-S4 | P-SEAT | CHANGE_LEDGER.md line 5 promised line numbers the table does not carry | (b) FIXED — sentence corrected |
+| AG-S14 | P-SEAT | the handoff's "CI probe list on those bytes" read as a CI result with no run recorded | (b) FIXED — worded as the seat's run; the CI run and its failure are recorded |
+| AG-M3 · AG-M4 · AG-M8 | P-MARKET | cost per estimated unit on no surface; no auto-round control (CEIL always); item creation from the grid stops at a manual line | (c) CANDIDATE / follow-on — with the price unit (R5); recorded in the handoff §7 |
+| AG-T14 · AG-T15 | P-TRADE | recap drawer carries no derivation; grid CSV names a labor line like its material sibling | (c) CANDIDATE — the grid and exports are the batch's surfaces; the CSV naming is pre-existing (C-AG3) |
+| AG-G4 | P-GAME | caret after a change-commit lands at position 0 (select-all); Enter on the last row's formula cell leaves focus on body | (c) CANDIDATE — the grid's existing select-on-refocus grammar (C-AG4) |
+| AG-G13 · AG-G14 | P-GAME | at 115–150 % the Formula and Total columns leave the viewport (horizontal scroll); the Library lens's first frame is 265 ms on 164 rows | (c) CANDIDATE (C-AG5, C-AG1) — recorded in the handoff §6 |
+| AG-S5 · AG-S16 | P-SEAT | LEDGER's D-series "first cited at" line numbers are stale against F18.69 (carried from main); NOTES carries doubled date fragments | (d) recorded — a seat adds rows, never rewrites; the function names beside each citation are the durable anchor (C-AG6, Patrick's to prune) |
+| AG-S7 | P-SEAT | the PreToolUse guard matches the flag text — evadable by `sh -c`, a variable, or `node -e`; README says selftest has 10 checks, NOTES 12 | (d) recorded — S-03's rail is a text match; hardening is a hook change (Patrick's call, C-AG7); the count drift is noted |
+| AG-S13 | P-SEAT | PASS_2026-09 §5.4 says findings go under `evidence/`; the agents return lists and have no Write tool; no `evidence/` at HEAD | (d) tension recorded — the agent definitions are the rail that runs; the pass charter's workflow shape is unbuilt |
+
 ## Sweep and batch records
 - `SWEEP_68c8e23.md` — the live-repo sweep (findings F-01…F-14, proposals P-01…P-12).
 - `MOBILE_FEASIBILITY_68c8e23.md` — phone/tablet measurements and the ROI frame.

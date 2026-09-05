@@ -24,13 +24,14 @@ shows, exports, saves, reloads to the cent, and reverts to the library when clea
 
 | item | value |
 |---|---|
-| product | `src/VES_PM.html` · 3,633,084 bytes · sha256 `0ba7e3c4c95b9a88f900902612d47fc867354b8b657d81926402db1eea177661` |
-| build | F18.69 · Batch AF · branch `claude/estimate-sheet-depth-vrhnf6` (base `b191423` = F18.68 on `main`) |
+| product | `src/VES_PM.html` · **F18.70** · 3,646,306 bytes · sha256 `dea73046e5206a0c76d74a2acf30fb26cdcab7ce6c2ccf2703508ea239d65895` (F18.69 = Batch AF was 3,633,084 · `0ba7e3c4…`, commit `a63af32`) |
+| build | F18.70 · Batch AF + Batch AG (persona pass 1 answered) · branch `claude/estimate-sheet-depth-vrhnf6` (base `b191423` = F18.68 on `main`) |
 | verifier on those bytes | `RESULT PASS` · `EGRESS 7 matches; baseline 7 entries; 0 new, 0 gone` · `FREEZE 2 regions; manifest absent` · exit 0 |
 | G0 on those bytes | `G0 GREEN` 4/4 · exit 0 |
-| batch gate | `tools/sweep/probe-af.mjs` 15/15 · exit 0 — **RED-first 1/15 on the F18.68 bytes** (only the provenance-colour control passed, stated as a control) |
-| CI probe list on those bytes | probe-v 17/17 · probe-x 5/5 · probe-y 4/4 · probe-z 6/6 · probe-aa 5/5 · probe-ac 5/5 · probe-ab 4/4 · probe-ad 5/5 · probe-u 8/8 · probe-ae 5/5 |
-| registers | `CHANGE_LEDGER.md` (new, 18 rows) · `LEDGER.md` §Batch AF (7 rows) · `NOTES.md` §State · `CLAUDE.md` §Identity · `tools/sweep/README.md` · `.github/workflows/verify.yml` (probe-af in the probes job) |
+| batch gate | `tools/sweep/probe-af.mjs` 29/29 · exit 0 — AF1–AF15 **RED-first 1/15 on the F18.68 bytes**; AF16–AF29 (Batch AG) **RED-first 16/29 on the F18.69 bytes** (13 of the 14 new rows red; AF19 a control) |
+| the CI probe list, run by the seat on those bytes (not a CI result) | probe-v 17/17 · probe-x 5/5 · probe-y 4/4 · probe-z 6/6 · probe-aa 5/5 · probe-ac 5/5 · probe-ab 4/4 · probe-ad 5/5 · probe-u 8/8 · probe-ae 5/5 |
+| CI on the branch | run 51 (`a63af32`, F18.69): verify ✓ · gate ✓ · **probes ✗** — the probe-af step fetched the F18.68 bytes by an abbreviated sha, which `git fetch` does not accept on a shallow checkout (P-SEAT pass 1 finding 2); fixed in Batch AG (full sha, exit captured). The run on the F18.70 push is the one to read. |
+| registers | `CHANGE_LEDGER.md` (new, 18 AF rows + 16 AG rows) · `LEDGER.md` §Batch AF (7 rows) + §Batch AG (persona pass 1, 33 rows) · `NOTES.md` §State · `CLAUDE.md` §Identity · `tools/sweep/README.md` · `.github/workflows/verify.yml` (probe-af in the probes job) |
 
 If `src/VES_PM.html` no longer carries that sha256, the line references in `CHANGE_LEDGER.md` are stale; the function
 names beside each are the durable anchor.
@@ -75,9 +76,9 @@ Run from the repo root on the branch. `VES=src/VES_PM.html`.
 | 1 | the engine line carries `driver` (R1/R2) | `grep -n "driver: driverOf()" $VES` | one hit inside `resolveItem`'s return |
 | 2 | the item's drivers sit on the ITEM layer (level truth) | `grep -n "coverage: item.coverage, density: item.density, qty_expr: item.qty_expr, params: item.params" $VES` | one hit in `layers.ITEM` |
 | 3 | params merge outside `resolveOverride` | `grep -n "OVERRIDE_LEVELS.slice().reverse()" $VES` | one hit, the params loop |
-| 4 | the function set and the reserved names | `grep -n "const FUNCS = " $VES; grep -n "RESERVED_NAMES" $VES \| head -3` | `ceil floor round abs max min`; used by the engine, the door and the validator |
+| 4 | the function set and the reserved names | `grep -n "const FUNCS = " $VES; grep -n "RESERVED_NAMES" $VES` | `ceil floor round abs max min`; five hits — three in the engine, one in `validateLibrary`, one in `parseParamsText` |
 | 5 | NEW-4 reversed, typed at the door | `grep -n "const LINE_FORBID = \[\];" $VES; grep -n "qty_expr: 'expr', params: 'params'" $VES` | both hit once |
-| 6 | the old build drops it loudly | `node tools/sweep/probe-af.mjs … <F18.68 bytes>` AF7 | banner text contains `unsupported override field` |
+| 6 | the old build drops it loudly | `git show b191423:src/VES_PM.html > /tmp/VES_F18.68.html` (a full clone; CI fetches the same commit by full sha), then `VES_CHROME=<chrome> node tools/sweep/probe-af.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" /tmp/VES_F18.68.html` — AF7 | banner text contains `unsupported override field`; `build: "F18.68"`; `ordered: 619` |
 | 7 | the grid's 8th column and its cells | `grep -c 'colspan="8"' $VES; grep -n 'data-field="qty_expr"' $VES` | 4 colspans; the `.fx` cell in `derivCell` |
 | 8 | the qty cell edits from full precision | AF13 | `data-raw` = `450.11428571428576`, shown `450.11` |
 | 9 | exports carry the derivation; the ladder references Pct cells | AF4 | `G{c}*I{o}` … no literal `*0.` |
@@ -90,10 +91,13 @@ Run from the repo root on the branch. `VES=src/VES_PM.html`.
 
 ## 5. What was not done, stated plainly
 
+- **Persona pass 1 ran on F18.69** (P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic); every finding and its
+  disposition is in `LEDGER.md` §Batch AG; the (a)/(b) rows are fixed in F18.70 with RED-first probe rows AF16–AF29.
+  Pass 2 re-runs the filing personas; a finding closes only by their re-run.
+
 - **The freeze fence gated nothing.** `tools/freeze-manifest.json` does not exist; the `engine` region was edited on
   purpose (D1, D2) and the verifier reports `manifest absent`. Patrick writes the manifest by hand on the accepted
   pre-batch build (`b191423`) before this branch is reviewed for merge; until then "inside the fence" is a description.
-- **No persona pass** (`.claude/agents/p-*`) was run on this build.
 - **The card depth row's qty input** (`buildDepthRow`) still edits the 2-dp figure — a number input with no raw/display
   split. The grid and both recap tabs are fixed (F1.4 m named four sites; three moved).
 - **The money peek** shows `ordered` only, as before.
@@ -117,6 +121,12 @@ Run from the repo root on the branch. `VES=src/VES_PM.html`.
    re-prices on open. A file hand-edited to carry one now prices it — and says so on the row, which is the point.
 
 ## 7. Follow-ons — OPEN, not done
+
+- From persona pass 1 (LEDGER §Batch AG, CANDIDATE rows): cost per estimated unit on the row (with the price unit);
+  an auto-round control (CEIL is always on for material); item creation from the grid beyond a manual line; the recap
+  drawer's derivation; the grid's CSI column and group-header code; the caret-after-commit grammar; the Library lens's
+  full re-render per edit (218 ms on 164 rows) and 265 ms first frame; 20 px segments on the phone (with G-08, Field lens);
+  the guard hook's text match; stale D-series line citations in LEDGER (Patrick's to prune).
 
 - **Price unit / price formula** (R5): `unit_cost` is per order unit everywhere it is shown; an EDGE-style price unit and
   price formula are a schema change.

@@ -6,7 +6,25 @@ truth first, history compressed.
 
 ## State
 
-- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.69, Batch AF — a TEST BUILD, not on `main`** — sha256
+- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.70, Batch AG — persona pass 1 on F18.69, answered** — sha256
+  `dea73046e5206a0c76d74a2acf30fb26cdcab7ce6c2ccf2703508ea239d65895`, 3,646,306 bytes (2026-09-05, cloud seat, owner's word
+  2026-09-04: "run persona pass; if accepted finalize build and push to main; run in loop"). The four read-only personas
+  (P-GAME · P-TRADE · P-MARKET · P-SEAT) ran on the F18.69 bytes from the main checkout's absolute paths (an agent worktree
+  is cut from `origin/main`); their findings are on record in LEDGER.md §Batch AG with the seat's triage. Fixed in this build
+  (each with a RED-first row in probe-af, AF16–AF29): a line formula evaluating to 0 gates (ZERO_QTY) instead of pricing an
+  included $0; a dormant formula behind a typed qty is checked and said; the parser names the token; the Library lens's
+  authored-item id comes from the library, not the takeoff counter (the reload replaced yesterday's item); blank CSI lands
+  under the assembly's code; edited cells read in the accent against the seed; match code column; ＋ Add by the description;
+  coarse-pointer cells; the toast says the takeoff follows the book; item waste in the derivation words; Q's meaning by kind
+  and the scope on the sheet foot; the cue clears; the funnel line under the description, measure after unit, closest-name
+  hint, case/dash-forgiving match; the fourth segment no longer covers Files & exports and sheds its words under 720 px; the
+  waste box refuses "abc" in its own words and never keeps a refused value; qty needed numeric in the workbook and "(× Pct)"
+  labels; BOM headers Title Case; landing + README name the derivation and the Library lens; CI fetches the F18.68 bytes by
+  full sha (the branch's first CI run was red on that step — run 51). Gates: probe-af 29/29 (RED-first 16/29 on F18.69) ·
+  probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x 5/5 · probe-y 4/4 ·
+  probe-aa 5/5 · probe-ac 5/5 · G0 4/4 · verifier PASS 0 new egress. Pass 2 re-runs the filing personas; acceptance =
+  a pass with zero new (a)/(b) P0/HIGH, then `main` moves by fast-forward.
+- **F18.69 = Batch AF (2026-09-04) — Estimate sheet depth, a TEST BUILD** — sha256
   `0ba7e3c4c95b9a88f900902612d47fc867354b8b657d81926402db1eea177661`, 3,633,084 bytes (2026-09-04, cloud seat, architect
   commission "Estimate sheet depth · branch a test build", rulings R1–R7 in lane; Patrick's veto open on each — LEDGER §Batch AF).
   THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE: the engine line carries its derivation
