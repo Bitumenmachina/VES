@@ -49,6 +49,7 @@ loses nothing (git keeps the originals) and is Patrick's call (§6).
 | product diff | `git diff --numstat main..HEAD -- src/VES_PM.html` → `912 116` in 79 hunks |
 | CI, F18.72 commit `d95c830` | run 54 (id 33971056598) · **success** · jobs `verify` ✓ (ves-verify) · `gate` ✓ (g0 golden money-path gate) · `probes` ✓ (sweep probes probe-v … probe-af) — read through the GitHub API |
 | CI, later register-only commits | runs 55, 56, 57, 58 (`b01c496`, `4175fc2`, `68895ab`, `df4c97c`) · all success. Run 51 (`a63af32`, F18.69) failed on the probes job — the shallow-fetch bug AG fixed. |
+| CI, this report's push `28282dc` on `claude/new-session-ch1yrd` | run 59 (id 33987848894) · **success** · `verify` ✓ · `gate` ✓ · `probes` ✓ (the same F18.72 bytes, outside this VM) |
 | freeze manifest | absent (`tools/freeze-manifest.json` does not exist); the `engine` fence carries 11 hunks (+119/−20), `core` carries none |
 
 ## 2. Gates on the F18.72 bytes, verbatim (this seat's run, this VM, Chromium `/opt/pw-browsers/chromium-1194`)
