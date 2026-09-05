@@ -6,7 +6,26 @@ truth first, history compressed.
 
 ## State
 
-- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.70, Batch AG — persona pass 1 on F18.69, answered** — sha256
+- **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.71, Batch AH — persona pass 2 on F18.70, answered** — sha256
+  `4e7be4b2bc81ed34dcac4237342d72d91d9eb8adb9cc8f61f1581af77d6fee90`, 3,652,594 bytes (2026-09-05, cloud seat, the same owner's word: run the persona pass
+  in a loop, finalize on acceptance). Pass 2 re-ran all four personas on the F18.70 bytes: every pass-1 fix held on the
+  filing persona's re-run except AG-M6's dropdowns (the lens selects carried no seed mark) and AG-G8's ✓ Add position (as
+  recorded); AG-G3's refutation was agreed. Pass 2 filed 39 items; the seat verified each on the bytes — 12 built, 4 refuted
+  with evidence, the rest CANDIDATE/recorded (LEDGER §Batch AH). Fixed here (RED-first rows AF30–AF35, 6/6 red on F18.70):
+  a malformed number literal (`1.2.3` priced as 1.2, silent) and a wrong function arity (`round(x, 1)` dropped the 1) gate
+  the line with the reason; the Library lens refuses an empty unit and a zero production rate, and the unit gate never
+  prints "undefined"; clearing the Qty cell re-checks the formula so the cue follows the row; a new takeoff clears the cue;
+  lens selects carry the seed mark (and a pipe-list ref compares as shown); waste percentages at two decimals everywhere
+  (0.05 % read "0.1 %"); the waste box says what it did when left by blur, as Enter did; on a phone with a sheet live the
+  document door sat 10 px past the left edge under the AG pin — the pin follows the wordless segments under 720 px; the
+  Plan segment has a name; a gated row carries `tr.gated` after the cue expires; ＋ Add joins the coarse rule; Library cells
+  take the grid's Escape/Enter grammar. Registers: P-SEAT's drift rows (handoff §8 identity, row counts, CHANGE_LEDGER
+  evidence cells worded to what the checks assert, the agent definitions now say "read the build from the main checkout by
+  absolute path"). Gates: probe-af 35/35 · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 ·
+  probe-ae 5/5 · probe-x 5/5 · probe-y 4/4 · probe-aa 5/5 · probe-ac 5/5 · G0 4/4 · verifier PASS 0 new egress. Iteration
+  2 of the owner's 3; pass 3 re-runs the four personas on these bytes; acceptance = zero new (a)/(b) P0/HIGH → `main`
+  moves by fast-forward.
+- **F18.70 = Batch AG — persona pass 1 on F18.69, answered** — sha256
   `dea73046e5206a0c76d74a2acf30fb26cdcab7ce6c2ccf2703508ea239d65895`, 3,646,306 bytes (2026-09-05, cloud seat, owner's word
   2026-09-04: "run persona pass; if accepted finalize build and push to main; run in loop"). The four read-only personas
   (P-GAME · P-TRADE · P-MARKET · P-SEAT) ran on the F18.69 bytes from the main checkout's absolute paths (an agent worktree

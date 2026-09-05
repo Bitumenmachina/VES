@@ -139,6 +139,45 @@ ruling → tension. A finding closes only by the filing persona's re-run (pass 2
 | AG-S7 | P-SEAT | the PreToolUse guard matches the flag text — evadable by `sh -c`, a variable, or `node -e`; README says selftest has 10 checks, NOTES 12 | (d) recorded — S-03's rail is a text match; hardening is a hook change (Patrick's call, C-AG7); the count drift is noted |
 | AG-S13 | P-SEAT | PASS_2026-09 §5.4 says findings go under `evidence/`; the agents return lists and have no Write tool; no `evidence/` at HEAD | (d) tension recorded — the agent definitions are the rail that runs; the pass charter's workflow shape is unbuilt |
 
+## Batch AH — persona pass 2 on F18.70 (TEST BUILD F18.71 on the same branch)
+
+The same owner's word (2026-09-04), iteration 2 of 3. All four personas re-ran on the F18.70 bytes (sha verified by each;
+main checkout, absolute paths). Pass-1 rows on the filing persona's re-run: DEAD — AG-T5, T7, T8, T10, T9, T13, T2, T16;
+AG-M1, M2, M7, M9, M5, M10; AG-G1, G5, G6, G7, G12, G16; AG-S2, S3, S4, S14. ALIVE-as-recorded — AG-G8 (✓ Add on the
+phone), AG-G13/G14 (candidates), AG-M6 for `<select>` cells (fixed here). AG-G3's refutation agreed by P-GAME. Not
+re-run by P-TRADE (its pass-2 module never assembled under the worktree guard): AG-T11, T12, T14, T15 — AF22 and the
+seat's inspection stand as the evidence, stated as such. Product rows: `CHANGE_LEDGER.md` AH-1…; probe rows AF30–AF35
+RED-first on F18.70 (6 of 6 red).
+
+| id | persona | finding (what was SEEN) | disposition |
+|---|---|---|---|
+| AH-T2 · AH-M12a | P-TRADE · P-MARKET | `RAW * 1.2.3` priced 495 (= 412.5 × 1.2) with no gate, no cue — parseFloat's truncation | (a) FIXED F18.71 — a literal is digits with at most one point; `bad number "1.2.3"` gates (AF30) |
+| AH-M12b | P-MARKET | `round(RAW * width * lbsf, 1)` priced 596, the second argument dropped silently | (a) FIXED F18.71 — ceil/floor/round/abs take exactly one argument, max/min one or more; `round() takes one argument (got 2)` gates (AF30) |
+| AH-M10 | P-MARKET | the Library lens accepted an empty unit and the next takeoff's row read `item unit undefined`; a labor production rate of 0 was accepted | (a) FIXED F18.71 — `validateLibrary` refuses an empty unit and a rate ≤ 0 with its reason; the unit gate says "(no unit)" (AF32). Free-text CSI stays free text (the seed's own CSI strings are not validated either — recorded) |
+| AH-T1 | P-TRADE | after the Qty cell was cleared the row read EXPR_ERROR while the cue and toast still said "the typed quantity 600 LB stands" (seat reproduced) | (b) FIXED F18.71 — a qty edit on a line carrying a formula re-runs the formula check (AF31) |
+| AH-T3 | P-TRADE | a new takeoff kept the previous takeoff's cue | (b) FIXED F18.71 — the reset clears it (AF31) |
+| AH-M6 | P-MARKET | kind / driven-by selects that differed from the seed carried no accent and no seed value | (b) FIXED F18.71 — the same mark as the inputs; a pipe-list ref compares as shown (the old string compare marked every multi-condition labor item as edited) (AF32) |
+| AH-M9 · AH-T6 · AH-G4 | P-MARKET · P-TRADE · P-GAME | 0.05 % condition waste read "0.1 % waste" (one-decimal rounding at five sites); a value committed by leaving the box said nothing; 150 % was stored with no word | (b) FIXED F18.71 — `pctWord` at two decimals everywhere; the blur path toasts the same sentence as Enter (AF33). 100 %+ stays legal (D-26.2 refuses negatives only) |
+| AH-G9 | P-GAME | phone 390 px, sheet live: Files & exports at `left −10.6`, its words wrapped inside the 24 px band — the AG pin (342 px) sized for worded segments | (b) HIGH FIXED F18.71 — under 720 px the four pins follow the wordless segments (184 px); the button never wraps (AF34) |
+| AH-G2 | P-GAME | the Plan segment had no title and no aria-label; wordless under 720 px | (b) FIXED F18.71 — title + aria-label on all four (AF34) |
+| AH-G1 | P-GAME | after the 6 s cue expired the only sign of a gated row was the cell text | (b) FIXED F18.71 — `tr.gated` with a tint and a left bar (AF35) |
+| AH-G6 | P-GAME | the Library ＋ Add button was 30 px on a coarse pointer | (b) FIXED F18.71 — joins the coarse rule (AF35) |
+| AH-G7 | P-GAME | Escape in a Library cell closed nothing and committed the draft on blur; Enter did nothing | (b) FIXED F18.71 — Escape reverts and says so, Enter commits and the re-render puts focus back; Enter on the ＋ Add row adds (AF35) |
+| AH-T5 | P-TRADE | "the Flags list was empty in both gated states" | REFUTED-with-evidence — `#asmFlags` is filled by `renderAssembly`, which the persona did not call; the seat's run: "1 line(s) excluded … Coil — unknown token "widht"" (AF31 control) |
+| AH-M13 | P-MARKET | "a free line has no derivation cell, so the landing sentence overreaches" | REFUTED-with-evidence — the free line's row reads `manual line · ADJ 55 LF as is = 55 → 55 LF`; the persona's text match landed on the group header and subtotal rows, which have none |
+| AH-G10 | P-GAME | "the Formula header carries no tooltip" | REFUTED-with-evidence — the 7th header does (the persona read the 8th, Total) |
+| AH-M14 | P-MARKET | "the waste box has no unit word" | REFUTED for the label (`Waste % (this condition)` sits beside it); the fraction-typed-as-fraction case is the labelled percent grammar — recorded |
+| AH-T4 | P-TRADE | the workbook carries the derivation as words and the quantities as literals; only the ladder is live | (c) CANDIDATE C-AG8 — by design this batch (R1: the sheet renders what it computes; live quantity math in the workbook is a follow-on) |
+| AH-M11 | P-MARKET | `RAW *` on an item with a density is refused as "2 drivers" before the parse | (c) CANDIDATE C-AG9 — both facts are true; ordering the refusals is taste |
+| AH-M15 | P-MARKET | round trip: `production_rate: null → undefined` on labor items | (c) recorded — no behaviour rides on the difference |
+| AH-G3 | P-GAME | the five trailing export columns carry three header casings (grid CSV lowercase, BOM Title Case, workbook Sentence case) | (c) CANDIDATE C-AG10 — the grid CSV's lowercase headers are pre-existing and read by probe-ab |
+| AH-G5 · AH-G8 | P-GAME | the Library lens table is 2,193 px wide (scrolls inside `.gscroll`); the open lens is not remembered on reload | (c) recorded with C-AG5; the rest state is the Plan (probe-aa) |
+| AH-S1 · S2 · S3 · S8 · S9 | P-SEAT | handoff §8 still said F18.69 / 15 checks; handoff :36 promised line references CHANGE_LEDGER :5 disclaims; "33 rows" was 35; CLAUDE.md header date; verify.yml header says one probe | (b) FIXED in the registers this batch |
+| AH-S4 · S5 · S6 · S7 | P-SEAT | CHANGE_LEDGER AG-10 / AG-7 / AG-13 / AG-8 evidence cells cited checks that assert less than the row (fixed Q, line value, provenance-once, Title Case, the 720 px breakpoint) | (b) FIXED — the cells now say which claims are asserted and which are by inspection |
+| AH-S10 | P-SEAT | the agent definitions say "read CLAUDE.md, NOTES.md and LEDGER.md first" while a worktree is cut from `origin/main` | (b) FIXED — each definition says: read the build and the registers from the main checkout by absolute path, verify the sha first |
+| AH-S11 | P-SEAT | the guard hook blocks an invocation-shaped string inside quotes (a false positive) and lets `sh -c` / a variable through (S7, recorded) | (d) recorded — hardening is a hook change, Patrick's (C-AG7) |
+| AH-S12 · S13 · S15 · S16 | P-SEAT | hooks vs the protocol, probe README vs argv, counts across NOTES/LEDGER/handoff: nothing found; `.claude/loop.md` step 1 needs GitHub access the seat may lack | (c) recorded; README's selftest count corrected to 12 |
+
 ## Sweep and batch records
 - `SWEEP_68c8e23.md` — the live-repo sweep (findings F-01…F-14, proposals P-01…P-12).
 - `MOBILE_FEASIBILITY_68c8e23.md` — phone/tablet measurements and the ROI frame.

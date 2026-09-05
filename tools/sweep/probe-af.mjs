@@ -2,6 +2,7 @@
 // Commission: research/HANDOFF_ESTIMATE_SHEET_b191423.md §5 (the coil case) · rulings R1–R7 · ledger findings
 // F1.4(m), F2.1, F2.3, F3.3, F3.4, F4.1-1..5, F4.3-4, F5.4. RED-first on F18.68 (b191423).
 //   node tools/sweep/probe-af.mjs <ves.html> <demo.json> <repo root> <old ves.html (F18.68 bytes, for AF7)>
+//   AF16–AF29: Batch AG (persona pass 1) · AF30–AF35: Batch AH (persona pass 2)
 //   exit 0 pass / 1 findings / 2 harness
 import { spawn } from 'node:child_process'; import { mkdtempSync, readFileSync } from 'node:fs'; import { tmpdir } from 'node:os'; import { join } from 'node:path';
 const CHROME = process.env.VES_CHROME; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const [VES, DEMO, ROOT, OLD] = process.argv.slice(2);
@@ -295,4 +296,77 @@ const af29 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => s
   libraryEditItem('ssmr.eavedrip', 'unit_cost', 4.5); const toast = document.getElementById('toast').textContent; return { gate: l.gate, toast }; })()`);
 check('AF29 "RAW width" gates as unexpected "width" after "RAW" — missing an operator; a library edit\'s toast says every takeoff priced from the book follows',
   !af29.error && /unexpected "width" after "RAW"/.test(af29.gate || '') && /every takeoff priced from it/.test(af29.toast || ''), af29);
+// ═══ Batch AH — persona pass 2 fixes (RED-first on F18.70 = 82652fa; the 1st arg is the build under test) ═══
+// AF30 — a malformed number literal and a wrong function arity gate the line with the reason, never a silent other number (P-TRADE 2, P-MARKET 12)
+const af30 = await tryEv(`(() => { const sc = { RAW: 412.5, ADJ: 412.5, WASTE: 0, Q: 412.5 }; const t = (e) => { try { return VESASM.resolveExpr(e, sc); } catch (x) { return 'ERR ' + x.message; } };
+  return { dots: t('RAW * 1.2.3'), arity: t('round(RAW * 1.156, 1)'), ceil2: t('ceil(RAW, 2)'), half: t('RAW * .5'), max2: t('max(RAW, 100)'), one: t('RAW * 1.') }; })()`);
+check('AF30 "RAW * 1.2.3" gates as a bad number and "round(x, 1)" as a wrong argument count — the line never prices on a number the estimator did not type; ".5", "1." and max(a, b) still evaluate',
+  !af30.error && /^ERR .*bad number "1\.2\.3"/.test(String(af30.dots)) && /^ERR .*round\(\) takes one argument/.test(String(af30.arity)) && /^ERR .*ceil\(\) takes one argument/.test(String(af30.ceil2))
+  && af30.half === 206.25 && af30.max2 === 412.5 && af30.one === 412.5, af30);
+// AF31 — clearing the Qty cell on a formula line re-checks the formula, so the cue follows the row into its gate; a new takeoff clears the cue; the Flags list names the gated line (P-TRADE 1/3/5)
+const af31 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.coil', 'qty', 600); await wait(150);
+  ${setCell('input.fx[data-item="ssmr.coil"][data-field="qty_expr"]', 'RAW * widht')}; await wait(150); const cueTyped = (document.getElementById('gridCue') || {}).textContent || '';
+  ${setCell('input.recap-edit[data-item="ssmr.coil"][data-field="qty"]', '')}; await wait(150); const cueCleared = (document.getElementById('gridCue') || {}).textContent || '';
+  const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.coil'); renderAssembly(); const flags = (document.getElementById('asmFlags') || {}).textContent || '';
+  ${RESET} await wait(100); const cue = document.getElementById('gridCue');
+  return { cueTyped: cueTyped.slice(0, 80), cueCleared: cueCleared.slice(0, 120), status: l.matchStatus, included: l.included, flags: flags.slice(0, 120), cueAfterNew: cue.textContent, hiddenAfterNew: cue.hidden }; })()`);
+check('AF31 after the Qty cell is cleared the cue names the EXPR_ERROR (not "the typed quantity stands"); the Flags list names the line (control); a new takeoff leaves no cue behind',
+  !af31.error && /typed quantity 600/.test(af31.cueTyped) && af31.status === 'EXPR_ERROR' && af31.included === false && /widht/.test(af31.cueCleared) && !/stands/.test(af31.cueCleared)
+  && /widht/.test(af31.flags) && af31.cueAfterNew === '' && af31.hiddenAfterNew === true, af31);
+// AF32 — the Library lens: a select that differs from the seed is marked like an input; an empty unit and a zero production rate are refused; the unit gate never prints a JS word (P-MARKET 6/10)
+const af32 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} const r1 = libraryEditItem('ssmr.eavedrip', 'cqty_ref', 'ssmr.rake'); showLibrary(true); await wait(200);
+  const sel = document.querySelector('#libBody select.lib-edit[data-item="ssmr.eavedrip"][data-field="cqty_ref"]'); const plain = document.querySelector('#libBody select.lib-edit[data-item="ssmr.clips"][data-field="cqty_ref"]');
+  const selInfo = { ov: !!(sel && sel.classList.contains('ov')), title: sel ? sel.title : null, plainOv: !!(plain && plain.classList.contains('ov')) }; libraryEditItem('ssmr.eavedrip', 'cqty_ref', 'ssmr.eave'); showLibrary(false);
+  const unitBefore = VESApp.state.library.items['ssmr.clips'].unit; const r2 = libraryEditItem('ssmr.clips', 'unit', null); const unitAfter = VESApp.state.library.items['ssmr.clips'].unit;
+  const r3 = libraryEditItem('lab.ssmr.panel', 'production_rate', 0); const prAfter = VESApp.state.library.items['lab.ssmr.panel'].production_rate;
+  VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.eave', 100); await wait(100); const it = VESApp.state.library.items['ssmr.eavedrip']; const keep = it.unit; delete it.unit;   // an identity item: no conversion, so the unit gate is the one that speaks
+  const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.eavedrip'); it.unit = keep;
+  return { r1ok: r1.ok, sel: selInfo, r2: r2.error || 'ok', unitKept: unitAfter === unitBefore, r3: r3.error || 'ok', prKept: prAfter == null, gate: l.gate, status: l.matchStatus }; })()`);
+check('AF32 a "driven by" select that differs from the seed reads in the accent with the seed value in its title; an empty unit is refused and kept; production rate 0 is refused; a unit-less item gates without the word "undefined"',
+  !af32.error && af32.r1ok && af32.sel.ov && /seed has/.test(af32.sel.title || '') && af32.sel.plainOv === false && /unit/i.test(af32.r2) && af32.r2 !== 'ok' && af32.unitKept && /production/i.test(af32.r3) && af32.r3 !== 'ok' && af32.prKept
+  && af32.status === 'UNIT_GATE' && !/undefined/.test(af32.gate || '') && /no unit/.test(af32.gate || ''), af32);
+// AF33 — condition-waste words carry the figure as typed (0.05 %, not 0.1 %); a value committed by leaving the box says what it did (P-MARKET 9/14, P-TRADE 6, P-GAME 4)
+const af33 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${RESET} VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.eave', 412.5); await wait(100); setConditionWaste('ssmr.eave', 0.05);
+  VESApp.showEstimate(true); VESApp.renderEstimateGrid(); await wait(150); const cell = document.querySelector('input.fx[data-item="ssmr.eavedrip"]'); const words = cell ? cell.closest('tr').querySelector('td.deriv').textContent.replace(/\\s+/g, ' ') : '';
+  const jl = VESApp.state.journal.undo.length ? VESApp.state.journal.undo[VESApp.state.journal.undo.length - 1].label : ''; VESApp.showEstimate(false);
+  const src = VESApp.state.conditions.find(x => x.libRef === 'ssmr.eave'); VESApp.state.expandedCondId = src.id; VESApp.renderCards(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 250)));
+  const inp = document.querySelector('#depthPanel input.cond-waste') || document.querySelector('input.cond-waste'); if (!inp) return { error: 'no waste input' };
+  inp.value = '7'; inp.dispatchEvent(new Event('change', { bubbles: true })); await wait(120); const toast = document.getElementById('toast').textContent; const stored = VESApp.state.assemblyProject.conditionOverrides['ssmr.eave'].waste;
+  return { words: words.slice(0, 120), journal: jl, toast: toast.slice(0, 120), stored }; })()`);
+check('AF33 a 0.05 % condition waste reads "0.05% waste" on the row and in the journal; leaving the box after typing 7 toasts "Waste 7% applied" and stores 0.07',
+  !af33.error && /0\.05% waste/.test(af33.words) && !/0\.1% waste/.test(af33.words) && /0\.05%/.test(af33.journal) && /Waste 7% applied/.test(af33.toast) && near(af33.stored, 0.07, 1e-9), af33);
+// AF34 — on a 390 px phone with a sheet live, the document door sits inside the screen on one line beside the wordless segments; every segment carries a name (P-GAME G9/G2)
+await tryEv(`VESApp.loadFromData(window.__demo); 1`); await sleep(400);
+await c.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true }); await sleep(300);
+const af34 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); VESApp.showEstimate(true); await wait(200); const b = document.getElementById('btnDataMenu').getBoundingClientRect(); const v = document.querySelector('.viewtoggle').getBoundingClientRect();
+  const overlap = Math.max(0, Math.min(b.right, v.right) - Math.max(b.left, v.left)); const titles = [...document.querySelectorAll('.viewtoggle .vseg')].map(e => (e.title || '').slice(0, 24)); const aria = [...document.querySelectorAll('.viewtoggle .vseg')].map(e => e.getAttribute('aria-label') || '');
+  const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); VESApp.showEstimate(false);
+  return { sheetLive: document.body.classList.contains('sheet-live'), left: b.left, right: b.right, height: b.height, vtLeft: v.left, overlap, hitIsDoor: !!(hit && (hit.id === 'btnDataMenu' || hit.closest('#dataMenuWrap'))), titles, ariaAll: aria.every(Boolean) }; })()`);
+await c.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }); await sleep(300);
+check('AF34 390 px phone, sheet live, Estimate lens: Files & exports is wholly on screen (left ≥ 0, right ≤ 390), one line tall (≤ 26 px), clear of the segments, and the element at its own centre; all four segments have a title and an aria-label',
+  !af34.error && af34.sheetLive && af34.left >= 0 && af34.right <= 390 && af34.height <= 26 && af34.overlap === 0 && af34.hitIsDoor && af34.titles.every(Boolean) && af34.ariaAll, af34);
+// AF35 — a gated row carries a class the eye can find after the cue expires; ＋ Add joins the coarse-pointer rule; Escape in a Library cell reverts and the lens stays, Enter commits and stays (P-GAME G1/G6/G7)
+await nav(VES, true);
+const af35a = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.coil', 'qty_expr', 'RAW * widht'); VESApp.renderEstimateGrid(); await wait(150);
+  const tr = document.querySelector('input.fx[data-item="ssmr.coil"]').closest('tr'); const ok = document.querySelector('input.fx[data-item="ssmr.eavedrip"]').closest('tr'); return { gated: tr.classList.contains('gated'), plain: ok.classList.contains('gated') }; })()`);
+await c.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 }); await c.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true }); await sleep(200);
+const af35b = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); showLibrary(true); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 300))); const coarse = matchMedia('(pointer: coarse)').matches; const b = document.querySelector('#libBody tr.libadd[data-asm="ssmr"] button.libAddBtn'); const cell = document.querySelector('#libBody input.lib-edit[data-item="ssmr.clips"][data-field="unit_cost"]');
+  const out = { coarse, btnH: b ? b.getBoundingClientRect().height : null, cellH: cell ? cell.getBoundingClientRect().height : null }; showLibrary(false); return out; })()`);
+await c.send('Emulation.setTouchEmulationEnabled', { enabled: false }); await c.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }); await sleep(200);
+// real typing (CDP insertText sets the dirty flag a programmatic .value never does — blur then fires change, as a keyboard does);
+// the 2 s wait lets the deferred fixed-allowance toast of the build gesture (1.8 s, by design) land before the toast under test
+await sleep(2000);
+await tryEv(`(async () => { showLibrary(true); await new Promise(r => setTimeout(r, 250)); const i = document.querySelector('#libBody input.lib-edit[data-item="ssmr.clips"][data-field="unit_cost"]'); i.focus(); i.select(); return 1; })()`);
+await c.send('Input.insertText', { text: '9.99' }); await sleep(50);
+await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }); await sleep(200);
+const af35c = await tryEv(`(() => { const i = document.querySelector('#libBody input.lib-edit[data-item="ssmr.clips"][data-field="unit_cost"]'); return { lensOpen: !!VESApp.state.libView, value: i ? i.value : null, stored: VESApp.state.library.items['ssmr.clips'].unit_cost, toast: (document.getElementById('toast').textContent || '').slice(0, 60) }; })()`);
+await tryEv(`(() => { const i = document.querySelector('#libBody input.lib-edit[data-item="ssmr.clips"][data-field="unit_cost"]'); i.focus(); i.select(); return 1; })()`);
+await c.send('Input.insertText', { text: '8.88' }); await sleep(50);
+await c.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 }); await c.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 }); await sleep(300);
+const af35d = await tryEv(`(() => { const a = document.activeElement; const r = { lensOpen: !!VESApp.state.libView, stored: VESApp.state.library.items['ssmr.clips'].unit_cost, activeInLens: !!(a && a.closest && a.closest('#libview')), activeField: a && a.dataset ? a.dataset.field : null }; libraryEditItem('ssmr.clips', 'unit_cost', ${JSON.stringify(0)}); showLibrary(false); return r; })()`);
+const seedClips = await tryEv(`VES_LIBRARY.items['ssmr.clips'].unit_cost`);
+await tryEv(`libraryEditItem('ssmr.clips', 'unit_cost', ${JSON.stringify(1)}); 1`);
+check('AF35 a gated row carries tr.gated (a priced one does not); on a coarse pointer the Library ＋ Add button is ≥ 40 px tall (asserted only where the emulation reports pointer: coarse); Escape in a Library cell reverts the draft, keeps the stored value, says so, and the lens stays open; Enter commits and focus stays in the lens',
+  !af35a.error && af35a.gated && af35a.plain === false && !af35b.error && (af35b.coarse ? af35b.btnH >= 40 : true) && !af35c.error && af35c.lensOpen && af35c.value !== '9.99' && af35c.stored === seedClips && /Reverted/.test(af35c.toast)
+  && !af35d.error && af35d.lensOpen && af35d.stored === 8.88 && af35d.activeInLens, { a: af35a, b: af35b, c: af35c, d: af35d, seedClips });
 const fails = results.filter((r) => !r.ok).length; console.log(`\nprobe-af: ${results.length - fails}/${results.length} passed, ${fails} failed`); c.close(); chrome.kill('SIGKILL'); process.exit(fails ? 1 : 0);

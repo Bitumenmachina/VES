@@ -22,7 +22,7 @@ Exit 0 = pass. Checks: per-`<script>` syntax (`node --check`), egress pattern se
 committed baseline, sentinel-region freeze (two regions, `core` and `engine`; the manifest is written only by
 Patrick), and file identity (size + sha256).
 `.github/workflows/verify.yml` runs the same script on every push and PR; read the job summary,
-not the badge. `bash test/selftest.sh` proves the verifier's exit-code contract (10 checks).
+not the badge. `bash test/selftest.sh` proves the verifier's exit-code contract (12 checks).
 
 ## Engine gate (needs a headless Chrome or Chromium)
 

@@ -1,10 +1,12 @@
-# CHANGE_LEDGER — Batch AF (F18.69, TEST BUILD on `claude/estimate-sheet-depth-vrhnf6`)
+# CHANGE_LEDGER — Batches AF · AG · AH (F18.69 → F18.71, TEST BUILD on `claude/estimate-sheet-depth-vrhnf6`)
 
 Every product byte moved by this batch, keyed to the finding it answers in
 `research/FINDINGS_ESTIMATE_SHEET_b191423.md` (the recon ledger; line numbers there are against F18.68) and to the
 commission's rulings R1–R7. Anchors are function names — the durable handle; no line numbers are carried here.
 Evidence column names the probe check (`tools/sweep/probe-af.mjs`) that proves the change on the bytes.
-Batch AG (F18.70) rows follow the AF table, keyed to LEDGER.md §Batch AG (persona pass 1).
+Batch AG (F18.70) rows follow the AF table, keyed to LEDGER.md §Batch AG (persona pass 1); Batch AH (F18.71) rows follow
+those, keyed to LEDGER.md §Batch AH (persona pass 2). An evidence cell names only what the check asserts; a claim the
+check does not reach says "by inspection".
 Synthetic aliases only. No client, project, address, or job dollar figure.
 
 Standing: branch, never `main`. Acceptance is Patrick's cold run of the coil case (commission §5); nothing here is
@@ -41,16 +43,34 @@ Standing: branch, never `main`. Acceptance is Patrick's cold run of the coil cas
 | AG-4 | AG-M1 | library | authored-item ids from the library's own counter; the Setup form too | `nextLibraryUserId` · `libraryUpsertItem` · `addAssemblyItem` | AF17 |
 | AG-5 | AG-M7 | library | blank CSI / match code default to the assembly's | `libraryUpsertItem` | AF24 |
 | AG-6 | AG-T10 | library | edit toast: the book changed, every takeoff priced from it follows, no project override written; desc fallback | `libraryEditItem` | AF29 |
-| AG-7 | AG-M6 · AG-M9 · AG-G10 · AG-G9 | Library lens | per-cell accent vs the built-in seed (`.ov`, title carries the seed's value); "authored here" on non-seed items; match-code column instead of a second Description; ＋ Add beside the description; coarse-pointer rule; provenance said once | `renderLibraryLens` · CSS `.libgrid` | AF25 |
-| AG-8 | AG-G1 · AG-G2 | toolbar | document-door pin `right: 342px` (three sites); segments drop their words under 720 px; the control's title says four lenses | CSS `#dataMenuWrap` pins · `.viewtoggle` media rule · markup | AF18 |
+| AG-7 | AG-M6 · AG-M9 · AG-G10 · AG-G9 | Library lens | per-cell accent vs the built-in seed (`.ov`, title carries the seed's value); "authored here" on non-seed items; match-code column instead of a second Description; ＋ Add beside the description; coarse-pointer rule; provenance said once | `renderLibraryLens` · CSS `.libgrid` | AF25 (accent, match code, ＋ Add position, "authored here"); the coarse rule and provenance-once by inspection (AF35 asserts the coarse rule for ＋ Add in AH) |
+| AG-8 | AG-G1 · AG-G2 | toolbar | document-door pin `right: 342px` (three sites); segments drop their words under 720 px; the control's title says four lenses | CSS `#dataMenuWrap` pins · `.viewtoggle` media rule · markup | AF18 (1440: no overlap; 390: segments < 200 px); the 720 px breakpoint itself by inspection (AF34 asserts the phone pin in AH) |
 | AG-9 | AG-G3 | grid | Escape in a cell reverts, blurs, stops at the cell, says "Reverted" | `moneyCellKeys` | AF19 (control) |
-| AG-10 | AG-M2 · AG-T9 · AG-T11 | grid | derivation words carry the item waste; a FIXED formula reads "fixed Q"; "line value" vs "line formula"; the Formula cell title says what Q is; the Waste header says item waste; card and cell titles say "this takeoff's line value" | `derivSummary` · `derivCell` · thead · `recapEditCell` · `overrideInput` | AF21 |
+| AG-10 | AG-M2 · AG-T9 · AG-T11 | grid | derivation words carry the item waste; a FIXED formula reads "fixed Q"; "line value" vs "line formula"; the Formula cell title says what Q is; the Waste header says item waste; card and cell titles say "this takeoff's line value" | `derivSummary` · `derivCell` · thead · `recapEditCell` · `overrideInput` | AF21 (item waste in the words; the Waste header); "fixed Q", "line value", the Q title and the card/cell titles by inspection |
 | AG-11 | AG-G6 · AG-G7 · AG-G8 · AG-T12 | entry row | measure select after the unit (markup + `GENTRY_WALK`); funnel line in the description cell; empty-row text; closest-name hint; case/dash-forgiving name match | entry-row markup · `libNameKey` · `libCondByLabel` · `libCondClosest` · `entryFunnelWords` | AF22 |
 | AG-12 | AG-G12 · AG-T13 | waste door | non-number sentence; a refused value never stays in the box | `setConditionWaste` · `buildCondWasteRow` | AF23 |
-| AG-13 | AG-T2 · AG-G16 | exports | qty needed numeric in the workbook; ladder labels "(× Pct)"; BOM trailing headers in Title Case | `exportEstimateXLSX` · `exportBOMCSV` | AF26 · AF4 |
+| AG-13 | AG-T2 · AG-G16 | exports | qty needed numeric in the workbook; ladder labels "(× Pct)"; BOM trailing headers in Title Case | `exportEstimateXLSX` · `exportBOMCSV` | AF26 (numeric qty needed, "(× Pct)"); AF4 reads the BOM headers case-insensitively, so Title Case is by inspection |
 | AG-14 | AG-M5 · AG-M10 · AG-T16 | landing · sheet foot · README | the derivation, the line formula and the Library lens are named; the scope is on the sheet foot | landing `.empty-safe` · `.gaddhint` · README | AF27 |
 | AG-15 | AG-S2 | CI | probe-af fetches the F18.68 bytes by full sha; exit captured; step renamed | `.github/workflows/verify.yml` | CI run on the push |
 | AG-16 | — | build stamp | `VES_BUILD = 'F18.70'` with the batch entry | `VES_BUILD` | — |
+
+## Batch AH — persona pass 2 fixes (F18.71)
+
+| # | LEDGER row | surface | what moved | anchor | evidence |
+|---|---|---|---|---|---|
+| AH-1 | AH-T2 · AH-M12a | engine | a number literal is digits with at most one point; anything else throws `bad number "…"` (was parseFloat's silent truncation) | `tokenize` (engine fence) | AF30 |
+| AH-2 | AH-M12b | engine | `FUNC_ARITY`: ceil / floor / round / abs take exactly one argument; max / min one or more; a wrong count throws | `resolveExpr` `parseFactor` (engine fence) | AF30 |
+| AH-3 | AH-M10 | engine · library | the unit gate prints "(no unit)" for a missing unit; `validateLibrary` refuses an empty unit and a production rate ≤ 0 | `resolveItem` UNIT_GATE · `validateLibrary` rule 3 | AF32 |
+| AH-4 | AH-T1 | write door | a qty edit on a line carrying `qty_expr` calls `afterFormulaEdit` — the cue follows the row | `handleMoneyEdit` (numeric branch) | AF31 |
+| AH-5 | AH-T3 | new takeoff | the reset clears the lens cue | `newTakeoff` | AF31 |
+| AH-6 | AH-M6 | Library lens | `sel()` carries the seed-diff accent and title like `inp()`; `seedText` joins a pipe-list ref as shown; CSS `select.lib-edit.ov` | `renderLibraryLens` · CSS | AF32 |
+| AH-7 | AH-M9 · AH-T6 · AH-G4 | waste words · waste box | `pctWord` (two decimals) at the derivation, item-waste, journal, toast and assembly-waste sites; the box's `change` path toasts `wasteSaid` as Enter does | `pctWord` · `derivSummary` · `setConditionWaste` · `buildCondWasteRow` · `renderLibraryLens` | AF33 |
+| AH-8 | AH-G9 | toolbar (phone) | under 720 px the four document-door pins read `right: 184px`; the Plan bar's expanded padding 250 px; `#btnDataMenu` never wraps | CSS media block after the pins | AF34 |
+| AH-9 | AH-G2 | toolbar | `#segPlan` title; `aria-label` on all four segments | markup | AF34 |
+| AH-10 | AH-G1 | grid | `tr.gated` on a gated row; tint + left bar | `renderEstimateGrid` · CSS `.estgrid tr.gated` | AF35 |
+| AH-11 | AH-G6 | Library lens | `button.libAddBtn` in the coarse-pointer rule | CSS `@media (pointer: coarse)` | AF35 (asserted where the emulation reports coarse) |
+| AH-12 | AH-G7 | Library lens | `keydown` on `#libBody`: Escape reverts to `defaultValue`, blurs, toasts, stops; Enter commits via the change path with `libFocus` set so the re-render refocuses; Enter on the ＋ Add row clicks ＋ Add | lens key listener (boot) | AF35 |
+| AH-13 | — | build stamp | `VES_BUILD = 'F18.71'` with the batch entry | `VES_BUILD` | — |
 
 ## What did not move (commission §6)
 G0's twelve recap keys and eight line keys (4/4 on every commit) · probe-v V2 demo sell 64,620.46 · probe-u's four
