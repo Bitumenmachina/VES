@@ -22,7 +22,11 @@ truth first, history compressed.
   Patrick: the licence word (R-8) before B7.
   **Push:** the box's pre-push guard allows `main` (and main-reachable tags) only — `ves2` is LOCAL; not routed around. CI on the
   runner runs when Patrick merges (or pushes the branch from a cloud seat). Every gate above ran on this box, raw output in the LEDGER row.
-  **B0f landed `721b4d4`:** synthetic three-sheet fixture + golden + control probe 7/7 on both F18.72 and the port. B0 COMPLETE. **PICKUP = B1** (charter `.scratch/charter-b1.md`; rulings R-3/R-3a/R-4).
+  **B0f landed `721b4d4`:** synthetic three-sheet fixture + golden + control probe 7/7 on both F18.72 and the port. B0 COMPLETE.
+- **VES 2 · Batch B1 LANDED — build 2.0.0-rc.2** (2026-09-14). sha256 `7e0bac9b6511cd0ea9c7fa56df4d398e1a3d121469b641360736da700e431b74`. Pitch = one store (rise/12), one
+  function, every surface; a bare 6 is 6/12; TAKEOFF_VERSION 4 with a named migration (legacy-factor confirm; R-3a deltas on one
+  banner, +$15,291.49 on the fixture). probe-b1-pitch 12/12 (1/12 on base) · G0 GREEN · af 40/40 (AF6/AF7 re-pointed, declared) ·
+  fixture control 7/7 on the re-recorded 2.0 golden (F18.72 record kept beside it). **PICKUP = B2a** (charter `.scratch/charter-b2a.md`; R-5).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

@@ -61,6 +61,38 @@ Plan (Patrick-approved 2026-09-14, the deliverable of the architect's revisit): 
   `.gitignore` now `fixtures/*` + `!fixtures/synthetic/` (a negation never fires inside an ignored DIRECTORY) + `.scratch/`;
   `.gitattributes` marks the synthetic PDF binary (its xref lines carry required trailing spaces).
 
+## Batch B1 — VES 2 · PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION (build 2.0.0-rc.2, 2026-09-14)
+
+Rulings R-3 / R-3a / R-4 (LEDGER §Batch B0). Opus agent, RED-first: `tools/sweep/probe-b1-pitch.mjs` **1/12 on the base
+(md5 5c48c64a)** → **12/12 on the patch**; applied by md5 contract (declared `9aad053e258e6333f889b95ef04e9055` = applied). Product: sha256 `7e0bac9b6511cd0ea9c7fa56df4d398e1a3d121469b641360736da700e431b74`,
+3705692 bytes.
+- `c.pitch` = rise per 12 (unrounded — rounding to an eighth would have moved $0.32 on one line silently; the eighth is for
+  display and for the divergence test only), the ONLY store. `pitchFactor(rise, kind)` is the one conversion: area/slope
+  √(1+(r/12)²) · hipvalley √(1+(r/12)²/2) · level 1 · count 1; `VESCore.rollup` applies it for every condition, library or
+  not; `resolveTakeoff` reads the pitched rollup and never multiplies again; `condPitchFactor`/`dispQtyOf`/`factorOf` are thin
+  wrappers on it. `conditionOverrides[libRef].pitch` survives only as a non-enumerable read-only VIEW of the one store (never
+  serialised, never reaches the engine — kept because AH1–AH5 and the fixture control read that key). Both doors write through
+  `parsePitch` (a bare 6 is 6/12), show `fmtPitch`, and are JOURNALED ("pitch 6/12 → 4/12 on <condition>"; Ctrl+Z restores
+  pitch and the shown quantity). Linears carry `lenKind` (hipvalley ×1.0607 · level ×1 · slope = area factor; existing
+  pitched linears migrate as `slope` so nothing moves). A library row's pitch seeds a new condition once (no seed row carries
+  one today; B1-7 seeds one to prove the door).
+- **Migration 3→4** in `normalizeSnapshot`: a v3 FACTOR becomes a rise; a factor the rise cannot reproduce (the bare 6 →
+  implied rise 71) keeps `pitchLegacyFactor`, prices exactly as saved, and shows a per-condition confirm banner; confirming
+  re-prices at 6/12 and journals it. **R-3a on the fixture:** three library conditions whose pitch sat in the plain store
+  DISPLAYED pitched but PRICED flat — money reconciled TO THE DISPLAYED number and named on one load banner: SSMR — hip
+  +$215.08 · Slate — field area +$13,657.08 · Slate — valley +$1,419.33 · sell $496,800.67 → $512,092.16 (+1,529,149¢, the
+  probe reads the deltas from the banner text and checks the grand against them). 26/26 other quantities identical to the
+  F18.72 golden. A v4 file round-trips through two saves with no repeat banner. The Audit CSV — the one surface with no pitch
+  on it (per-measurement raw strokes) — now carries `Pitch` + `Pitch factor` columns.
+- **Gates on `9aad053e258e6333f889b95ef04e9055`:** G0 GREEN 4/4 (goldens untouched) · ves-verify PASS · probe-b1-pitch 12/12 · probe-af **40/40** after two
+  declared row changes (AF6 "version still 3" → "version ≥ 3 — the build's"; AF7: the F18.68 bytes now REFUSE a version-4 file
+  loudly, naming the version — a stronger guarantee than the field-drop the row pinned; the drop path still exists for
+  same-version files) · probe-v 17/17 · probe-u 8/8 · probe-p903-pitch 6/6 (+ rail/words/aim/doc per the agent's run) ·
+  **fixture control 7/7 against a NEW golden**: `golden.cents.json` re-recorded on rc.2 (`--write-golden`), the F18.72 record
+  kept as `golden.f18.72.cents.json` (probe-b1-pitch's delta arithmetic reads it); F2 accepts a file no newer than the build.
+- Candidates (not built): C-B1-1 the fixture control's F6 still documents the legacy ×6 hold (its wording updated) — when
+  Patrick confirms the banner on a real file the row is his to watch; C-B0-1 (identity fileSize 0) still open.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
