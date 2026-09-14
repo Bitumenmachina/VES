@@ -1,0 +1,604 @@
+{
+  "fixture": "three-sheet",
+  "note": "Money is integer cents; quantities are integer thousandths of the displayed unit. Recorded by tools/sweep/probe-b0-fixture.mjs --write-golden.",
+  "html": {
+    "sha256": "d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70",
+    "bytes": 3657712,
+    "build": "F18.72"
+  },
+  "library": {
+    "name": "Roofing & Envelope — Coastal SE Georgia",
+    "fingerprint": "7e4e6a2a",
+    "seed": true
+  },
+  "recap": {
+    "lineCount": 101,
+    "off": 0,
+    "materialCents": 23745838,
+    "laborCents": 16081056,
+    "equipmentCents": 0,
+    "costCents": 39826894,
+    "ohAmtCents": 3982689,
+    "mkAmtCents": 3504767,
+    "pfAmtCents": 2365717,
+    "sellCents": 49680067
+  },
+  "conditions": [
+    {
+      "id": 1,
+      "name": "SSMR — field area",
+      "libRef": "ssmr.field",
+      "type": "area",
+      "location": "Main Roof",
+      "color": "#ff5d3a",
+      "unit": "SF",
+      "count": 2,
+      "pages": [
+        1,
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": 1.118,
+      "rollupPitch": 1,
+      "dispPitch": 1.118,
+      "rollupQtyMilli": 3596875,
+      "dispQtyMilli": 4021306,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 2,
+      "name": "SSMR — eave",
+      "libRef": "ssmr.eave",
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#3d9be9",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 208750,
+      "dispQtyMilli": 208750,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 3,
+      "name": "SSMR — ridge",
+      "libRef": "ssmr.ridge",
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#6fd08c",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 151250,
+      "dispQtyMilli": 151250,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 4,
+      "name": "SSMR — hip",
+      "libRef": "ssmr.hip",
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#ffd166",
+      "unit": "LF",
+      "count": 2,
+      "pages": [
+        1
+      ],
+      "storedPitch": 1.0541,
+      "overridePitch": null,
+      "rollupPitch": 1.0541,
+      "dispPitch": 1.0541,
+      "rollupQtyMilli": 364982,
+      "dispQtyMilli": 364982,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 5,
+      "name": "SSMR — valley",
+      "libRef": "ssmr.valley",
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#b07cd8",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 102500,
+      "dispQtyMilli": 102500,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 6,
+      "name": "SSMR — pipe penetration",
+      "libRef": "ssmr.pipe",
+      "type": "count",
+      "location": "Main Roof",
+      "color": "#f25f8e",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 4000,
+      "dispQtyMilli": 4000,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 7,
+      "name": "TPO — membrane field",
+      "libRef": "tpo.field",
+      "type": "area",
+      "location": "Annex",
+      "color": "#4ecdc4",
+      "unit": "SF",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 1943750,
+      "dispQtyMilli": 1943750,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 8,
+      "name": "TPO — parapet flashing",
+      "libRef": "tpo.parapet",
+      "type": "linear",
+      "location": "Annex",
+      "color": "#c8a24b",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 120000,
+      "dispQtyMilli": 120000,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 9,
+      "name": "TPO — drain",
+      "libRef": "tpo.drain",
+      "type": "count",
+      "location": "Annex",
+      "color": "#ff5d3a",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 7000,
+      "dispQtyMilli": 7000,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 10,
+      "name": "Slate — field area",
+      "libRef": "slate.field",
+      "type": "area",
+      "location": "Main Roof",
+      "color": "#3d9be9",
+      "unit": "SF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": 1.25,
+      "overridePitch": null,
+      "rollupPitch": 1.25,
+      "dispPitch": 1.25,
+      "rollupQtyMilli": 2695313,
+      "dispQtyMilli": 2695313,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 11,
+      "name": "Slate — valley",
+      "libRef": "slate.valley",
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#6fd08c",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": 1.118,
+      "overridePitch": null,
+      "rollupPitch": 1.118,
+      "dispPitch": 1.118,
+      "rollupQtyMilli": 276705,
+      "dispQtyMilli": 276705,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 12,
+      "name": "Slate — chimney cap",
+      "libRef": "slate.chimney",
+      "type": "count",
+      "location": "Main Roof",
+      "color": "#ffd166",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 3000,
+      "dispQtyMilli": 3000,
+      "extendedCents": null,
+      "included": false
+    },
+    {
+      "id": 13,
+      "name": "Field membrane",
+      "libRef": null,
+      "type": "area",
+      "location": "Annex",
+      "color": "#b07cd8",
+      "unit": "SF",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 1814063,
+      "dispQtyMilli": 1814063,
+      "extendedCents": 979594,
+      "included": true
+    },
+    {
+      "id": 14,
+      "name": "Hip/valley metal",
+      "libRef": null,
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#f25f8e",
+      "unit": "LF",
+      "count": 2,
+      "pages": [
+        1,
+        3
+      ],
+      "storedPitch": 1.118,
+      "overridePitch": null,
+      "rollupPitch": 1.118,
+      "dispPitch": 1.118,
+      "rollupQtyMilli": 375229,
+      "dispQtyMilli": 375229,
+      "extendedCents": 703554,
+      "included": true
+    },
+    {
+      "id": 15,
+      "name": "Eave drip",
+      "libRef": null,
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#4ecdc4",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": 1.118,
+      "overridePitch": null,
+      "rollupPitch": 1.118,
+      "dispPitch": 1.118,
+      "rollupQtyMilli": 195650,
+      "dispQtyMilli": 195650,
+      "extendedCents": 121303,
+      "included": true
+    },
+    {
+      "id": 16,
+      "name": "Curb flashing",
+      "libRef": null,
+      "type": "linear",
+      "location": "Canopy",
+      "color": "#c8a24b",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        3
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 131000,
+      "dispQtyMilli": 131000,
+      "extendedCents": 314400,
+      "included": true
+    },
+    {
+      "id": 17,
+      "name": "Ridge vent",
+      "libRef": null,
+      "type": "linear",
+      "location": "Main Roof",
+      "color": "#ff5d3a",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": 1.0541,
+      "overridePitch": null,
+      "rollupPitch": 1.0541,
+      "dispPitch": 1.0541,
+      "rollupQtyMilli": 131763,
+      "dispQtyMilli": 131763,
+      "extendedCents": 283289,
+      "included": true
+    },
+    {
+      "id": 18,
+      "name": "Skylight curb",
+      "libRef": null,
+      "type": "count",
+      "location": "Canopy",
+      "color": "#3d9be9",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        3
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 4000,
+      "dispQtyMilli": 4000,
+      "extendedCents": 154000,
+      "included": true
+    },
+    {
+      "id": 19,
+      "name": "Roof access ladder",
+      "libRef": null,
+      "type": "count",
+      "location": "",
+      "color": "#6fd08c",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 9000,
+      "dispQtyMilli": 9000,
+      "extendedCents": 846000,
+      "included": true
+    },
+    {
+      "id": 20,
+      "name": "Underlayment — high temp",
+      "libRef": null,
+      "type": "area",
+      "location": "Main Roof",
+      "color": "#ffd166",
+      "unit": "SF",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": 1.25,
+      "overridePitch": null,
+      "rollupPitch": 1.25,
+      "dispPitch": 1.25,
+      "rollupQtyMilli": 1722656,
+      "dispQtyMilli": 1722656,
+      "extendedCents": 318691,
+      "included": true
+    },
+    {
+      "id": 21,
+      "name": "Sheathing repair — allowance",
+      "libRef": null,
+      "type": "area",
+      "location": "",
+      "color": "#b07cd8",
+      "unit": "SF",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 1368750,
+      "dispQtyMilli": 1368750,
+      "extendedCents": 650156,
+      "included": true
+    },
+    {
+      "id": 22,
+      "name": "Snow guard",
+      "libRef": null,
+      "type": "count",
+      "location": "",
+      "color": "#f25f8e",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        1
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 5000,
+      "dispQtyMilli": 5000,
+      "extendedCents": 16000,
+      "included": true
+    },
+    {
+      "id": 23,
+      "name": "Counterflashing — reglet",
+      "libRef": null,
+      "type": "linear",
+      "location": "Canopy",
+      "color": "#4ecdc4",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        3
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 92500,
+      "dispQtyMilli": 92500,
+      "extendedCents": 131813,
+      "included": true
+    },
+    {
+      "id": 24,
+      "name": "Cricket framing",
+      "libRef": null,
+      "type": "area",
+      "location": "Canopy",
+      "color": "#c8a24b",
+      "unit": "SF",
+      "count": 1,
+      "pages": [
+        3
+      ],
+      "storedPitch": 6,
+      "overridePitch": null,
+      "rollupPitch": 6,
+      "dispPitch": 6,
+      "rollupQtyMilli": 9187500,
+      "dispQtyMilli": 9187500,
+      "extendedCents": 8820000,
+      "included": true
+    },
+    {
+      "id": 25,
+      "name": "Gutter — box",
+      "libRef": null,
+      "type": "linear",
+      "location": "Annex",
+      "color": "#ff5d3a",
+      "unit": "LF",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": 1.0541,
+      "overridePitch": null,
+      "rollupPitch": 1.0541,
+      "dispPitch": 1.0541,
+      "rollupQtyMilli": 183282,
+      "dispQtyMilli": 183282,
+      "extendedCents": 502192,
+      "included": true
+    },
+    {
+      "id": 26,
+      "name": "Downspout boot",
+      "libRef": null,
+      "type": "count",
+      "location": "",
+      "color": "#3d9be9",
+      "unit": "EA",
+      "count": 1,
+      "pages": [
+        2
+      ],
+      "storedPitch": null,
+      "overridePitch": null,
+      "rollupPitch": 1,
+      "dispPitch": 1,
+      "rollupQtyMilli": 7000,
+      "dispQtyMilli": 7000,
+      "extendedCents": 32200,
+      "included": true
+    }
+  ],
+  "bare6": {
+    "id": 24,
+    "name": "Cricket framing",
+    "storedPitch": 6,
+    "appliedFactor": 6,
+    "rawQtyMilli": 1531250,
+    "pricedQtyMilli": 9187500,
+    "readsAs": "6x multiplier (a bare 6 is NOT 6/12 in this build)"
+  },
+  "storeB": {
+    "condId": 1,
+    "name": "SSMR — field area",
+    "libRef": "ssmr.field",
+    "overridePitch": 1.118,
+    "flatMilli": 3596875,
+    "pitchedMilli": 4021306,
+    "surfaces": {
+      "rollupRowQty": 3596875,
+      "railCard": "4021.3",
+      "proposal": "4,021.31",
+      "estimateGrid": 4022,
+      "engineOrderedFirstLine": 4022,
+      "engineOrderedOverFlat": 1.1182
+    },
+    "flatSurfaces": [
+      "rollupRow(always flat — rollup cannot see store B)"
+    ]
+  }
+}

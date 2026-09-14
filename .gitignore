@@ -8,9 +8,16 @@ node_modules/
 *~
 .DS_Store
 
-# Client material — never public, no other home in this project
-fixtures/
+# Client material — never public, no other home in this project.
+# `fixtures/*` rather than `fixtures/`: git does not descend into an ignored DIRECTORY, so a
+# negation inside one never fires. Ignoring the contents instead leaves the door open for the
+# one subtree that must be tracked — the synthetic fixtures every probe and gate runs on.
+fixtures/*
+!fixtures/synthetic/
 refs/
+
+# Batch scratch clones and their patches — working copies, never the record
+.scratch/
 
 # Release artifacts stay out except the synthetic demo
 release/*
