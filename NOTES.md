@@ -30,7 +30,10 @@ truth first, history compressed.
 - **VES 2 · Batch B2a LANDED — build 2.0.0-rc.3** (2026-09-14). sha256 `b588d85ff53b540e9f9a5064a3c98ecaf5223e35088a3eef8f1157a6b94f257c`. Section → System nested subtotals on every
   money surface + takeoff paper; Unassigned/Project/Multiple named; rename door journaled; one-cent nested-apportion fix (R-5i..k).
   probe-b2a-sections 7/7 (0/7 on base) · G0 GREEN · fixture 7/7 · pitch 12/12 · af 40/40 · ae 4/5 (AE5 declared red until B4).
-  **PICKUP = B2b** (charter `.scratch/charter-b2b.md`; R-5e..h) → B3 → B4 → B5 → B6 → B7.
+- **VES 2 · Batch B2b LANDED — build 2.0.0-rc.4** (2026-09-14). sha256 `6fb551cc8510e9b599221d6eb9a36f453a6627f4f20786818e9c6914299f13d7`. Section tool draws regions; containment tags
+  unsectioned conditions at measure time (journaled); Tag-by-regions door; TAKEOFF_VERSION 5; regions print on the takeoff paper only
+  (R-5e..h, R-5l..o). probe-b2b-regions 8/8 real pointer (0/8 on base) · G0 GREEN · all standing gates green.
+  **PICKUP = B3** (charter `.scratch/charter-b3.md`; R-7, sonnet) → B4 (`charter-b4.md`) → B5 (`charter-b5.md`) → B6 → B7.
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

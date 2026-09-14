@@ -120,6 +120,29 @@ Ruling R-5 (+R-5b..d in the charter). Opus agent, RED-first: `tools/sweep/probe-
 - Token note: B1 287K · B2a 331K (the ~150K rail was a stop-and-return-partial rail; both delivered green, neither returned partial).
   B3/B5 charters are narrower and run on sonnet.
 
+## Batch B2b — VES 2 · SECTIONS, DRAWN: regions tag by containment (build 2.0.0-rc.4, 2026-09-14)
+
+Rulings R-5e..h (charter). Opus agent, RED-first with a REAL pointer: `tools/sweep/probe-b2b-regions.mjs` **0/8 on the base
+(md5 2b26e249) → 8/8 on the patch**; applied by md5 contract (declared `ec6688af04b4dd318d62e890e93b390a` = applied). Product: sha256 `6fb551cc8510e9b599221d6eb9a36f453a6627f4f20786818e9c6914299f13d7`, 3770833 bytes.
+- A Section tool (rack, under REGION, below Rect/Poly) draws a closed polygon exactly like the area tool, then asks a name (datalist
+  of existing sections). `state.sections[]` in sheet coordinates; TAKEOFF_VERSION 4 → 5 (absent → []; the rc.3 bytes refuse a v5
+  file loudly — tested against the real rc.3 bytes in a second tab). A measurement completed inside a region tags its condition
+  ONLY if the condition has no section (journaled "section Annex on <condition> — from the drawn region"); a sectioned condition
+  stays and the toast says so; "Tag by regions" does it for every unsectioned condition in one journal entry; moving/renaming/
+  deleting a region never changes a section (money never retro-changes; grand read before/after = equal). Regions print on the
+  takeoff sheet figures only (lavender wash beneath measurements, violet chip), never on bid or proposal.
+- **Ratified from the agent's declared decisions:** **R-5l** anchor = centroid for areas, mean of markers for a multi-point count,
+  the point halfway ALONG the run for a line (the mid vertex can sit outside its own section); **R-5m** the smallest containing
+  region wins (a canopy nested in a main roof takes what is drawn in it); **R-5n** a condition whose measurements straddle two
+  regions is left alone and named in the toast (splitting out of scope); **R-5o** no "hide markup" toggle exists — the region's
+  fill follows the Fills cycle, outline and chip survive "No fill".
+- Two harness facts recorded in the probe header, neither a product defect: snap pulls a first corner onto a nearby calibration
+  mark (the probe draws with snap off and says so); the floating islands settle ~13 px sideways on first pointer entry (the probe
+  hovers, waits, re-aims — what a hand does).
+- **Gates on `ec6688af04b4dd318d62e890e93b390a` (orchestrator rerun):** G0 GREEN 4/4 · ves-verify PASS · probe-b2b-regions 8/8 · probe-b2a-sections 7/7 ·
+  probe-b0-fixture 7/7 (F2 "≥ 3" holds) · probe-b1-pitch 12/12 · probe-u 8/8 · probe-p903-aim 7/7 · probe-af 40/40 (AF7 "newer
+  file refused loudly" holds for v5). Agent's run also: v 17/17 · p903 doc/rail/pitch/words green. Token note: 339K.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
