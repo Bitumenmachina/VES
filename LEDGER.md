@@ -143,6 +143,30 @@ Rulings R-5e..h (charter). Opus agent, RED-first with a REAL pointer: `tools/swe
   probe-b0-fixture 7/7 (F2 "≥ 3" holds) · probe-b1-pitch 12/12 · probe-u 8/8 · probe-p903-aim 7/7 · probe-af 40/40 (AF7 "newer
   file refused loudly" holds for v5). Agent's run also: v 17/17 · p903 doc/rail/pitch/words green. Token note: 339K.
 
+## Batch B3 — VES 2 · COLORS: 24 hues, custom hex, print-separable (build 2.0.0-rc.5, 2026-09-14)
+
+Ruling R-7 (+R-7a..f in the charter). Sonnet agent (second spawn — the first was stopped by the auto-mode classifier before any
+work; a pre-made clone and a plainer prompt fixed it), RED-first: `tools/sweep/probe-b3-colors.mjs` **1/8 on the base (md5
+ec6688af) → 8/8 on the patch**; applied by md5 contract (declared `62a2031c1c11443bb415e3262c89ca0f` = applied). Product: sha256 `bafd32ae64095c932a242769d5705f3e3fbdf5b1f5d57ce8f36a56ca9257cb59`, 3786425 bytes.
+- `PALETTE` = 24 hues, the shipped 8 byte-identical and first (existing files keep their colors); the 16 new built from the
+  existing 8's HSL with ≥135° hue separation between consecutive picks, alternating light/dark bands. `readableInk(hex)` picks
+  black/white by WCAG luminance — proven for ANY sRGB color (the two curves cross at luminance ≈0.179 at ≈4.58:1), so every label
+  plate, card chip and legend glyph clears 4.5:1, custom included. `patternOf(i)`: 8 dash signatures × 5 hatch orientations, coprime
+  cycle (lcm 40) so all 24 palette indices carry a unique (dash, hatch) pair; custom colors get a persisted `patternIdx`. Custom door
+  lives in `colorSwatches()` (both callers — ✎ editor and create form): 24 buttons, native `<input type="color">`, hex field, one
+  `onPick`, journaled like a unit-cost edit. `CUSTOM_COLOR_RE` mirrors the frozen `COLOR_RE` (private to VESCore's freeze region).
+- **Real find:** the takeoff sheet box (`.tk-sheet { height: 7.4in; overflow: hidden }`, kind-curie AE-3) silently CLIPPED a long
+  legend on printed media — proven by emulating print media at the real 10.2 in column width (a 1440 px window hides it); the last
+  legend row sat 20 px past the box on the base. Legends now paginate past 20 items (R-7e); B4 keeps this row.
+- **Gates on `62a2031c1c11443bb415e3262c89ca0f` (orchestrator rerun):** G0 GREEN 4/4 · ves-verify PASS · probe-b3-colors 8/8 · probe-b0-fixture 7/7 ·
+  probe-b1-pitch 12/12 · probe-b2a-sections 7/7 · probe-b2b-regions **8/8 after a harness fix** (its "old build" defaulted to
+  `git show ves2:…`, which after B2b landed IS a version-5 build, so the refusal row could never fire — pinned to `4742d02`, the
+  last v4 commit; the agent's run had passed only because its clone's `ves2` still pointed at the pre-B2b base — harness defect
+  #1 of VES 2, the R-04 class) · probe-p903-doc 8/8 (its optional prior-build AE7 row is not in CI) · probe-af 40/40 · probe-ae
+  4/5 (AE5 declared red until B4).
+- Token note: sonnet 464K / 230 tool uses — more than any opus batch (B1 287K, B2a 331K, B2b 339K). Remaining code batches run
+  on opus (Patrick 2026-09-14: "use opus if sonnet trips again"; cost per token is higher but the burn was not lower).
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
