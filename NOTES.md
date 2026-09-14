@@ -26,7 +26,11 @@ truth first, history compressed.
 - **VES 2 · Batch B1 LANDED — build 2.0.0-rc.2** (2026-09-14). sha256 `7e0bac9b6511cd0ea9c7fa56df4d398e1a3d121469b641360736da700e431b74`. Pitch = one store (rise/12), one
   function, every surface; a bare 6 is 6/12; TAKEOFF_VERSION 4 with a named migration (legacy-factor confirm; R-3a deltas on one
   banner, +$15,291.49 on the fixture). probe-b1-pitch 12/12 (1/12 on base) · G0 GREEN · af 40/40 (AF6/AF7 re-pointed, declared) ·
-  fixture control 7/7 on the re-recorded 2.0 golden (F18.72 record kept beside it). **PICKUP = B2a** (charter `.scratch/charter-b2a.md`; R-5).
+  fixture control 7/7 on the re-recorded 2.0 golden (F18.72 record kept beside it).
+- **VES 2 · Batch B2a LANDED — build 2.0.0-rc.3** (2026-09-14). sha256 `b588d85ff53b540e9f9a5064a3c98ecaf5223e35088a3eef8f1157a6b94f257c`. Section → System nested subtotals on every
+  money surface + takeoff paper; Unassigned/Project/Multiple named; rename door journaled; one-cent nested-apportion fix (R-5i..k).
+  probe-b2a-sections 7/7 (0/7 on base) · G0 GREEN · fixture 7/7 · pitch 12/12 · af 40/40 · ae 4/5 (AE5 declared red until B4).
+  **PICKUP = B2b** (charter `.scratch/charter-b2b.md`; R-5e..h) → B3 → B4 → B5 → B6 → B7.
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

@@ -93,6 +93,33 @@ Rulings R-3 / R-3a / R-4 (LEDGER §Batch B0). Opus agent, RED-first: `tools/swee
 - Candidates (not built): C-B1-1 the fixture control's F6 still documents the legacy ×6 hold (its wording updated) — when
   Patrick confirms the banner on a real file the row is his to watch; C-B0-1 (identity fileSize 0) still open.
 
+## Batch B2a — VES 2 · SECTIONS, TYPED: Section → System nested subtotals (build 2.0.0-rc.3, 2026-09-14)
+
+Ruling R-5 (+R-5b..d in the charter). Opus agent, RED-first: `tools/sweep/probe-b2a-sections.mjs` **0/7 on the base (md5 9aad053e)
+→ 7/7 on the patch**; applied by md5 contract (declared `2b26e249430e263fb32aadc5418a060f` = applied). Product: sha256 `b588d85ff53b540e9f9a5064a3c98ecaf5223e35088a3eef8f1157a6b94f257c`, 3738095 bytes.
+- Every money surface now groups **Section → System → line** with a subtotal at each level: recap summary (the division table
+  stays), Estimate grid (the division chip filters inside the grouping), client bid, cost sheet, takeoff paper ("Section: <name>",
+  EDGE wording; quantities only), proposal scope; Estimate CSV trailing `section` column, supplier RFQ `section`, workbook Section
+  column with live SUM subtotal rows. "Unassigned" is a named section; general lines roll under "Project". The condition editor's
+  location field is a section picker (datalist + free text); "Rename section" moves every condition, journaled under both names,
+  Ctrl+Z restores, grand unchanged. No format bump.
+- **Ratified from the agent's declared decisions (recorded here as rulings):** **R-5i** an engine line whose driving conditions sit
+  in different sections rolls under a third named, subtotaled section "Multiple" (never silently filed under its first driver,
+  never dumped into Project); **R-5j** a FIXED allowance (no driving refs) inherits its assembly's section and falls to Project only
+  if that assembly's conditions disagree; **R-5k** section cost is apportioned NESTED (sections → grand, systems → their section,
+  Mat/Lab/Equip → their row) and section Sell rides one hoisted copy of the bid's largest-remainder routine, so the recap's
+  section Sell and the bid's section subtotal are the same integers — the agent found sections rounded individually summed to
+  41,052,763¢ against a grand of 41,052,762¢ (the S3/F5 round-then-sum class, third time in this file) and fixed it.
+- **Gates on `2b26e249430e263fb32aadc5418a060f` (orchestrator rerun):** G0 GREEN 4/4 · ves-verify PASS · probe-b2a-sections 7/7 · probe-b0-fixture 7/7 ·
+  probe-b1-pitch 12/12 · probe-v 17/17 · probe-af 40/40 · probe-ae **4/5** (AE2 went green as a side effect — the takeoff paper now
+  carries every measured quantity; AE5 still red as declared until B4). Agent's run also: u 8/8 · p903 ×5 green · x/y/z/aa/ab/ac/ad green.
+- Seen, not fixed: the fixture's bid drops 4 zero-quantity $0 lines (the existing note says so; bid == recap holds here and would
+  need that note read on a job where it does not); the 316 px recap dock shows the new Sell column with Cost scrolled behind the
+  sticky column (the Estimate lens is where the table reads whole) — **C-B2a-1**, a layout candidate for B6. `exportClientReviewXLSX`
+  stays a division document (unlisted in R-5d; cents unchanged).
+- Token note: B1 287K · B2a 331K (the ~150K rail was a stop-and-return-partial rail; both delivered green, neither returned partial).
+  B3/B5 charters are narrower and run on sonnet.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
