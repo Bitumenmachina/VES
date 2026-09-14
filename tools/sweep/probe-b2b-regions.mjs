@@ -17,7 +17,7 @@
  *     #19 Roof access ladder ~(888, 783) and #26 Downspout boot ~(709, 843) sit outside the
  *     box this probe draws, and #22 Snow guard is on sheet 1 where no region is drawn — so
  *     "tag by regions" must move exactly one of the four and leave three Unassigned.
- * The last arg (or `git show ves2:src/VES_PM.html`) is the OLD BUILD for the v5 refusal row.
+ * The last arg (or `git show 4742d02:src/VES_PM.html` — the rc.3 commit, the last version-4 build; PINNED because once B2b landed `ves2` itself is a version-5 build and the refusal row could never fire — found by the orchestrator's rerun at B3) is the OLD BUILD for the v5 refusal row.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -40,7 +40,7 @@ const TMP = mkdtempSync(join(tmpdir(), 'ves-b2b-'));
    build that really cannot read v5 (never a mock of one). */
 let OLD = OLDARG || '';
 if (!OLD) {
-  const g = spawnSync('git', ['-C', ROOT, 'show', 'ves2:src/VES_PM.html'], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 });
+  const g = spawnSync('git', ['-C', ROOT, 'show', '4742d02:src/VES_PM.html'], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 });
   if (g.status === 0 && g.stdout && g.stdout.length > 1000) { OLD = join(TMP, 'old-build.html'); writeFileSync(OLD, g.stdout); }
 }
 

@@ -159,11 +159,12 @@ ec6688af) → 8/8 on the patch**; applied by md5 contract (declared `62a2031c1c1
   legend on printed media — proven by emulating print media at the real 10.2 in column width (a 1440 px window hides it); the last
   legend row sat 20 px past the box on the base. Legends now paginate past 20 items (R-7e); B4 keeps this row.
 - **Gates on `62a2031c1c11443bb415e3262c89ca0f` (orchestrator rerun):** G0 GREEN 4/4 · ves-verify PASS · probe-b3-colors 8/8 · probe-b0-fixture 7/7 ·
-  probe-b1-pitch 12/12 · probe-b2a-sections 7/7 · probe-b2b-regions **8/8 after a harness fix** (its "old build" defaulted to
+  probe-b1-pitch 12/12 · probe-b2a-sections 7/7 · probe-b2b-regions **7/8 at the B3 commit `a26f133` — the harness fix this row claimed had NOT applied** (the orchestrator's edit script asserted on a pattern it did not find, the shell did not abort, and the record was written from the intended result, not the observed one — the Assumed-vs-Verified class; corrected in the next commit, which pins the old build and carries the real rerun). The defect: its "old build" defaulted to
   `git show ves2:…`, which after B2b landed IS a version-5 build, so the refusal row could never fire — pinned to `4742d02`, the
   last v4 commit; the agent's run had passed only because its clone's `ves2` still pointed at the pre-B2b base — harness defect
   #1 of VES 2, the R-04 class) · probe-p903-doc 8/8 (its optional prior-build AE7 row is not in CI) · probe-af 40/40 · probe-ae
   4/5 (AE5 declared red until B4).
+- **Correction commit (orchestrator, 2026-09-14):** `probe-b2b-regions.mjs` old build pinned to `4742d02`; rerun on the landed rc.5 bytes: **probe-b2b-regions: 8/8 passed, 0 failed** (raw in the commit). The LEDGER line above was wrong when committed; this line is the observed result.
 - Token note: sonnet 464K / 230 tool uses — more than any opus batch (B1 287K, B2a 331K, B2b 339K). Remaining code batches run
   on opus (Patrick 2026-09-14: "use opus if sonnet trips again"; cost per token is higher but the burn was not lower).
 
