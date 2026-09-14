@@ -110,6 +110,19 @@ jobs:
             echo "HARNESS FAIL: could not materialise the F18.68 bytes ($OLD_SHA) for probe-af" | tee -a probes.txt; code11=2
           fi
           [ "$code" = 0 ] && code=$code11
+          # Batch B0 (VES 2): Patrick's 9/03 gates ported from branch kind-curie under p903-* names
+          # (their probe-ae/probe-af file names collided with this branch's own AE/AF gates — different content).
+          node tools/sweep/mkpdf.mjs "$RUNNER_TEMP/plan2.pdf" 1500 2 | tee -a probes.txt
+          node tools/sweep/probe-p903-doc.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan2.pdf" "$PWD" 2>&1 | tee -a probes.txt
+          code12=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code12
+          node tools/sweep/probe-p903-aim.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$RUNNER_TEMP/plan.pdf" "$PWD" 2>&1 | tee -a probes.txt
+          code13=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code13
+          node tools/sweep/probe-p903-rail.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" 2>&1 | tee -a probes.txt
+          code14=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code14
+          node tools/sweep/probe-p903-pitch.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" 2>&1 | tee -a probes.txt
+          code15=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code15
+          node tools/sweep/probe-p903-words.mjs "$PWD/src/VES_PM.html" "$PWD/release/demo/demo-flat-roof.json" "$PWD" 2>&1 | tee -a probes.txt
+          code16=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code16
           {
             echo '## sweep probes'
             echo

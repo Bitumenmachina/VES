@@ -42,3 +42,14 @@ Fixtures are synthetic: `release/demo/demo-flat-roof.json` and a vector plan `mk
 
 Each script prints PASS/FAIL lines or a JSON report; exit codes are 0 pass / 1 findings / 2 harness.
 `probe-sweep.mjs` and `probe2.mjs` are the first-pass runs kept for the record (see SWEEP_68c8e23.md).
+
+## Batch B0 (VES 2, 2026-09-14) — Patrick's 9/03 gates, ported from branch kind-curie
+The kind-curie lineage (F18.67→F18.71) and this lineage (F18.69→F18.72) both named batches AE–AI, so its
+probe-ae/probe-af collided with ours by file name with different content. Ported verbatim under new names:
+
+    node tools/sweep/mkpdf.mjs /tmp/plan2.pdf 1500 2      # two synthetic sheets (third arg = page count, from kind-curie)
+    node tools/sweep/probe-p903-doc.mjs   <html> <json> /tmp/plan2.pdf "$PWD" [prior-build.html]   # was kc probe-ae: the takeoff prints one landscape sheet per measured page, legends, quantities page, no money
+    node tools/sweep/probe-p903-aim.mjs   <html> <json> /tmp/plan.pdf  "$PWD"                      # was kc probe-af: the click picks what you aimed at
+    node tools/sweep/probe-p903-rail.mjs  <html> <json> "$PWD"                                     # was kc probe-ag: one click means one thing on the conditions rail
+    node tools/sweep/probe-p903-pitch.mjs <html> <json> "$PWD"                                     # was kc probe-ah: pitch reads as rise over 12; a bare 6 is 6/12
+    node tools/sweep/probe-p903-words.mjs <html> <json> "$PWD"                                     # was kc probe-ai: the two dropdowns in trade words

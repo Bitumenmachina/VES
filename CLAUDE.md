@@ -39,7 +39,7 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-05, cloud seat, branch claude/estimate-sheet-depth-vrhnf6 — a TEST BUILD, not main)
 - canonical file: src/VES_PM.html
-- build: F18.72 (Batch AI — persona pass 3 on F18.71, answered; F18.71 = Batch AH — pass 2 answered; F18.70 = Batch AG — pass 1 answered; F18.69 = Batch AF — Estimate sheet depth: the sheet renders what it computes, and a formula can live on the line)
+- build: 2.0.0-rc.1 (Batch B0, VES 2 — one lineage: F18.72 + kind-curie F18.71 content-merged; semver from here; prior line: F18.72 = Batch AI — persona pass 3 on F18.71, answered; F18.71 = Batch AH — pass 2 answered; F18.70 = Batch AG — pass 1 answered; F18.69 = Batch AF — Estimate sheet depth: the sheet renders what it computes, and a formula can live on the line)
 - bytes: 3657712
 - sha256: d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70
 - on `main`: F18.68 (Batch AE), 3570752 bytes, sha256 494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760 — the line that moves forward until Patrick accepts this branch.
