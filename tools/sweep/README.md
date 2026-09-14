@@ -53,3 +53,17 @@ probe-ae/probe-af collided with ours by file name with different content. Ported
     node tools/sweep/probe-p903-rail.mjs  <html> <json> "$PWD"                                     # was kc probe-ag: one click means one thing on the conditions rail
     node tools/sweep/probe-p903-pitch.mjs <html> <json> "$PWD"                                     # was kc probe-ah: pitch reads as rise over 12; a bare 6 is 6/12
     node tools/sweep/probe-p903-words.mjs <html> <json> "$PWD"                                     # was kc probe-ai: the two dropdowns in trade words
+
+## Batch B1 / B2a / B2b (VES 2) — the fixture gates
+
+    node tools/sweep/probe-b0-fixture.mjs   <html> fixtures/synthetic/three-sheet/takeoff.v3.json  <plan.pdf> "$PWD"
+    node tools/sweep/probe-b1-pitch.mjs     <html> release/demo/demo-flat-roof.json "$PWD" fixtures/synthetic/three-sheet
+    node tools/sweep/probe-b2a-sections.mjs <html> fixtures/synthetic/three-sheet/takeoff.v3.json  <plan.pdf> "$PWD" [--no-subgates]
+    node tools/sweep/probe-b2b-regions.mjs  <html> fixtures/synthetic/three-sheet/takeoff.v3.json  <plan.pdf> "$PWD" [--no-subgates] [old-build.html]
+                                            # Batch B2b gate — SECTIONS, DRAWN (R-5e…h): the Section tool outlines a roof
+                                            # section and what is measured inside it files that condition under it, once,
+                                            # at tag time. 8 rows, RED-first 0/8 on 2.0.0-rc.3. Every region is drawn with a
+                                            # REAL pointer (Input.dispatchMouseEvent); snap is turned OFF for the run so the
+                                            # containment answers are the fixture's arithmetic and not the snap's. The v5
+                                            # refusal row opens a second tab on the OLD build — the last argument, or
+                                            # `git show ves2:src/VES_PM.html` when it is left out.

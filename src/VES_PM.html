@@ -674,6 +674,7 @@
   .modal p { margin: 0 0 12px; color: var(--ink-dim); }
   .modal .row { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
   .modal input { width: 100%; font-family: var(--mono); font-size: 16px; }
+  #secNameModal .modal .row { justify-content: flex-end; gap: 8px; margin-top: 12px; }
   #projModal .modal { width: 460px; }
   /* ── S2 (B-04), measured consequence of adding one field. The Project info form was ALREADY
      taller than its own `.modal { max-height: 84vh; overflow-y: auto }` box — at 1440×900,
@@ -1871,6 +1872,10 @@
     <button class="racktool" id="btnRect" title="Rectangle — two opposite corners, into the area condition you clicked (B)"><span class="ti">▭</span><span class="tl">Rect</span></button>
     <button class="racktool" id="btnToolPoly" title="Polygon — click each corner, Enter closes, into the area condition you clicked"><span class="ti">⬡</span><span class="tl">Poly</span></button>
     <div class="rackgap"></div>
+    <!-- B2b (R-5e): the Section tool. Outline a roof section once; what you measure inside it files itself there. -->
+    <div class="rack-sec" aria-hidden="true">Region</div>
+    <button class="racktool" id="btnSection" title="Section — outline a roof section on the sheet (click each corner, click the first corner again to close). What you measure inside it files itself under that section."><span class="ti">⬚</span><span class="tl">Region</span></button>
+    <div class="rackgap"></div>
     <button class="racktool" id="btnEdit" title="Edit the selected measurement's condition"><span class="ti">✎</span><span class="tl">Edit</span></button>
     <button class="racktool" id="btnDelete" title="Delete the selected measurement (Del)"><span class="ti">␡</span><span class="tl">Del</span></button>
     <div class="rackspring"></div>
@@ -2091,6 +2096,21 @@
 </div>
 
 <!-- generic explicit-confirm (destructive actions only) -->
+<!-- B2b (R-5e/R-5g): naming a drawn region. Same door renames one (double-click its chip).
+     The datalist is the sections already on this job, so the fifth region joins "Main Roof"
+     instead of starting "main roof"; free text is legal and starts a new one. -->
+<div class="modalBack" id="secNameModal">
+  <div class="modal">
+    <h3 id="secNameTitle">Name this section</h3>
+    <p id="secNameHint">Which roof section did you just outline? Anything measured inside it, on a condition with no section yet, files itself here. Naming a region never re-files money on its own.</p>
+    <input type="text" id="secNameInput" list="secNameList" placeholder="Main Roof" autocomplete="off" aria-label="Section name">
+    <datalist id="secNameList"></datalist>
+    <div class="row">
+      <button id="secNameCancel" class="quiet">Cancel</button>
+      <button id="secNameOk" class="armed">Save region</button>
+    </div>
+  </div>
+</div>
 <div class="modalBack" id="confirmModal">
   <div class="modal">
     <h3 id="confirmTitle">Are you sure?</h3>
@@ -2154,6 +2174,13 @@
       <button id="btnCSVBOM" class="quiet" title="What the systems say to buy, priced — one row per item">Bill of materials (CSV)</button>
       <button id="btnCSVRoll" class="quiet" title="One row per condition: measured quantity, pitch, unit cost, extended cost, and where it was measured">Condition totals (CSV)</button>
       <button id="btnCSVAudit" class="quiet" title="Every measurement, with the sheet it came from and the scale it was measured at — for checking the count against the drawings">Audit (CSV)</button>
+    </div>
+    <!-- B2b (R-5f): the job-wide door. Per-measurement tagging happens as you trace; this one
+         catches up a takeoff whose regions were drawn after the measuring. -->
+    <h4>Sections</h4>
+    <div class="row" style="justify-content:flex-start;flex-wrap:wrap">
+      <button id="btnTagRegions" class="quiet" title="File every condition that has no section yet under the drawn region its measurements sit inside. Conditions whose measurements land in no region — or in more than one — are left alone. One undo step; no price changes.">Tag by regions</button>
+      <span class="muted" id="tagRegionsNote" style="font-size:12px"></span>
     </div>
     <h4>Bill of materials</h4>
     <div id="bomPane">
@@ -2741,7 +2768,7 @@ const VESCore = (() => {
 
   /* ---------- takeoff snapshot normalization (v3 reads v1/v2) ---------- */
 
-  const TAKEOFF_VERSION = 4;   // B1: v4 stores pitch as a RISE per 12 on the condition (v3 stored a multiplier, in two places)
+  const TAKEOFF_VERSION = 5;   // B2b: v5 carries `sections` — the drawn section regions (R-5h). v4: pitch as a RISE per 12 on the condition (v3 stored a multiplier, in two places)
 
   function normalizeSnapshot(d) {
     if (!d || d.app !== 'VES' || !Array.isArray(d.conditions) || !Array.isArray(d.measurements)) {
@@ -2763,7 +2790,7 @@ const VESCore = (() => {
        engine does not know is dropped with its measurements; a non-numeric unitCost becomes null
        (unpriced, flagged) and a non-positive pitch is dropped (engine default 1 stands). App-written
        files never carry any of these; only a foreign or hand-edited file does. ── */
-    const drop = { conditions: 0, fields: 0, measurements: 0 };
+    const drop = { conditions: 0, fields: 0, measurements: 0, regions: 0 };
     const finiteGE0 = (v) => typeof v === 'number' && isFinite(v) && v >= 0;
     const GEOM = ['linear', 'area', 'count'];
     const conditions = [];
@@ -2848,17 +2875,37 @@ const VESCore = (() => {
       if (m.points != null && !Array.isArray(m.points)) { drop.measurements++; continue; }
       measurements.push({ notes: '', ...m });
     }
-    const dropped = drop.conditions + drop.fields + drop.measurements;
+    /* ── B2b (R-5h) · THE DRAWN REGIONS COME THROUGH THE SAME DOOR AS EVERYTHING ELSE.
+       A region with no name, no sheet, or fewer than three corners cannot be drawn, cannot be
+       hit-tested and cannot be shown — so it is DROPPED under its own name and counted, never
+       repaired into something the estimator did not draw. A region is inert money: dropping one
+       moves no cent, and every condition keeps the section it was filed under. ── */
+    const sections = [];
+    if (Array.isArray(d.sections)) {
+      for (const sec of d.sections) {
+        if (!sec || typeof sec !== 'object' || Array.isArray(sec)) { drop.regions++; continue; }
+        const nm = String(sec.name == null ? '' : sec.name).trim();
+        const pg = sec.page;
+        const pts = Array.isArray(sec.points)
+          ? sec.points.map((q) => (Array.isArray(q) ? [+q[0], +q[1]] : (q && typeof q === 'object' ? [+q.x, +q.y] : null)))
+              .filter((q) => q && isFinite(q[0]) && isFinite(q[1]))
+          : [];
+        if (!nm || !(typeof pg === 'number' && isFinite(pg) && pg >= 1) || pts.length < 3) { drop.regions++; continue; }
+        sections.push({ id: (typeof sec.id === 'number' && isFinite(sec.id)) ? sec.id : 0, name: nm, page: Math.round(pg), points: pts });
+      }
+    }
+    const dropped = drop.conditions + drop.fields + drop.measurements + drop.regions;
     const bits = [];
     if (drop.measurements) bits.push(drop.measurements + ' measurement' + (drop.measurements === 1 ? '' : 's') + ' with a quantity or points the engine cannot read');
     if (drop.conditions) bits.push(drop.conditions + ' condition' + (drop.conditions === 1 ? '' : 's') + ' with an unknown geometry type');
     if (drop.fields) bits.push(drop.fields + ' unit-cost / pitch value' + (drop.fields === 1 ? '' : 's') + ' out of range');
+    if (drop.regions) bits.push(drop.regions + ' drawn section region' + (drop.regions === 1 ? '' : 's') + ' with no name, no sheet, or fewer than three corners');
     const ingressNote = dropped
       ? dropped + ' value' + (dropped === 1 ? '' : 's') + ' in this file could not be priced and ' + (dropped === 1 ? 'was' : 'were')
         + ' DROPPED, not applied (' + bits.join(', ') + '). Re-check the measurements and conditions you expected.'
       : '';
     let maxId = 0;
-    for (const x of [...conditions, ...measurements]) maxId = Math.max(maxId, x.id || 0);
+    for (const x of [...conditions, ...measurements, ...sections]) maxId = Math.max(maxId, x.id || 0);
     const defPane = () => ({ pageNum: 1, zoom: 1, scroll: { l: 0, t: 0 } });
     return {
       ok: true, dropped, ingressNote,
@@ -2880,6 +2927,7 @@ const VESCore = (() => {
         assemblyProject: projectLayer,                // project-level overrides (#2); null on v1/v2 files
         pitchMigration: (pitchMig.legacy.length || pitchMig.reconcile.length) ? pitchMig : null,   // B1: consumed (and deleted) by applySnapshot's doors
         conditions, measurements,
+        sections,                                     // B2b (R-5h): absent in a v1…v4 file → []
       },
     };
   }
@@ -4521,6 +4569,12 @@ const state = {
   calibrations: {},               // pageNum -> {pdfDist, realFt, ftPerUnit, points, typed, when, verifications[]}
   conditions: [],                 // {id, name, color, type, csi, wbs, location, notes, unitCost, tags, sortOrder, createdAt, updatedAt}
   measurements: [],               // {id, conditionId, page, type, points:[{x,y}], value, notes}
+  /* ── B2b (R-5e) · SECTIONS, DRAWN. A region is an INPUT METHOD for the typed section
+     (`c.location`, B2a) — never a second store of it, never a condition, never priced.
+     Sheet coordinates, the same space every measurement lives in: {id, name, page, points:[[x,y],…]}. ── */
+  sections: [],                   // drawn section regions (R-5e)
+  secDraft: null,                 // {points:[], cursor, page} while the Section tool is tracing one
+  selectedSectionId: null,        // the region the select tool has in hand (chip click)
   draft: null,                    // {points:[], cursor} in pdf space, on the ACTIVE pane's page
   calDraft: null,
   selectedId: null,
@@ -4743,6 +4797,7 @@ function setTool(t) {
   // pending quantity in state to reappear on the NEXT arm, in the banner, on a different
   // condition. One line, all doors.
   if (t !== 'measure') { state.activeCond = null; state.qtyBuf = ''; }
+  if (t !== 'section' && state.secDraft) state.secDraft = null;   // B2b: leaving the Section tool drops an unclosed outline
   state.tool = t; state.draft = null; state.calDraft = null; state.snapHit = null;
   $('btnSelect').classList.toggle('armed', t === 'select');
   $('btnCalibrate').classList.toggle('armed', t === 'calibrate');
@@ -4753,6 +4808,7 @@ function setTool(t) {
   if (t === 'pan') toolMsg('Pan: drag to move the sheet · wheel zooms. (Hold Space to pan from any tool.)');
   if (t === 'calibrate') toolMsg(`Calibrate sheet ${AP() ? AP().pageNum : ''}: click both ends of a known dimension — the longest one you can find.`);
   if (t === 'verify') toolMsg('Verify: click both ends of a second known dimension to check the scale.');
+  if (t === 'section') toolMsg(`Section: outline a roof section on sheet ${AP() ? pageLabel(AP().pageNum) : ''} — click each corner, click the first corner again (or Enter) to close, then name it. Nothing you draw here is priced.`);
   renderCards(); drawOverlays(); updateLive(); syncRack();
 }
 
@@ -5502,6 +5558,17 @@ function drawOverlay(pane) {
   ctx.clearRect(0, 0, o.width, o.height);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
+  /* B2b (R-5e): the drawn regions paint FIRST and therefore sit UNDER every measurement —
+     a region is the sheet's filing cabinet, not a thing on the sheet. Their chips are cached
+     on the pane in css space; the select tool hit-tests that cache and nothing else. */
+  pane.__secChips = [];
+  for (const sec of regionsOnPage(pane.pageNum)) {
+    const rpts = secPoly(sec).map((q) => pdfToCss(pane, q));
+    drawRegionShape(ctx, rpts, { selected: sec.id === state.selectedSectionId });
+    const chip = drawRegionChip(ctx, rpts, sec.name);
+    if (chip) pane.__secChips.push({ id: sec.id, ...chip });
+  }
+
   const condById = Object.fromEntries(state.conditions.map((c) => [c.id, c]));
   for (const m of state.measurements) {
     if (m.page !== pane.pageNum) continue;
@@ -5536,6 +5603,10 @@ function drawOverlay(pane) {
     }
   }
   if (pane !== AP()) return; // drafts live on the active pane only
+  if (state.secDraft && state.secDraft.page === pane.pageNum && state.secDraft.points.length) {
+    const dp = [...state.secDraft.points, state.secDraft.cursor].filter(Boolean).map((q) => pdfToCss(pane, q));
+    drawRegionShape(ctx, dp, { open: true });
+  }
   if (state.calDraft) drawShape(ctx, 'linear',
     [...state.calDraft.points, state.calDraft.cursor].filter(Boolean).map((p) => pdfToCss(pane, p)),
     '#4f9fe0', { dashed: true });
@@ -5557,6 +5628,54 @@ function drawOverlay(pane) {
     ctx.fillStyle = '#4f9fe0';
     ctx.beginPath(); ctx.arc(s.x, s.y, 1.5, 0, Math.PI * 2); ctx.fill();
   }
+}
+
+/* ── B2b (R-5e) · WHAT A REGION LOOKS LIKE. Dashed outline, one ink of its own so it can never
+   be mistaken for a traced quantity, effectively no fill (.05) so the linework under it still
+   reads, and a name chip at its top-left corner. It is drawn beneath every measurement, and it
+   paints the same way on screen and on the takeoff paper — one painter, two surfaces. ── */
+const SEC_INK = '#6b4fbb';
+function drawRegionShape(ctx, pts, opt = {}) {
+  if (!pts.length) return;
+  ctx.save();
+  ctx.strokeStyle = SEC_INK; ctx.fillStyle = SEC_INK;
+  ctx.lineWidth = opt.selected ? 2.6 : 1.8;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  if (!opt.open && pts.length > 2) {
+    ctx.closePath();
+    // There is no "hide markup" toggle in this build (R-5e's condition). The nearest thing is the
+    // Fills cycle, and the region's whisper of a fill follows it: on "No fill" the outline and the
+    // chip are all that is left, which is the state the ruling asks for.
+    if ((state.fillMode || 'on') !== 'off') { ctx.globalAlpha = .05; ctx.fill(); ctx.globalAlpha = 1; }
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (opt.open || opt.selected) {
+    for (const q of pts) {
+      ctx.beginPath(); ctx.rect(q.x - 3.5, q.y - 3.5, 7, 7);
+      ctx.fillStyle = opt.selected ? '#ffffff' : SEC_INK; ctx.fill();
+      ctx.strokeStyle = SEC_INK; ctx.lineWidth = 1.6; ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+// the chip — solid, so the name reads over any linework. Returns its css-space box for hit-testing.
+function drawRegionChip(ctx, pts, name) {
+  if (!pts.length || !name) return null;
+  let a = pts[0];
+  for (const q of pts) if (q.y < a.y - 0.01 || (Math.abs(q.y - a.y) <= 0.01 && q.x < a.x)) a = q;
+  ctx.save();
+  try { ctx.font = '600 11px ui-monospace, Menlo, Consolas, monospace'; } catch (_) {}
+  const label = String(name);
+  const w = Math.max(28, ctx.measureText(label).width + 14), h = 17;
+  const x = a.x + 6, y = a.y + 5;
+  ctx.fillStyle = SEC_INK; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#ffffff'; ctx.fillText(label, x + 7, y + 12.5);
+  ctx.restore();
+  return { x, y, w, h };
 }
 
 function drawShape(ctx, type, pts, color, opt = {}) {
@@ -5765,6 +5884,7 @@ function newTakeoff() {
   const dirty = state.measurements.length || state.conditions.length;
   const go = () => {
     state.conditions = []; state.measurements = [];
+    state.sections = []; state.selectedSectionId = null; state.secDraft = null;   // B2b: the outlines belong to the takeoff
     state.schedule = { rows: {} };   // F18: schedule lives and dies with the condition list
     state.sheetDone = {};            // D3: sheet marks die with the takeoff too
     state.selectedId = null; state.editingCondId = null; state.grip = null;
@@ -5860,6 +5980,10 @@ function snapCandidates(pane) {
   }
   const c = calFor(pane.pageNum);
   if (c && c.points) for (const q of c.points) out.push(q);
+  // B2b: a region's corners are drawn geometry too — and the OPEN draft's own corners are what
+  // "close it on the first point" snaps to, so the closing click lands exactly on the vertex.
+  for (const sec of regionsOnPage(pane.pageNum)) for (const q of secPoly(sec)) out.push(q);
+  if (state.secDraft && state.secDraft.page === pane.pageNum) for (const q of state.secDraft.points) out.push(q);
   return out;
 }
 function maybeSnap(pane, p) {
@@ -5916,6 +6040,7 @@ function syncRack() {
   set('btnSelect', state.tool === 'select');
   set('btnToolPoly', ty === 'area' && !state.rectMode);   // AI-4: the Type buttons are gone — the armed condition's type is the tool
   set('btnRect', state.rectMode);
+  set('btnSection', state.tool === 'section');   // B2b: the Section tool is a tool, not a condition type
   set('btnSnap', state.snap);
 }
 
@@ -5958,6 +6083,8 @@ function syncState() {
   ['btnPan', 'btnSelect', 'btnSnap', 'btnFills'].forEach((id) => gateCtl(id, sheet, 'Start a grid (New) or open a PDF first.'));
   ['btnToolPoly', 'btnRect']
     .forEach((id) => gateCtl(id, hasScale, sheet ? 'Set the scale first.' : 'Start a grid (New) or open a PDF first.'));
+  // B2b: a region needs a sheet to sit on, not a scale — it measures nothing.
+  gateCtl('btnSection', sheet, 'Start a grid (New) or open a PDF first.');
   gateCtl('btnEdit', hasSel, 'Select a measurement first.');
   gateCtl('btnDelete', hasSel, 'Select a measurement first.');
   // files & exports — need data to export
@@ -6113,6 +6240,14 @@ function wirePaneInput() {
       // E2: touch never grip-drags or manual-pans — native scroll owns touch (touch-action).
       if (e.pointerType === 'touch') return;
       // D3: a grab on a vertex grip is not a pan — grips are checked FIRST.
+      // B2b (R-5g): a SELECTED region's corner is a grip on the same terms.
+      if (e.button === 0 && !spaceHeld && state.tool === 'select' && pane === AP() && pane.viewport && state.selectedSectionId != null) {
+        const sec = (state.sections || []).find((x) => x.id === state.selectedSectionId && x.page === pane.pageNum);
+        if (sec) {
+          const si = regionGripHit(pane, evtToPdf(pane, e), sec, e.pointerType === 'mouse' ? 8 : 14);
+          if (si >= 0) { beginSecGripDrag(pane, sec, si, e); e.preventDefault(); return; }
+        }
+      }
       if (e.button === 0 && !spaceHeld && state.tool === 'select' && pane === AP() && pane.viewport) {
         const gm = selectedMeasurementOn(pane);
         if (gm) {
@@ -6142,7 +6277,8 @@ function wirePaneInput() {
       const p = evtToPdf(pane, e);
       if (state.calDraft) { state.calDraft.cursor = maybeSnap(pane, p); drawOverlay(pane); updateLive(); }
       else if (state.draft) { state.draft.cursor = maybeSnap(pane, p); drawOverlay(pane); updateLive(); }
-      else if (state.tool === 'measure' || state.tool === 'calibrate' || state.tool === 'verify') {
+      else if (state.secDraft && state.secDraft.page === pane.pageNum) { state.secDraft.cursor = maybeSnap(pane, p); drawOverlay(pane); }
+      else if (state.tool === 'measure' || state.tool === 'calibrate' || state.tool === 'verify' || state.tool === 'section') {
         const before = state.snapHit; maybeSnap(pane, p);          // live snap indicator before the first click
         if (state.snapHit || before) drawOverlay(pane);
       }
@@ -6165,6 +6301,21 @@ function wirePaneInput() {
           openCalModal(state.tool);
         }
         drawOverlay(pane); updateLive();
+        return;
+      }
+
+      /* ── B2b (R-5e) · DRAWING A SECTION IS DRAWING AN AREA, WITHOUT THE MONEY. Same gesture,
+         same snap, same close: click each corner, click the first corner again (snap puts you
+         exactly on it) or press Enter. No calibration is needed — a region measures nothing. ── */
+      if (state.tool === 'section') {
+        const d = state.secDraft;
+        if (d && d.page === pane.pageNum && d.points.length >= 3
+            && VESCore.dist(p, d.points[0]) <= 12 / (pane.viewport.scale || 1)) { finishRegionDraft(); return; }
+        if (!d || d.page !== pane.pageNum) state.secDraft = { points: [], cursor: p, page: pane.pageNum };
+        state.secDraft.points.push(p);
+        state.secDraft.cursor = p;
+        toolMsg(`Section outline: ${state.secDraft.points.length} corner${state.secDraft.points.length === 1 ? '' : 's'} — click the first corner again (or Enter) to close it, Esc to drop it.`);
+        drawOverlay(pane);
         return;
       }
 
@@ -6222,6 +6373,12 @@ function wirePaneInput() {
     overlay.addEventListener('dblclick', (e) => {
       e.preventDefault();
       if (pane !== AP()) return;
+      // B2b (R-5g): the chip is the region's handle — double-click renames it.
+      if (state.tool === 'select') {
+        const hit = sectionChipAt(pane, evtToPdf(pane, e));
+        if (hit != null) { openSectionNamePrompt({ renameId: hit }); return; }
+      }
+      if (state.tool === 'section' && state.secDraft) { finishRegionDraft(); return; }
       finishDraft(true);
     });
 
@@ -6241,6 +6398,11 @@ function wirePaneInput() {
   }
 
   window.addEventListener('pointermove', (e) => {
+    if (secDrag) {   // B2b (R-5g): a region corner in hand
+      if (Math.abs(e.clientX - secDrag.x) + Math.abs(e.clientY - secDrag.y) > 3) secDrag.moved = true;
+      if (secDrag.moved) moveSecGripDrag(e);
+      return;
+    }
     if (gripDrag) {
       if (Math.abs(e.clientX - gripDrag.x) + Math.abs(e.clientY - gripDrag.y) > 3) gripDrag.moved = true;
       if (gripDrag.moved) moveGripDrag(e);
@@ -6253,6 +6415,7 @@ function wirePaneInput() {
     }
   });
   const endPanePointer = () => {
+    if (secDrag) { endSecGripDrag(); return; }
     if (gripDrag) { endGripDrag(); return; }
     if (pan && pan.moved) suppressNextClick = true;
     if (pan) pan.wrap.classList.remove('panning');
@@ -6261,6 +6424,296 @@ function wirePaneInput() {
   };
   window.addEventListener('pointerup', endPanePointer);
   window.addEventListener('pointercancel', endPanePointer);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   BATCH B2b (plan §B2b · R-5e / R-5f / R-5g / R-5h) · SECTIONS, DRAWN.
+
+   On a big plan the estimator outlines each roof section ONCE on the sheet, and what he measures
+   inside it lands in that section without typing — the Bluebeam "Spaces" convention. The TYPED
+   section (B2a, `c.location`) stays the truth; the region is an INPUT METHOD for it, and nothing
+   else. A region is never a condition: it is never on the rail, never priced, never in an export
+   but the audit CSV, and it never appears in a total.
+
+   THE ONE RULE THAT MAKES IT SAFE (R-5f): resolution happens AT TAG TIME ONLY. A measurement
+   completed inside a region files its condition IF that condition has no section yet, once, with
+   its own undo step and its own toast. From that instant the section is TYPED and belongs to the
+   estimator. Moving, renaming or deleting the region afterwards changes NOTHING — money that has
+   been filed never re-files itself behind the estimator's back. That is why renaming a region
+   OFFERS the B2a rename door for the section of the same name rather than doing it.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+const secPt = (q) => (Array.isArray(q) ? { x: +q[0], y: +q[1] } : { x: +q.x, y: +q.y });
+const secPoly = (sec) => (sec && Array.isArray(sec.points) ? sec.points.map(secPt) : []);
+function regionsOnPage(n) { return (state.sections || []).filter((sec) => sec.page === n && secPoly(sec).length >= 3); }
+
+/* R-5f: where a measurement SITS. A polygon is its centroid, a line is the point halfway along
+   the run it actually traces (not the mid vertex — an L-shaped flashing's mid vertex can sit
+   outside its own section), a count is its markers' mean point. One anchor per measurement,
+   never per vertex: a trace that crosses a boundary belongs to one section, and splitting a
+   condition across regions is deliberately out of scope this batch. */
+function measurementAnchor(m) {
+  const pts = (m && Array.isArray(m.points) ? m.points : []).map(secPt).filter((q) => isFinite(q.x) && isFinite(q.y));
+  if (!pts.length) return null;
+  if (pts.length === 1) return pts[0];
+  if (m.type === 'count') {
+    let x = 0, y = 0; for (const q of pts) { x += q.x; y += q.y; }
+    return { x: x / pts.length, y: y / pts.length };
+  }
+  if (m.type === 'linear') {
+    const total = VESCore.polylineLength(pts);
+    if (!(total > 0)) return pts[0];
+    let run = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const d = VESCore.dist(pts[i - 1], pts[i]);
+      if (run + d >= total / 2) { const t = d ? (total / 2 - run) / d : 0;
+        return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t }; }
+      run += d;
+    }
+    return pts[pts.length - 1];
+  }
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const q = pts[i], r = pts[(i + 1) % pts.length];
+    const f = q.x * r.y - r.x * q.y; a += f; cx += (q.x + r.x) * f; cy += (q.y + r.y) * f;
+  }
+  if (Math.abs(a) < 1e-9) {   // a degenerate polygon has no centroid — its bounding box does
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const q of pts) { x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y); }
+    return { x: (x0 + x1) / 2, y: (y0 + y1) / 2 };
+  }
+  a *= 0.5;
+  return { x: cx / (6 * a), y: cy / (6 * a) };
+}
+// The SMALLEST region containing the point wins, so an outlined canopy inside an outlined main
+// roof takes what is drawn inside it — the same nesting rule AF-1 gave the click.
+function regionAt(page, pt) {
+  let best = null, bestArea = Infinity;
+  for (const sec of regionsOnPage(page)) {
+    const poly = secPoly(sec);
+    if (!VESCore.pointInPolygon(pt, poly)) continue;
+    const a = VESCore.polygonArea(poly);
+    if (a < bestArea) { bestArea = a; best = sec; }
+  }
+  return best;
+}
+function sectionOf(m) {
+  if (!m || m.page == null) return null;
+  const pt = measurementAnchor(m);
+  return pt ? regionAt(m.page, pt) : null;
+}
+// One spelling per job — the same case-insensitive rule the typed picker uses (B2a).
+function regionSectionName(nm) {
+  const known = (typeof namedSections === 'function' ? namedSections() : []).find((n) => sectionKey(n) === sectionKey(nm));
+  return known || String(nm || '').trim();
+}
+
+/* ---------- the drawn region: create, reshape, rename, remove (R-5e / R-5g) ---------- */
+function finishRegionDraft() {
+  const d = state.secDraft;
+  if (!d || d.points.length < 3) { toast('A section needs at least three corners.'); return; }
+  openSectionNamePrompt({ draft: true });
+}
+function addSectionRegion(name, page, points) {
+  const sec = { id: uid(), name: String(name).trim(), page, points: points.map((q) => [q.x, q.y]) };
+  state.sections.push(sec);
+  journalPush({
+    label: 'draw section region "' + sec.name + '" on sheet ' + pageLabel(page),
+    undo() { const i = state.sections.indexOf(sec); if (i >= 0) state.sections.splice(i, 1);
+      if (state.selectedSectionId === sec.id) state.selectedSectionId = null; },
+    redo() { state.sections.push(sec); },
+  });
+  markDirty(); drawOverlays();
+  return sec;
+}
+function renameSectionRegion(id, raw) {
+  const sec = (state.sections || []).find((x) => x.id === id);
+  if (!sec) return false;
+  const next = String(raw == null ? '' : raw).trim();
+  if (!next || next === sec.name) return false;
+  const prior = sec.name;
+  sec.name = next;
+  journalPush({ label: 'rename section region "' + prior + '" → "' + next + '"',
+    undo() { sec.name = prior; drawOverlays(); }, redo() { sec.name = next; drawOverlays(); } });
+  markDirty(); drawOverlays();
+  /* R-5f, said out loud: the region is not the section. If a SECTION of the old name exists, the
+     B2a door is OFFERED here — one gesture, one meaning, and the estimator decides whether the
+     money follows the drawing. */
+  const had = (typeof namedSections === 'function' ? namedSections() : []).find((n) => sectionKey(n) === sectionKey(prior));
+  if (had) {
+    showBanner('secregion-rename',
+      'Region renamed to "' + next + '". The conditions filed under the SECTION "' + had + '" did not move — a region never re-files money on its own.',
+      [{ label: 'Rename the section too', armed: true, run: () => renameSection(had, next) }], 'warn');
+  } else {
+    toast('Region renamed to "' + next + '" — no condition changed section.', 'ok');
+  }
+  return true;
+}
+function deleteSectionRegion(id) {
+  const i = (state.sections || []).findIndex((x) => x.id === id);
+  if (i < 0) return false;
+  const sec = state.sections[i];
+  state.sections.splice(i, 1);
+  if (state.selectedSectionId === id) state.selectedSectionId = null;
+  journalPush({ label: 'delete section region "' + sec.name + '"',
+    undo() { state.sections.splice(Math.min(i, state.sections.length), 0, sec); drawOverlays(); },
+    redo() { const k = state.sections.indexOf(sec); if (k >= 0) state.sections.splice(k, 1); drawOverlays(); } });
+  markDirty(); drawOverlays();
+  toast('Region "' + sec.name + '" removed — no condition changed section. Ctrl+Z puts it back.', 'ok');
+  return true;
+}
+function regionGripHit(pane, p, sec, tolPx = 8) {
+  const tolPdf = tolPx / (pane.viewport.scale || 1);
+  const poly = secPoly(sec);
+  let best = -1, bestD = tolPdf;
+  for (let i = 0; i < poly.length; i++) { const d = VESCore.dist(p, poly[i]); if (d <= bestD) { bestD = d; best = i; } }
+  return best;
+}
+function sectionChipAt(pane, p) {
+  if (!pane || !pane.viewport || !pane.__secChips || !pane.__secChips.length) return null;
+  const c = pdfToCss(pane, p);
+  for (const ch of pane.__secChips) {
+    if (c.x >= ch.x && c.x <= ch.x + ch.w && c.y >= ch.y && c.y <= ch.y + ch.h) return ch.id;
+  }
+  return null;
+}
+let secDrag = null;   // B2b: {pane, sec, idx, x, y, moved, prior} — one region corner in hand
+function beginSecGripDrag(pane, sec, idx, e) {
+  secDrag = { pane, sec, idx, x: e.clientX, y: e.clientY, moved: false, prior: secPoly(sec).map((q) => [q.x, q.y]) };
+  drawOverlay(pane);
+}
+function moveSecGripDrag(e) {
+  const g = secDrag, pane = g.pane;
+  const p = maybeSnap(pane, evtToPdf(pane, e));
+  g.sec.points[g.idx] = [p.x, p.y];
+  drawOverlay(pane);
+}
+function endSecGripDrag() {
+  const g = secDrag; secDrag = null;
+  suppressNextClick = true;
+  if (!g.moved) { drawOverlay(g.pane); return; }
+  const sec = g.sec, prior = g.prior, next = secPoly(sec).map((q) => [q.x, q.y]);
+  journalPush({ label: 'move a corner of section region "' + sec.name + '"',
+    undo() { sec.points = prior.map((q) => q.slice()); drawOverlays(); },
+    redo() { sec.points = next.map((q) => q.slice()); drawOverlays(); } });
+  state.snapHit = null;
+  markDirty(); drawOverlays();
+  toolMsg('Region reshaped — no condition changed section.');
+}
+
+/* ---------- the name prompt (R-5e), which is also the rename door (R-5g) ---------- */
+let secNamePending = null;
+function openSectionNamePrompt(opts) {
+  const modal = $('secNameModal'), input = $('secNameInput'), list = $('secNameList');
+  if (!modal || !input) return;
+  const renaming = opts && opts.renameId != null;
+  const sec = renaming ? (state.sections || []).find((x) => x.id === opts.renameId) : null;
+  if (renaming && !sec) return;
+  secNamePending = renaming ? { renameId: sec.id } : { draft: true };
+  if (list) {
+    list.innerHTML = '';
+    const seen = new Set();
+    for (const n of (typeof namedSections === 'function' ? namedSections() : [])) { seen.add(sectionKey(n));
+      const o = document.createElement('option'); o.value = n; list.appendChild(o); }
+    for (const r of (state.sections || [])) { if (seen.has(sectionKey(r.name))) continue; seen.add(sectionKey(r.name));
+      const o = document.createElement('option'); o.value = r.name; list.appendChild(o); }
+  }
+  $('secNameTitle').textContent = renaming ? 'Rename this region' : 'Name this section';
+  $('secNameHint').textContent = renaming
+    ? 'Renaming the outline changes the drawing only. Conditions already filed under the old section name stay where they are — you will be offered that move separately.'
+    : 'Which roof section did you just outline? Anything measured inside it, on a condition with no section yet, files itself here. Naming a region never re-files money on its own.';
+  $('secNameOk').textContent = renaming ? 'Rename region' : 'Save region';
+  input.value = renaming ? sec.name : '';
+  modal.classList.add('open');
+  setTimeout(() => { input.focus(); input.select(); }, 0);
+}
+function closeSectionNamePrompt() {
+  secNamePending = null;
+  const m = $('secNameModal'); if (m) m.classList.remove('open');
+}
+function commitSectionNamePrompt() {
+  const pend = secNamePending, input = $('secNameInput');
+  if (!pend || !input) { closeSectionNamePrompt(); return; }
+  const v = input.value.trim();
+  if (!v) { toast('A section needs a name.'); return; }
+  if (pend.renameId != null) { closeSectionNamePrompt(); renameSectionRegion(pend.renameId, v); return; }
+  const d = state.secDraft;
+  closeSectionNamePrompt();
+  if (!d || d.points.length < 3) return;
+  const sec = addSectionRegion(regionSectionName(v) || v, d.page, d.points);
+  state.secDraft = null;
+  drawOverlays();
+  toolMsg(`Region "${sec.name}" drawn on sheet ${pageLabel(sec.page)} — measure inside it and the condition files itself there. Draw the next one, or press V for Select.`);
+  toast('Section region "' + sec.name + '" drawn. It is not priced and not a condition — it only decides where what you measure inside it is filed.', 'ok');
+}
+function cancelSectionNamePrompt() {
+  const pend = secNamePending;
+  closeSectionNamePrompt();
+  if (pend && pend.draft) { state.secDraft = null; drawOverlays(); toolMsg('Section outline dropped.'); }
+}
+
+/* ---------- R-5f: tagging, at tag time and nowhere else ---------- */
+function tagFromRegion(cond, m) {
+  if (!cond || !m) return false;
+  const sec = sectionOf(m);
+  if (!sec) return false;
+  const cur = String(cond.location || '').trim();
+  if (cur) {
+    // The estimator's typed answer stands. Say what happened, name both, change nothing.
+    toast('Measured inside "' + sec.name + '" — ' + cond.name + ' stays in "' + sectionName(cur) + '". Change it on the card if that is wrong.');
+    return false;
+  }
+  const next = regionSectionName(sec.name) || sec.name;
+  const stamp = () => { cond.updatedAt = new Date().toISOString(); };
+  cond.location = next; stamp();
+  journalPush({
+    label: 'section ' + next + ' on ' + cond.name + ' — from the drawn region',
+    undo() { cond.location = ''; stamp(); renderCards(); renderRecap(); if (state.gridView) renderEstimateGrid(); },
+    redo() { cond.location = next; stamp(); renderCards(); renderRecap(); if (state.gridView) renderEstimateGrid(); },
+  });
+  markDirty(); renderCards(); renderRecap();
+  if (state.gridView) renderEstimateGrid();
+  toast('Measured inside "' + sec.name + '" — ' + cond.name + ' filed under ' + next + '. Ctrl+Z puts it back to Unassigned.', 'ok');
+  return true;
+}
+
+/* R-5f, the job-wide door. Catches up a takeoff whose regions were drawn after the measuring.
+   A condition whose measurements land in TWO regions is left alone and said — splitting one
+   condition across sections is out of scope, and guessing which half wins would move money. */
+function tagBySections() {
+  const regions = (state.sections || []).filter((sec) => secPoly(sec).length >= 3);
+  if (!regions.length) { toast('No regions drawn yet — outline a section on the sheet with the Section tool first.'); return 0; }
+  const moves = [], split = [];
+  for (const c of state.conditions) {
+    if (String(c.location || '').trim()) continue;
+    const hits = new Map();
+    for (const m of state.measurements) {
+      if (m.conditionId !== c.id) continue;
+      const sec = sectionOf(m);
+      if (sec) hits.set(sectionKey(sec.name), sec.name);
+    }
+    if (hits.size === 1) moves.push([c, regionSectionName([...hits.values()][0]) || [...hits.values()][0]]);
+    else if (hits.size > 1) split.push(c.name + ' (' + [...hits.values()].join(' + ') + ')');
+  }
+  const splitNote = split.length
+    ? ' ' + split.length + ' condition' + (split.length === 1 ? ' measures' : 's measure') + ' inside more than one region and ' + (split.length === 1 ? 'was' : 'were') + ' left alone: ' + split.join(', ') + '.'
+    : '';
+  if (!moves.length) {
+    toast('Nothing to tag — no condition without a section has all its measurements inside one region.' + splitNote);
+    return 0;
+  }
+  const prior = moves.map(([c]) => c.location || '');
+  const named = moves.map(([c, n]) => c.name + ' → ' + n).join(', ');
+  const apply = (back) => moves.forEach(([c, n], i) => { c.location = back ? prior[i] : n; c.updatedAt = new Date().toISOString(); });
+  apply(false);
+  journalPush({
+    label: 'tag by regions — ' + named,
+    undo() { apply(true); renderCards(); renderRecap(); if (state.gridView) renderEstimateGrid(); },
+    redo() { apply(false); renderCards(); renderRecap(); if (state.gridView) renderEstimateGrid(); },
+  });
+  markDirty(); renderCards(); renderRecap();
+  if (state.gridView) renderEstimateGrid();
+  toast('Tagged by regions: ' + named + '.' + splitNote + ' Ctrl+Z puts them back.', 'ok');
+  return moves.length;
 }
 
 /* ---------- selection: whole measurement ---------- */
@@ -6299,6 +6752,18 @@ function pickCandidates(pane, p) {
 }
 function selectAt(pane, p) {
   const scale = pane.viewport.scale || 1;
+  /* B2b (R-5g): a region is selected by its CHIP only — never by its outline or its interior,
+     which would put a filing boundary in front of the traced work the estimator is aiming at
+     (the AF-1 lesson: the click picks what you aimed at). */
+  const chipId = sectionChipAt(pane, p);
+  if (chipId != null) {
+    const sec = (state.sections || []).find((x) => x.id === chipId);
+    state.selectedSectionId = chipId; state.selectedId = null; state.grip = null; lastPick = null;
+    drawOverlays(); renderCards();
+    toolMsg(`Section region "${sec ? sec.name : ''}" selected — drag a corner to reshape it · double-click the chip to rename it · Delete removes the region. No condition's section changes either way.`);
+    return;
+  }
+  if (state.selectedSectionId != null) { state.selectedSectionId = null; drawOverlays(); }
   const cands = pickCandidates(pane, p);
   const ids = cands.map((m) => m.id).join(',');
   let best = cands[0] || null;
@@ -6483,6 +6948,7 @@ function addMeasurement(cond, points, opts) {
   pulseCard(cond.id);
   if (typeof openDrawerAuto === 'function') openDrawerAuto();   // surface the live consequence
   markDirty();
+  tagFromRegion(cond, m);   // B2b (R-5f): resolution happens AT TAG TIME ONLY — after the add is on the stack
 }
 
 /* ---------- numeric / keyed entry (P1.4 — draw rough, set exact) ---------- */
@@ -6636,21 +7102,34 @@ window.addEventListener('keydown', (e) => {
     // and the mode had no exit: the persona tried Esc, the pill, the card's ⌖ and a
     // double-click and stayed armed through every one of them.
     if (clearQtyBuffer()) { e.preventDefault(); return; }
+    if (state.secDraft && state.secDraft.points.length) {   // B2b: the open outline is the outermost thing
+      state.secDraft = null; drawOverlays();
+      toolMsg('Section outline dropped.'); e.preventDefault(); return;
+    }
+    if (state.selectedSectionId != null) { state.selectedSectionId = null; drawOverlays(); e.preventDefault(); return; }
     if (state.draft && state.draft.points && state.draft.points.length) { clearDraft(); e.preventDefault(); return; }
     if (disarmCondition()) { e.preventDefault(); return; }
     clearDraft();
   } else if (e.key === 'Enter') {
     if (qtyBufferActive()) { commitQtyBuffer(); e.preventDefault(); return; }    // D-24.5d
+    if (state.secDraft && state.secDraft.points.length) { finishRegionDraft(); e.preventDefault(); return; }   // B2b
     finishDraft();
   }
   else if (e.key === 'Backspace') {
     if (qtyBufferActive()) { qtyBufferPop(); e.preventDefault(); return; }       // D-24.5d
+    if (state.secDraft && state.secDraft.points.length) {                        // B2b: take back one corner
+      state.secDraft.points.pop();
+      if (!state.secDraft.points.length) state.secDraft = null;
+      drawOverlays(); e.preventDefault(); return;
+    }
     if (state.draft && state.draft.points.length) {
       state.draft.points.pop();
       if (!state.draft.points.length) state.draft = null;
       drawOverlays(); updateLive(); e.preventDefault();
     }
   } else if (e.key === 'Delete') {
+    // B2b (R-5g): a selected region takes Delete — it is the only thing selected in that state.
+    if (state.selectedSectionId != null && state.tool === 'select') { deleteSectionRegion(state.selectedSectionId); return; }
     // D3: an armed grip takes Delete first — remove that vertex (guarded).
     // Counts fall through: their one grip IS the marker, so Delete keeps its
     // existing meaning (delete the selected marker, journaled).
@@ -8939,7 +9418,18 @@ function renderInspector() {
 }
 
 /* ---------- modal ---------- */
-function openAssemblies() { renderAssembly(); $('asmModal').classList.add('open'); }
+/* B2b (R-5f): the door says what it is about to do before it is pressed — how many regions are
+   drawn and how many conditions still carry no section. A door that cannot say that is a door
+   the estimator has to press to find out. */
+function syncTagRegionsNote() {
+  const el = $('tagRegionsNote'); if (!el) return;
+  const regs = (state.sections || []).filter((sec) => Array.isArray(sec.points) && sec.points.length >= 3).length;
+  const un = state.conditions.filter((c) => !String(c.location || '').trim()).length;
+  el.textContent = regs
+    ? regs + ' region' + (regs === 1 ? '' : 's') + ' drawn · ' + un + ' condition' + (un === 1 ? '' : 's') + ' with no section yet'
+    : 'No regions drawn — outline one on the sheet with the Section tool (left rack) first.';
+}
+function openAssemblies() { renderAssembly(); syncTagRegionsNote(); $('asmModal').classList.add('open'); }
 // Discoverable "add a line": open Setup with the project manual-line form expanded
 // and focused. Manual lines are project-scoped (adhoc) — they never touch the library.
 function openManualLine() {
@@ -11079,6 +11569,8 @@ function snapshot() {
     calibrations: state.calibrations,
     conditions: state.conditions,
     measurements: state.measurements,
+    sections: state.sections || [],   // B2b (R-5h): the drawn section regions — v5
+
     // project-level overrides (in-takeoff formula/price edits) — library stays pristine (#2)
     assemblyProject: {
       lineOverrides: state.assemblyProject.lineOverrides || {},
@@ -11473,6 +11965,8 @@ async function applySnapshot(d) {
   state.calibrations = d.calibrations;
   state.conditions = d.conditions;
   state.measurements = d.measurements;
+  state.sections = Array.isArray(d.sections) ? d.sections : [];   // B2b (R-5h): a v1…v4 file simply has none
+  state.selectedSectionId = null; state.secDraft = null;
   state.nextId = d.nextId;
   // restore project overrides BEFORE rebuildAdhoc (it re-derives the adhoc.* keys)
   if (d.assemblyProject) {
@@ -11847,6 +12341,18 @@ function exportAuditCSV() {
     if (orphans) warns.push(`${orphans} orphan measurement(s) \u2014 condition deleted.`);
   }
   if (warns.length) { out.push([]); for (const w of warns) out.push(['WARNING', w]); }
+  /* B2b (R-5e): the ONE export a drawn region appears in — the audit is the measurement RECORD,
+     and "which outline was on the sheet when this was measured" is part of that record. One row
+     each, additive and trailing, under an ID that can never collide with a measurement id. They
+     carry no quantity and no money: a region measures nothing. */
+  { const regs = (state.sections || []).filter((sec) => Array.isArray(sec.points) && sec.points.length >= 3);
+    if (regs.length) {
+      out.push([]);
+      for (const sec of regs.slice().sort((a, b) => (a.page - b.page) || String(a.name).localeCompare(String(b.name)))) {
+        out.push(['section-region', sec.name, 'region', '', '', sec.name, sec.page, pageLabel(sec.page),
+          '', '', '', '', sec.points.length, 'drawn region \u2014 not measured, not priced', 'ok', '', '', '']);
+      }
+    } }
   const csv = csvIdentityRows().map((r) => r.map(VESCore.csvSafe).join(',')).join('\r\n') + '\r\n'
     + VESX.rowsToCSV(['Measurement ID', 'Condition', 'Type', 'CSI', 'WBS', 'Location', 'Page',
       'Sheet Label', 'Quantity', 'Unit', 'Unit Cost', 'Extended Cost', 'Point Count',
@@ -12486,6 +12992,16 @@ async function compositeSheet(pageNum, opts = {}) {
   // space through a scaled transform so stroke weight rides the print size.
   ctx.setTransform(scale, 0, 0, scale, -x0 * scale, -y0 * scale);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  /* B2b (R-5h): the drawn regions ride the TAKEOFF paper and nothing else. The takeoff is the
+     estimator's own document — his filing belongs on it. The client bid and the proposal show
+     the measured work, not how the office files it, so they ask for no regions and get none. */
+  if (opts.regions) {
+    for (const sec of regionsOnPage(pageNum)) {
+      const rp = secPoly(sec).map((q) => { const [vx, vy] = vp1.convertToViewportPoint(q.x, q.y); return { x: vx, y: vy }; });
+      drawRegionShape(ctx, rp, {});
+      drawRegionChip(ctx, rp, sec.name);
+    }
+  }
   for (const m of onPage) {
     const c = labelConds[m.conditionId]; if (!c) continue;
     const conf = confMeasurement(m, c);
@@ -12762,7 +13278,7 @@ async function printTakeoff() {
     + `<div class="meta">${pages.length} sheet${pages.length === 1 ? '' : 's'} with measurements${state.pdf && state.pdfName ? ' · ' + esc(state.pdfName) : ''}</div>`;
   let body = '', failed = 0;
   for (const n of pages) {
-    const cs = await compositeSheet(n, { crop: false });
+    const cs = await compositeSheet(n, { crop: false, regions: true });   // B2b (R-5h)
     const head = `<h2>Sheet ${esc(pageLabel(n))}${state.pdf && total > 1 ? ' of ' + total : ''}${state.sheetDone && state.sheetDone[n] ? ' · swept' : ''}</h2>`;
     if (cs.fail) {
       failed++;
@@ -13304,6 +13820,15 @@ $('calStatus').addEventListener('click', () => state.pdf && openAudit());
 /* drawing tool rack (FOXTROT-B) — Pan/Select + type tools + Edit/Delete */
 $('btnPan').addEventListener('click', () => setTool('pan'));
 $('btnToolPoly').addEventListener('click', () => armType('area', false));
+/* B2b (R-5e/R-5g): the Section tool, its naming door, and the job-wide catch-up. */
+$('btnSection').addEventListener('click', () => setTool('section'));
+$('secNameOk').addEventListener('click', commitSectionNamePrompt);
+$('secNameCancel').addEventListener('click', cancelSectionNamePrompt);
+$('secNameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commitSectionNamePrompt(); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelSectionNamePrompt(); }
+});
+$('btnTagRegions').addEventListener('click', () => { tagBySections(); syncTagRegionsNote(); });
 $('btnEdit').addEventListener('click', editSelected);
 $('btnDelete').addEventListener('click', deleteSelected);
 
@@ -14097,7 +14622,7 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.0.0-rc.3';  // 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
+const VES_BUILD = '2.0.0-rc.4';  // 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
 // 2.0.0-rc.2: Batch B1 — PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION. `c.pitch` is the rise per 12 and the only store (the conditionOverrides pitch key is consumed at the file door and survives only as a non-enumerable read-only VIEW); VESCore.pitchFactor is the only plan→true conversion (area and up-the-slope √(1+(r/12)²), hip/valley √(1+(r/12)²/2), level and counts 1.0); VESCore.rollup applies it to EVERY condition so rollup().quantity is the money quantity on every face and resolveTakeoff is told not to pitch again (measuredPitched); R-4 gives a linear a lenKind (level | slope | hipvalley) beside its pitch, defaulted by name; both doors (✎ card field, depth-panel row) write the one store and are journaled by name; a library row's pitchDefault seeds a condition once at creation; TAKEOFF_VERSION 3→4 converts v3 multipliers to rises unrounded (money-exact), consumes the override store, reconciles R-3a's display-pitched/price-flat library conditions to the DISPLAYED quantity with a per-condition cent delta on one banner, and holds a bare `6` at its legacy ×6 behind a per-condition confirm so no cent moves silently on reload. 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
 // F18.72: Batch AI (persona pass 3 on F18.71 — density 0 refused at the book and gated on the line, never an included $0; the book refuses a formula that cannot parse; a book equal to the seed reads as the seed; the Flags list names an unpriced line and its row is tinted; waste words at four decimals; basis column clean, waste as percent, a linked labor line carries its basis; parser names a stray operator and a case mismatch; lens Escape says nothing when nothing was typed; landing/README say which lines carry a formula)  // F18.71: Batch AH (persona pass 2 on F18.70 — a malformed number literal and a wrong function arity gate the line; an empty unit / zero production rate refused in the Library lens and the unit gate never prints "undefined"; the cue follows the Qty cell and dies with the takeoff; lens selects carry the seed mark; waste words at two decimals and the box says what it did on blur; the phone pin follows the wordless segments; segment names; tr.gated; coarse ＋ Add; lens Escape/Enter grammar)  // F18.70: Batch AG (persona pass 1 on F18.69 — P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic fixtures; triage by the NOTES.md rubric; owner's word 2026-09-04 "run persona pass; if accepted finalize build and push to main") — WHAT THE PERSONAS SAW, ANSWERED. Money-honesty: a line formula that evaluates to 0 now gates (ZERO_QTY — flagged, excluded, said on the row) instead of pricing an included $0 (P-TRADE 5); a formula typed while a Qty is typed is checked and the cue says the typed qty stands and whether the dormant formula evaluates (P-TRADE 7); the parser names the token it choked on instead of "trailing tokens" (P-TRADE 8). Library: the authored-item id comes from the library's own counter, so a fresh takeoff's ＋ Add never replaces yesterday's item (P-MARKET 1); a blank CSI lands under the assembly's code (P-MARKET 7); edited cells read in the accent against the built-in seed, items the seed lacks say "authored here", match code is a column, ＋ Add sits by the description, cells meet the coarse-pointer rule (P-MARKET 6/9, P-GAME 9/10); the toast says every takeoff priced from the book follows — no project override written (P-TRADE 10, P-GAME 10). Grid: the derivation names the item waste that turns needed into ordered and the Waste header says which waste it is (P-MARKET 2); a FIXED formula reads "fixed Q"; a line-level number is "line value", a formula "line formula"; Q's meaning by kind is in the cell title and the sheet foot names the whole scope (P-TRADE 9/11, P-MARKET 5); the lens cue clears after a good commit (P-GAME 5); Escape in a cell stops at the cell (P-GAME 3, control). Entry row: the funnel line sits under the description, the measure select follows the unit in the Tab walk, an empty row explains both paths, a partial names the closest library name, the name match forgives case and dash (P-GAME 6/7/8, P-TRADE 12). Toolbar: the fourth lens segment no longer covers Files & exports (the document-door pin moved with it) and the segments drop their words under 720 px (P-GAME 1/2). Waste door: "abc" gets its own sentence and a refused value never stays in the box (P-GAME 12, P-TRADE 13). Exports: qty needed is a number cell and the ladder labels read "(× Pct)" (P-TRADE 2); BOM headers in Title Case (P-GAME 16). Landing + README name the derivation, the line formula and the Library lens (P-MARKET 10, P-TRADE 16). CI: probe-af fetches the F18.68 bytes by full sha (P-SEAT 2). Recorded, not built (LEDGER §Batch AG): cost per estimated unit, auto-round control, grid CSI column, item creation from the grid, recap-drawer derivation, phone segment height, Library lens first frame 265 ms, the guard hook's text match, stale D-series line citations. Gates: probe-af 29/29 (RED-first 16/29 on F18.69 — 13 of the 14 new rows red, AF19 a control) · probe-v · probe-u · probe-z · probe-ab · probe-ad · probe-ae · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress.  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
 // F18.71: Batch AI (Patrick's rulings P3-R2 + P3-R3, 2026-09-03: "top and side drop down are still weird", "a lot of the language is AI speak and not construction talk") — TWO DROPDOWNS IN TRADE WORDS. Files & exports: Project · Print (Takeoff, Bid, Cost sheet, Proposal) · Spreadsheets (Estimate .xlsx, Client review .xlsx, Estimate CSV, Supplier RFQ) · Settings; the bill-of-materials, condition-totals and audit CSVs live under Setup as 'Working files' (same ids, same functions). The rack drops the Type group (the condition you click decides linear/area/count; Rect and Poly are the two ways to draw an area). Setup headings and the price-source legend in plain words; the Estimate lens's buttons name the same files. Gates: probe-ai (RED-first on F18.70), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.70: Batch AH (Patrick's review of F18.66, 2026-09-03: "still don't like the way pitch is done, should be a fraction 2/12") — PITCH READS AS RISE OVER 12. fmtPitch/parsePitch: the card chip, both pitch fields, the toasts, the rollup CSV (a 'Pitch factor' column keeps the multiplier) and the takeoff quantities page say 6/12; input takes 6/12, 6:12 or a bare 6 (a decimal multiplier still works). Storage stays the multiplier in both stores (D-26.1) — the engine and G0's goldens do not move. Gates: probe-ah (RED-first on F18.69), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.69: Batch AG (Patrick's ruling P3-R1, 2026-09-03: "clicking from conditions isn't smooth, I find myself still on the old condition a lot") — ONE CLICK MEANS ONE THING. A click on a condition card arms it (the card is D-24.5c's explicit gesture; digits still never re-arm); clicking the armed card keeps it armed; ⌖, Esc and the pill stop. The open condition detail follows the arm (a plain condition closes it). L-05's highlight-only state (selectedCondId, .card.selected) is gone; hints and the empty-state step say 'click the condition'. Gates: probe-ag (RED-first on F18.68), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.68: Batch AF (Patrick's review of F18.66, 2026-09-03: "unable to easily click items so I can modify them, i.e. flashings over field conditions") — THE CLICK PICKS WHAT YOU AIMED AT. selectAt ranks what the pointer is ON (stroke, vertex, marker within 8 px; nearest, then line/marker before area, then smaller area) before the area that merely contains the point (smallest first); a repeat click within 4 px steps through the stack; the message names the condition and how many shapes sit under it. VESCore untouched (fenced). Gates: probe-af (RED-first on F18.67), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.67: Batch AE (Patrick's review of F18.66, 2026-09-03: "there is no way to just print a takeoff") — THE TAKEOFF IS A DOCUMENT. Print takeoff… prints every sheet carrying measurements whole and landscape with its markup, a per-sheet legend (that sheet's quantities, pitched per D-26.1) and a closing quantities page (the card numbers, never money); the proposal's plan snapshot and the takeoff share one compositor (compositeSheet — the proposal's bytes are unchanged, probe-ae AE7). No identity gate (nothing on it is a price); every early return releases the latch (D-24.7a); a sheet that fails prints a marked placeholder (MED-4); the toast names the document (AD-3). Gates: probe-ae 7/7 (RED-first 0/7 on F18.66), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
@@ -14174,6 +14699,10 @@ window.VESApp = {
   exportSupplierCSV, printCostSheet, printTakeoffDoc,
   sectionOfCondition, sectionOfLine, systemOfLine, jobSections, namedSections,
   renameSection, setConditionSection,
+  // Batch B2b (R-5e…h): the drawn regions and their doors.
+  drawOverlays, regionsOnPage, measurementAnchor, regionAt, sectionOf,
+  addSectionRegion, renameSectionRegion, deleteSectionRegion, tagBySections, tagFromRegion,
+  openSectionNamePrompt, finishRegionDraft,
 };
 
 // P0.1: keep the floating islands clear of the floating toolbar at any width and after
