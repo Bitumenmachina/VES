@@ -20,6 +20,8 @@ truth first, history compressed.
   that drives B0→B7 is `~/.claude/plans/swift-percolating-orbit.md` (Patrick-approved; local). **PICKUP: next = Batch B1
   (pitch: one store, one function, rise/12 canonical, TAKEOFF_VERSION 3→4 with a named migration banner).** Open for
   Patrick: the licence word (R-8) before B7.
+  **Push:** the box's pre-push guard allows `main` (and main-reachable tags) only — `ves2` is LOCAL; not routed around. CI on the
+  runner runs when Patrick merges (or pushes the branch from a cloud seat). Every gate above ran on this box, raw output in the LEDGER row.
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
