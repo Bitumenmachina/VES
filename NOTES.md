@@ -19,7 +19,7 @@ truth first, history compressed.
   G0 GREEN 4/4, ves-verify PASS, sweep green except probe-ae AE2/AE5 = declared red until B4 (LEDGER §Batch B0). The plan
   that drives B0→B7 is `~/.claude/plans/swift-percolating-orbit.md` (Patrick-approved; local). **PICKUP: next = Batch B1
   (pitch: one store, one function, rise/12 canonical, TAKEOFF_VERSION 3→4 with a named migration banner).** Open for
-  Patrick: the licence word (R-8) before B7.
+  Patrick: the licence word (R-8) before B7 — **GIVEN 2026-09-14: MIT** (LICENSE replaced; in-file line at B7).
   **Push:** the box's pre-push guard allows `main` (and main-reachable tags) only — `ves2` is LOCAL; not routed around. CI on the
   runner runs when Patrick merges (or pushes the branch from a cloud seat). Every gate above ran on this box, raw output in the LEDGER row.
   **B0f landed `721b4d4`:** synthetic three-sheet fixture + golden + control probe 7/7 on both F18.72 and the port. B0 COMPLETE.

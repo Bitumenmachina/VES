@@ -20,7 +20,7 @@ Plan (Patrick-approved 2026-09-14, the deliverable of the architect's revisit): 
 | R-5 | Section = `c.location` (typed, canonical); drawn regions are an input method resolved by containment at tag time — moving a region never retro-changes money; "Unassigned" is a named section. (B2a/B2b) |
 | R-6 | Document columns use Patrick's EDGE report words (Legend · Pitch · Description · SF · LF · EA; Class → cost-code → Subtotal → named adders → Total); app chrome words unchanged; "sheet" stays the chrome word. (B5) |
 | R-7 | Palette 24 + custom hex + hatch/dash for grayscale print; the local GTM bar's B2 measure ("8 distinct colors") is restated and re-run, not reworded. (B3) |
-| R-8 | Free product (Patrick 2026-09-14: "even if it's just a free program for others"). LICENSE in the repo reads "All rights reserved" — NOT an open licence. **Open for Patrick before B7**: which licence, or "free to use, source public, rights reserved" stated plainly. Nothing in B0–B6 depends on it. |
+| R-8 | Free product (Patrick 2026-09-14: "even if it's just a free program for others"). **RESOLVED 2026-09-14, Patrick's word: "use MIT license."** LICENSE replaced with the MIT text (© 2026 Patrick Moriarty / Bitumen Machina LLC); B7 puts the licence line inside the product file. |
 | R-9 | Out of this run (roadmap, not built): downspout LF door reachability · fab+install pairing · mobile · cost per estimated unit on the grid · CEIL/overhead/zero-qty trio · export-surface collapse. A persona P0 on any of them becomes a numbered fix batch. |
 
 ### What B0 did, from bytes
