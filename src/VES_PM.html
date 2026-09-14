@@ -2486,6 +2486,69 @@ const VESCore = (() => {
     return { cost, oh, mk, pf, ohAmt, mkAmt, pfAmt, sell: s1 + pfAmt };
   }
 
+  /* ══ R-3 / R-4 (Batch B1) · ONE STORE, ONE FUNCTION, ONE CONVENTION ═══════════════════════
+     PITCH IS A RISE PER 12, IT LIVES ON THE CONDITION (`c.pitch`), AND `pitchFactor` IS THE
+     ONLY PLACE A PLAN FIGURE BECOMES A TRUE ONE.
+
+     Until this batch pitch lived in two stores read by three formulas: `c.pitch` (a MULTIPLIER,
+     applied by rollup, plain conditions only), `conditionOverrides[libRef].pitch` (a MULTIPLIER,
+     applied by the engine, library conditions only), and the Flags advisory's own `factorOf`.
+     A file could say `pitch: 6` meaning 6/12 and be priced at SIX TIMES the measured area.
+
+     Now: `c.pitch` is the rise over 12 as a number (0 or absent = flat) and nothing else stores
+     it. `pitchFactor(rise, kind)` is the only conversion:
+       area                     → √(1 + (r/12)²)
+       linear 'slope'           → √(1 + (r/12)²)   (rake, step, panel run — measured up the slope)
+       linear 'hipvalley'       → √(1 + (r/12)²/2) (the diagonal of a 45° corner in plan)
+       linear 'level'           → 1                (eave, ridge, gutter, drip, fascia, coping)
+       count                    → 1
+     `rollup` applies it for EVERY condition, library or not, so `rollup().quantity` is the
+     pitched quantity everywhere and `resolveTakeoff` is handed a quantity that is already true.
+
+     `normRise` is the ONE tolerance in the system: a value that could only be an F18.72-era
+     MULTIPLIER (greater than 1, under 2.5, and not a clean eighth of an inch of rise) is read
+     back as the rise it stood for. It is the safety net under live-injected state; the file door
+     (`normalizeSnapshot`) converts v3 files deliberately and does not rely on it. ══════════ */
+  const LEN_KINDS = ['level', 'slope', 'hipvalley'];
+  function pitchFactor(rise, kind) {
+    const r = +rise;
+    if (!(isFinite(r) && r > 0)) return 1;
+    if (kind === 'count' || kind === 'level') return 1;
+    const t = (r / 12) * (r / 12);
+    return kind === 'hipvalley' ? Math.sqrt(1 + t / 2) : Math.sqrt(1 + t);
+  }
+  /* R-4: what a LENGTH was measured along. Defaulted by name so nothing moves silently — an
+     unrecognised name falls to 'slope', which is exactly F18.72's behaviour (one multiplier for
+     every linear). Geometry is never inferred from the traced path: T-07 stands, pitch is human-keyed. */
+  function lenKindFor(name) {
+    const s = String(name || '');
+    if (/hip|valley/i.test(s)) return 'hipvalley';
+    if (/rake|step|panel|seam|batten|slope/i.test(s)) return 'slope';
+    if (/eave|ridge|gutter|drip|fascia|coping|parapet|edge|curb/i.test(s)) return 'level';
+    return 'slope';
+  }
+  function normRise(v) {
+    const n = +v;
+    if (!(isFinite(n) && n > 0)) return 0;
+    if (n > 1 && n < 2.5 && Math.abs(n * 8 - Math.round(n * 8)) > 1e-6) return 12 * Math.sqrt(n * n - 1);
+    return n;
+  }
+  function condKind(c) {
+    if (!c || c.type === 'count') return 'count';
+    if (c.type !== 'linear') return 'area';
+    return LEN_KINDS.indexOf(c.lenKind) >= 0 ? c.lenKind : lenKindFor(c.name);
+  }
+  function condRise(c) { return c ? normRise(c.pitch) : 0; }
+  /* `pitchLegacyFactor` is set ONLY by the v3 → v4 door, on a condition whose stored number could
+     not have been a factor (the bare 6). It reproduces that file's cents to the penny until the
+     estimator confirms the reading; confirming deletes it and the condition prices at its rise. */
+  function condFactor(c) {
+    if (!c || c.type === 'count') return 1;
+    const lg = +c.pitchLegacyFactor;
+    if (isFinite(lg) && lg > 0) return lg;
+    return pitchFactor(condRise(c), condKind(c));
+  }
+
   /* ---------- rollup, project total ---------- */
   // Integrity rule: nothing uncalibrated, pending, or unpriced is ever
   // silently counted as zero — it is excluded from the total AND flagged.
@@ -2501,11 +2564,11 @@ const VESCore = (() => {
         qty += m.value;
       }
       const uc = c.unitCost;
-      // F18.19 (Patrick's field report — pitch didn't change measurements): pitch now lands on
-      // the PLAIN path. Same grammar as the engine's pitchDefault (§2): a per-condition slope
-      // multiplier on the measured quantity, counts immune, invalid → 1. The F18.3 door stored
-      // the factor and promised "lifts material AND labor" — that promise is kept here now.
-      const pitch = (c.type !== 'count' && typeof c.pitch === 'number' && isFinite(c.pitch) && c.pitch > 0) ? c.pitch : 1;
+      // B1 (R-3): ONE store, ONE function. Every condition — library-backed or not — is pitched
+      // here, through `pitchFactor`, so `quantity` IS the quantity the money is computed on and
+      // `raw` is the traced figure it came from. Counts are immune. The engine is handed this
+      // number (assemblyMeasured) and must not multiply again.
+      const pitch = condFactor(c);
       const pQty = qty * pitch;
       const priced = validCost(uc);
       const reasons = [];
@@ -2518,7 +2581,7 @@ const VESCore = (() => {
         csi: c.csi || '', wbs: c.wbs || '', location: c.location || '', notes: c.notes || '',
         count: ms.length, pending,
         pages: [...pages].sort((a, b) => a - b),
-        quantity: pQty, unit: UNITS[c.type], pitch,
+        quantity: pQty, raw: qty, unit: UNITS[c.type], pitch, rise: condRise(c), lenKind: condKind(c),
         unitCost: priced ? uc : null, unitCostRaw: uc ?? null,
         extended: priced ? pQty * uc : null,
         calStatus: !ms.length ? '—' : (pending ? `pending (${pending})` : 'calibrated'),
@@ -2649,7 +2712,7 @@ const VESCore = (() => {
 
   /* ---------- takeoff snapshot normalization (v3 reads v1/v2) ---------- */
 
-  const TAKEOFF_VERSION = 3;
+  const TAKEOFF_VERSION = 4;   // B1: v4 stores pitch as a RISE per 12 on the condition (v3 stored a multiplier, in two places)
 
   function normalizeSnapshot(d) {
     if (!d || d.app !== 'VES' || !Array.isArray(d.conditions) || !Array.isArray(d.measurements)) {
@@ -2691,6 +2754,63 @@ const VESCore = (() => {
       if (n.pitch !== undefined && !(typeof n.pitch === 'number' && isFinite(n.pitch) && n.pitch > 0)) { delete n.pitch; drop.fields++; }
       conditions.push(n);
     });
+    /* ── v3 → v4 · PITCH BECOMES A RISE, IN ONE STORE. MONEY NEVER MOVES SILENTLY ON RELOAD. ──
+       A v3 file carries a slope MULTIPLIER, in either or both of two places: `condition.pitch`
+       (store A) and `assemblyProject.conditionOverrides[libRef].pitch` (store B). Both become
+       `condition.pitch` as a RISE per 12, and the override key is consumed.
+
+       The rise is stored UNROUNDED (12·√(f²−1)) and rounded only for display. Rounding it in the
+       store would move real cents: the fixture's 1.118 becomes 6.0000/12 = ×1.118034, +$0.32 on a
+       single 559-LF line. Displaying it rounds to the nearest eighth, so the estimator still reads
+       "6/12". The nearest-eighth rise is used for ONE thing: deciding whether the stored number
+       could have been a factor at all. If re-deriving from it lands more than 1e-4 away from the
+       stored value, the number was never a multiplier — it was a bare rise typed into a factor
+       field (f = 6 implies a rise of 71). That condition keeps `pitchLegacyFactor`, prices on it so
+       every cent reproduces, and raises its own confirm banner.
+
+       R-3a: a LIBRARY condition whose pitch sat in store A displayed pitched and priced FLAT (the
+       engine only ever read store B). D-26.1 says the displayed quantity IS the money quantity, so
+       the reconcile goes toward the display: money becomes pitched and the load door names every
+       such condition with its delta. Linears carrying a pitch migrate as 'slope' — F18.72 applied
+       one multiplier to every linear, and the migration must not move a foot of it. ── */
+    const fileVersion = (typeof d.version === 'number' && isFinite(d.version)) ? d.version : 1;
+    let projectLayer = d.assemblyProject || null;
+    const pitchMig = { from: fileVersion, legacy: [], reconcile: [] };
+    if (fileVersion < 4) {
+      projectLayer = projectLayer ? JSON.parse(JSON.stringify(projectLayer)) : null;
+      const ovs = (projectLayer && projectLayer.conditionOverrides && typeof projectLayer.conditionOverrides === 'object')
+        ? projectLayer.conditionOverrides : {};
+      for (const c of conditions) {
+        let f = (typeof c.pitch === 'number' && isFinite(c.pitch) && c.pitch > 0) ? c.pitch : 0;
+        let fromOverride = false;
+        const ov = c.libRef ? ovs[c.libRef] : null;
+        if (ov && typeof ov === 'object') {
+          if (!f && typeof ov.pitch === 'number' && isFinite(ov.pitch) && ov.pitch > 0) { f = ov.pitch; fromOverride = true; }
+          delete ov.pitch;                                   // ONE store from here
+        }
+        if (c.type === 'linear') c.lenKind = f ? 'slope' : lenKindFor(c.name);
+        if (!f || c.type === 'count') { delete c.pitch; delete c.pitchLegacyFactor; continue; }
+        const rise = 12 * Math.sqrt(Math.max(f * f - 1, 0));
+        const eighth = Math.round(rise * 8) / 8;
+        const back = Math.sqrt(1 + (eighth / 12) * (eighth / 12));
+        if (Math.abs(back - f) > 1e-4) {
+          c.pitch = f; c.pitchLegacyFactor = f;              // the bare number: reads as f/12, still prices at ×f
+          pitchMig.legacy.push({ id: c.id, name: c.name, factor: f });
+        } else {
+          c.pitch = rise; delete c.pitchLegacyFactor;
+        }
+        if (c.libRef && !fromOverride) pitchMig.reconcile.push({ id: c.id, name: c.name, libRef: c.libRef, rise: normRise(c.pitch) });
+      }
+    } else {
+      /* A v4 file can still carry an unconfirmed legacy factor — the estimator saved before
+         answering. The confirm STANDS until it is answered, on every open; a pending question
+         that disappears on save is the same as no question. */
+      for (const c of conditions) {
+        const lg = +c.pitchLegacyFactor;
+        if (c.type !== 'count' && isFinite(lg) && lg > 0) pitchMig.legacy.push({ id: c.id, name: c.name, factor: lg });
+      }
+    }
+
     const measurements = [];
     for (const m of d.measurements) {
       if (!m || typeof m !== 'object' || Array.isArray(m)) { drop.measurements++; continue; }
@@ -2728,7 +2848,8 @@ const VESCore = (() => {
         mode: d.mode || 'single',
         activePane: d.activePane || 0,
         panes: Array.isArray(d.panes) && d.panes.length === 2 ? d.panes : [defPane(), defPane()],
-        assemblyProject: d.assemblyProject || null,   // project-level overrides (#2); null on v1/v2 files
+        assemblyProject: projectLayer,                // project-level overrides (#2); null on v1/v2 files
+        pitchMigration: (pitchMig.legacy.length || pitchMig.reconcile.length) ? pitchMig : null,   // B1: consumed (and deleted) by applySnapshot's doors
         conditions, measurements,
       },
     };
@@ -2833,6 +2954,7 @@ const VESCore = (() => {
     validCost, fmtMoney, fmtQty, csvSafe, sellLadder,
     rollup, projectTotal, measurementRows, reconcile,
     fnv1a, compareIdentity, identityKey, normalizeSnapshot, TAKEOFF_VERSION,
+    pitchFactor, lenKindFor, normRise, condKind, condRise, condFactor, LEN_KINDS,
     SET_VERSION, makeConditionSet, validateConditionSet, condKey, mergePlan,
   };
 })();
@@ -3273,8 +3395,12 @@ const VESASM = (() => {
   /* ---------- resolve a full takeoff into priced lines + totals + signature ---------- */
   // input = { library, measured:[{condId, value}], project:{settings, conditionOverrides, lineOverrides} }
   function resolveTakeoff(input) {
-    const { library, measured = [], project = {} } = input;
+    const { library, measured = [], project = {}, measuredPitched = false } = input;
     const warnings = [];
+    /* R-3 (Batch B1): `measuredPitched` says the caller already applied the condition's ONE pitch
+       factor to every measured value (VESCore.rollup does, for library and plain conditions alike).
+       The engine's own pitch layer then resolves to 1 — applying it again would price a 6/12 roof
+       at 12/12. A caller that hands over RAW sums leaves the flag off and the layer works as it did. */
 
     // sum traced value per library condition (multiple traces of the same condition add)
     const condValue = {};
@@ -3306,9 +3432,10 @@ const VESASM = (() => {
       // pitch: ONE per-condition fractional multiplier on the measured quantity (default 1.0;
       // counts default 1.0). true = measured × pitch; material then lifts by waste (adj), labor
       // is paid on true (raw). No geometry-awareness — the estimator sets pitch where sloped.
-      const pitchDefault = cond.geometry_type === 'count' ? 1
+      const pitchDefault = (measuredPitched || cond.geometry_type === 'count') ? 1
         : (typeof cond.pitch === 'number' && isFinite(cond.pitch) && cond.pitch > 0 ? cond.pitch : 1);
-      const p = resolveOverride('pitch', layers, pitchDefault);
+      const p = measuredPitched ? { value: 1, authority: 'TAKEOFF — pitched once, at the condition (R-3)' }
+        : resolveOverride('pitch', layers, pitchDefault);
       const pitch = (typeof p.value === 'number' && isFinite(p.value) && p.value > 0) ? p.value : 1;
       cqty[condId] = makeCQty(condValue[condId] * pitch, w.value);
       cqty[condId].pitch = pitch;
@@ -6905,30 +7032,34 @@ function pulseCard(condId) {
   q.classList.remove('pulse'); void q.offsetWidth; q.classList.add('pulse');
 }
 
-/* ── AH-1 (Batch AH; Patrick, 2026-09-03: "still don't like the way pitch is done, should be a fraction 2/12") ·
-   PITCH READS AS RISE OVER 12. The engine keeps the slope multiplier (c.pitch and conditionOverrides[libRef].pitch —
-   D-26.1's two stores; G0's goldens are absolute and do not move), and every FACE now speaks the roofer's fraction:
-   6/12 stores 1.1180 and reads back "6/12"; a multiplier that is not a clean rise (an imported library value) reads
-   "1.118×". Input takes 6/12, 6:12, or just 6 (a bare rise up to 24 with no decimal point); a decimal ≥ 1 is still
-   read as a multiplier for anyone who thinks that way. ── */
-function fmtPitch(mult) {
-  const m = +mult;
-  if (!(isFinite(m) && m > 0) || Math.abs(m - 1) < 1e-9) return 'flat';
-  if (m < 1) return m.toFixed(3) + '×';
-  const rise = 12 * Math.sqrt(m * m - 1);
-  const half = Math.round(rise * 2) / 2;
-  if (half > 0 && Math.abs(rise - half) < 0.01) return (Number.isInteger(half) ? String(half) : half.toFixed(1)) + '/12';
-  return m.toFixed(3) + '×';
+/* ── AH-1 (Batch AH) + R-3 (Batch B1) · PITCH READS — AND NOW STORES — AS RISE OVER 12.
+   AH-1 made every FACE speak the roofer's fraction while the stores still held multipliers.
+   B1 finished it: `c.pitch` IS the rise, `VESCore.pitchFactor` is the only conversion, and these
+   two are the grammar the doors speak. `fmtPitch` takes a RISE and rounds to the nearest eighth
+   for the page (the store keeps full precision so reloading a v3 file cannot move a cent);
+   `parsePitch` takes 6/12, 6:12, a bare 6, or — for anyone who still thinks in multipliers — a
+   decimal like 1.118, and returns the rise all three stand for. Both run values through
+   `VESCore.normRise`, so a multiplier that reaches them from older live state still reads right. ── */
+function fmtPitch(v) {
+  const rise = VESCore.normRise(v);
+  if (!(rise > 0)) return 'flat';
+  const e = Math.round(rise * 8) / 8;
+  if (Math.abs(rise - e) < 0.02) {
+    const word = Number.isInteger(e) ? String(e) : (Number.isInteger(e * 2) ? e.toFixed(1) : String(+e.toFixed(3)));
+    return word + '/12';
+  }
+  return (+rise.toFixed(2)) + '/12';
 }
-function parsePitch(raw) {   // → { ok, mult }; mult undefined = flat
+function parsePitch(raw) {   // → { ok, rise, mult }; rise undefined = flat
   const s = String(raw == null ? '' : raw).trim().toLowerCase().replace(/\s+/g, '');
-  if (s === '' || s === 'flat' || s === '0' || s === '0/12') return { ok: true, mult: undefined };
+  const done = (rise) => ({ ok: true, rise, mult: rise === undefined ? undefined : VESCore.pitchFactor(rise, 'area') });
+  if (s === '' || s === 'flat' || s === '0' || s === '0/12') return done(undefined);
   let m = /^(\d+(?:\.\d+)?)[/:](\d+(?:\.\d+)?)$/.exec(s);                 // rise over run: 6/12, 6:12, 7.5/12
-  if (m) { const rise = +m[1], run = +m[2]; if (!(run > 0) || !(rise >= 0)) return { ok: false }; const v = Math.sqrt(rise * rise + run * run) / run; return { ok: true, mult: Math.abs(v - 1) < 1e-9 ? undefined : v }; }
+  if (m) { const rise = +m[1], run = +m[2]; if (!(run > 0) || !(rise >= 0)) return { ok: false }; return done(rise === 0 ? undefined : rise * 12 / run); }
   m = /^(\d+(?:\.5)?)$/.exec(s);                                          // a bare rise: 6 → 6/12
-  if (m && +m[1] <= 24) { const rise = +m[1]; return { ok: true, mult: rise === 0 ? undefined : Math.sqrt(rise * rise + 144) / 12 }; }
+  if (m && +m[1] <= 24) { const rise = +m[1]; return done(rise === 0 ? undefined : rise); }
   const v = Number(s.replace(/[x×]$/, ''));                          // a multiplier: 1.118 or 1.118×
-  if (isFinite(v) && v >= 1) return { ok: true, mult: Math.abs(v - 1) < 1e-9 ? undefined : v };
+  if (isFinite(v) && v >= 1) { const rise = VESCore.normRise(v); return done(rise > 0 ? rise : undefined); }
   return { ok: false };
 }
 const PITCH_HELP = 'Type the pitch as rise over 12 — 6/12, or just 6. Blank = flat.';
@@ -7202,11 +7333,32 @@ function buildDepthRow(c, l) {
   return row;
 }
 
-// Per-condition Pitch (§2): a slope multiplier shown at the top of the depth panel for
-// area/linear conditions (counts stay 1.0, no control). Writes a conditionOverride (OBS);
-// the engine lifts BOTH material and labor by it. Accepts a multiplier or rise/12.
+/* Per-condition pitch at the top of the depth panel, for area/linear conditions (counts stay flat
+   and get no control). R-3: it writes `c.pitch` — the ONE store — through the ONE writer, and it
+   is journaled. R-4: a LINEAR also carries what it was measured ALONG, right beside the pitch,
+   because 100 ft of eave at 6/12 is still 100 ft while 100 ft of rake is 111.8. */
+function lenKindSelect(c, after) {
+  const sel = document.createElement('select'); sel.className = 'cond-lenkind';
+  sel.setAttribute('aria-label', 'Measured along');
+  sel.title = 'What this length runs along. Level (eave, ridge, gutter, drip, coping) does not lengthen with pitch. '
+    + 'Up the slope (rake, step flashing, a panel run) lengthens by the full slope factor. Hip / valley is the corner diagonal — it lengthens less.';
+  for (const [v, w] of [['level', 'level — no slope'], ['slope', 'up the slope'], ['hipvalley', 'hip / valley']]) {
+    const o = document.createElement('option'); o.value = v; o.textContent = w; sel.appendChild(o);
+  }
+  sel.value = VESCore.condKind(c);
+  sel.addEventListener('change', () => {
+    const prior = c.lenKind, next = sel.value;
+    if (prior === next) return;
+    const apply = (v) => { c.lenKind = v; c.updatedAt = new Date().toISOString(); syncPitchMirrors(); };
+    apply(next);
+    journalPush({ label: 'measured along → ' + next + ' on ' + (c.name || 'condition'),
+      undo() { apply(prior); renderCards(); renderAssembly(); }, redo() { apply(next); renderCards(); renderAssembly(); } });
+    markDirty(); renderCards(); renderAssembly();
+    if (after) after();
+  });
+  return sel;
+}
 function buildCondParamRow(c) {
-  const ov = (state.assemblyProject.conditionOverrides && state.assemblyProject.conditionOverrides[c.libRef]) || null;
   const row = document.createElement('div'); row.className = 'depth-row cond-params';
   const name = document.createElement('div'); name.className = 'dr-name';
   name.appendChild(document.createTextNode('Pitch (rise/12)'));   // AH-1
@@ -7214,11 +7366,12 @@ function buildCondParamRow(c) {
   row.appendChild(name);
   const pf = document.createElement('div'); pf.className = 'dr-f';
   const pin = document.createElement('input'); pin.type = 'text'; pin.className = 'cond-pitch';
-  pin.value = (ov && ov.pitch != null) ? fmtPitch(ov.pitch) : '';   // AH-1: the field reads 6/12
+  const rise = VESCore.condRise(c);
+  pin.value = rise > 0 ? fmtPitch(rise) : '';   // AH-1: the field reads 6/12
   pin.placeholder = 'flat';
   pin.title = PITCH_HELP + ' A multiplier (1.118) still works.';
-  if (ov && ov.pitch != null) pin.classList.add('ov');
-  pin.addEventListener('change', () => { if (pin.dataset.entered) return; setConditionPitch(c.libRef, pin.value); });
+  if (rise > 0) pin.classList.add('ov');
+  pin.addEventListener('change', () => { if (pin.dataset.entered) return; setCondPitch(c, pin.value); });
   /* D-24.6e (L-1): Enter commits HERE. It was left to the browser's change-on-Enter
      default, which (a) fires only when the value differs from the last committed one — a
      keydown-only Enter committed nothing at all — and (b) leaves focus on <body>, because
@@ -7231,20 +7384,18 @@ function buildCondParamRow(c) {
     if (ev.key !== 'Enter') return;
     ev.preventDefault(); ev.stopPropagation();
     pin.dataset.entered = '1';                               // the UA change-on-Enter must not re-commit behind us
-    const ref = c.libRef;
-    const co0 = state.assemblyProject.conditionOverrides || {};
-    const had = !!(co0[ref] && co0[ref].pitch);
-    setConditionPitch(ref, pin.value);
-    const co1 = state.assemblyProject.conditionOverrides || {};
-    const now = (co1[ref] && co1[ref].pitch) || null;
+    const had = VESCore.condRise(c) > 0;
+    setCondPitch(c, pin.value);
+    const now = VESCore.condRise(c);
     requestAnimationFrame(() => {                            // after renderCards' own frame
       const back = document.querySelector('#depthPanel input.cond-pitch') || document.querySelector('input.cond-pitch');
       if (back) { back.focus(); try { back.select(); } catch (_) {} }   // Enter commits; it does not eject
     });
-    if (now) toast(`Pitch ${fmtPitch(now)} applied to "${c.name}" — quantities and money follow.`, 'ok');   // AH-1
+    if (now > 0) toast(`Pitch ${fmtPitch(now)} applied to "${c.name}" — quantities and money follow.`, 'ok');   // AH-1
     else if (had) toast(`Pitch cleared on "${c.name}" — flat.`, 'ok');
   });
   pf.appendChild(pin);
+  if (c.type === 'linear') { const sel = lenKindSelect(c); sel.style.marginLeft = '6px'; pf.appendChild(sel); }
   // 4-col depth grid (Item | Unit$ | Qty | Cost) after #3b: seat pitch under Qty
   // (it scales the quantity), with mute spacers in the Unit$ and Cost columns.
   const spacer = () => { const s = document.createElement('div'); s.className = 'dr-f dr-mute'; row.appendChild(s); };
@@ -7377,12 +7528,12 @@ function renderDepthPanel(linesByRef, byId) {
 /* ══ D-26.1 (Batch R1) · ONE QUANTITY CONVENTION ON EVERY SURFACE ═══════════════════════════
    A DISPLAYED OR EXPORTED QUANTITY IS THE QUANTITY THE MONEY WAS COMPUTED ON.
 
-   Pitch lives in two stores. A PLAIN condition carries it on the condition object (`c.pitch`),
-   and `VESCore.rollup` applies it there (F18.19), so `rollup(...).quantity` is already pitched.
-   A LIBRARY condition carries it in `assemblyProject.conditionOverrides[libRef].pitch` (written
-   by `setConditionPitch`, read by `VESASM.resolveTakeoff` as the CONDITION override layer) —
-   and `rollup` cannot see that store at all, because `assemblyMeasured()` deliberately hands
-   the engine RAW, UNPITCHED sums and lets the engine pitch them itself.
+   B1 (R-3) closed the split this ruling was written around. Pitch lived in TWO stores: `c.pitch`
+   (plain conditions, applied by rollup) and `assemblyProject.conditionOverrides[libRef].pitch`
+   (library conditions, applied by the engine), which `rollup` could not see at all. It now lives
+   in ONE — `c.pitch`, a rise per 12 — `rollup` applies `pitchFactor` to every condition, and
+   `assemblyMeasured()` hands the engine that already-pitched figure with the engine's own pitch
+   layer forced to 1. The ruling below is unchanged; there is simply nothing left to reconcile.
 
    The consequence, before this helper: on one client proposal a plain condition at 6/12 printed
    its PITCHED quantity and a library condition at the same 6/12 printed its FLAT one, in the
@@ -7397,29 +7548,16 @@ function renderDepthPanel(linesByRef, byId) {
    apportionment ratio (pitch is per-libRef so it cancels, and it is money, not display), the
    plain-only paths in `recapData` / `collectPricedLines` (store A already applied), and the
    qty-link freeze (it writes a MEASUREMENT the engine will pitch again). ══════════════════ */
-function condPitchFactor(c) {
-  if (!c || !c.libRef) return 1;   // plain conditions: VESCore.rollup already applied store A
-  const co = (state.assemblyProject && state.assemblyProject.conditionOverrides) || {};
-  const ov = co[c.libRef] && co[c.libRef].pitch;
-  if (typeof ov === 'number' && isFinite(ov) && ov > 0) return ov;
-  /* engine parity: resolveTakeoff's `pitchDefault` falls back to the LIBRARY condition's own
-     `pitch` (an importable column, :3439/:3562) for non-count geometry. No seed library carries
-     one, so this branch is inert today — it exists so an imported library that DOES set a
-     default cannot reopen the same gap on the display side. */
-  const lc = (state.library && state.library.conditions && state.library.conditions[c.libRef])
-    || (state.adhoc && state.adhoc.conditions && state.adhoc.conditions[c.libRef]);
-  const lp = (lc && lc.geometry_type !== 'count') ? lc.pitch : undefined;
-  return (typeof lp === 'number' && isFinite(lp) && lp > 0) ? lp : 1;
-}
-// `r` = a VESCore.rollup row; `c` = the condition it came from. Returns the quantity the money
-// was computed on, plus the factor that got it there so a surface can name it.
+/* B1 (R-3): both helpers survive as THIN WRAPPERS so every caller keeps its shape, but neither
+   derives anything any more — `VESCore.rollup` has already applied the one factor to every
+   condition, library-backed or not, so the quantity on the row IS the quantity the money was
+   computed on and multiplying here would double it. `rise` rides along so a surface can print
+   the fraction without re-deriving it. */
+function condPitchFactor(c) { return VESCore.condFactor(c); }
+// `r` = a VESCore.rollup row; `c` = the condition it came from.
 function dispQtyOf(r, c) {
-  if (!r) return { qty: 0, pitch: 1 };
-  const ovP = condPitchFactor(c);
-  return {
-    qty: (ovP !== 1 && r.pitch === 1) ? r.quantity * ovP : r.quantity,   // ONCE: never on top of store A
-    pitch: r.pitch !== 1 ? r.pitch : ovP,
-  };
+  if (!r) return { qty: 0, pitch: 1, rise: 0 };
+  return { qty: r.quantity, pitch: r.pitch, rise: (r.rise != null ? r.rise : VESCore.condRise(c)) };
 }
 
 /* ══ P0-1 (Batch R2) · MONEY IS PRICED BY THE ENGINE ONLY ═══════════════════════════════════
@@ -7553,13 +7691,12 @@ function renderCardsNow() {
     // pitch chip (novice frame): area/linear conditions silently default to flat (1.0×), which is
     // WRONG for a sloped roof — surface the slope on the slim card so the control is discoverable,
     // not buried in the expanded depth panel. Click jumps straight to the pitch field.
-    if (c.type !== 'count' && r.count > 0) {   // P4 (F18.3): plain conditions get the chip too
-      const co = state.assemblyProject.conditionOverrides && state.assemblyProject.conditionOverrides[c.libRef];
-      const p = c.libRef ? (co && co.pitch)
-        : ((typeof c.pitch === 'number' && isFinite(c.pitch) && Math.abs(c.pitch - 1) > 1e-9) ? c.pitch : undefined);
-      const pc = chip(p ? `▲ ${fmtPitch(p)} pitch` : 'pitch: flat', !!p);   // AH-1: rise over 12
+    if (c.type !== 'count' && r.count > 0) {   // P4 (F18.3): plain conditions get the chip too — R-3: one store, read the same way for both
+      const f = r.pitch, rise = r.rise != null ? r.rise : VESCore.condRise(c);
+      const p = f !== 1 ? f : 0;
+      const pc = chip(p ? `▲ ${fmtPitch(rise)} pitch` : 'pitch: flat', !!p);   // AH-1: rise over 12
       pc.style.cursor = 'pointer';
-      pc.title = p ? `Pitch ${fmtPitch(p)} (quantities × ${(+p).toFixed(3)}) — click to change`
+      pc.title = p ? `Pitch ${fmtPitch(rise)}${c.type === 'linear' ? ' · ' + VESCore.condKind(c) : ''} (quantities × ${(+f).toFixed(3)}) — click to change`
         : 'Flat — click to set the roof pitch as rise over 12 (6/12). Plan area alone under-bids a sloped roof.';
       pc.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -7884,38 +8021,23 @@ function buildEditPanel(c, r) {
     lrow.appendChild(lbl); lrow.appendChild(ub);
     frow('Qty link', lrow);
   }
-  if (c.type !== 'count' && !c.libRef) {
+  /* P4 (F18.3) gave PLAIN conditions a pitch door; R-3 (B1) gives it to every condition, because
+     there is one store now and both doors write it. The library condition's depth-panel row is the
+     same field by another name — type 6 in either and the rail, the grid, the bid and the BOM all
+     move together. */
+  if (c.type !== 'count') {
     const pin = document.createElement('input');
     pin.type = 'text'; pin.classList.add('mono'); pin.placeholder = 'flat';
-    pin.value = (typeof c.pitch === 'number' && isFinite(c.pitch) && c.pitch > 0 && Math.abs(c.pitch - 1) > 1e-9)
-      ? fmtPitch(c.pitch) : '';   // AH-1: the field reads 6/12
+    const rise0 = VESCore.condRise(c);
+    pin.value = rise0 > 0 ? fmtPitch(rise0) : '';   // AH-1: the field reads 6/12
     pin.title = PITCH_HELP + ' Lifts material AND labor. A multiplier (1.118) still works.';
     pin.addEventListener('change', () => {
-      const sIn = pin.value.trim();
-      const prior = (typeof c.pitch === 'number') ? c.pitch : undefined;
-      let next;
-      if (sIn === '') next = undefined;
-      else {
-        const pp = parsePitch(sIn);   // AH-1: the same grammar as setConditionPitch
-        if (!pp.ok) {
-          toast(PITCH_HELP);
-          pin.value = prior != null ? fmtPitch(prior) : '';
-          return;
-        }
-        next = pp.mult;
-      }
-      if (next !== prior) {
-        if (next === undefined) delete c.pitch; else c.pitch = next;
-        journalPush({
-          label: 'pitch ' + c.name,
-          undo() { if (prior === undefined) delete c.pitch; else c.pitch = prior; c.updatedAt = new Date().toISOString(); },
-          redo() { if (next === undefined) delete c.pitch; else c.pitch = next; c.updatedAt = new Date().toISOString(); },
-        });
-      }
-      c.updatedAt = new Date().toISOString();
-      markDirty(); renderCards();
+      const prior = VESCore.condRise(c);
+      const r = setCondPitch(c, pin.value);
+      if (r === undefined && pin.value.trim() !== '') pin.value = prior > 0 ? fmtPitch(prior) : '';   // refused: the box never keeps it
     });
     frow('Pitch (rise/12)', pin);   // AH-1
+    if (c.type === 'linear') frow('Measured along', lenKindSelect(c));   // R-4
   }
 
   const notes = document.createElement('textarea');
@@ -8050,6 +8172,7 @@ function initCondForm() {
       csi: '', wbs: '', location: '', notes: '', unitCost: null,
       tags: [], sortOrder: state.conditions.length + 1, createdAt: now, updatedAt: now,
     };
+    seedCondPitch(c, null);   // R-4: a fresh linear knows what it runs along
     state.conditions.push(c);
     $('condName').value = '';
     const w = $('addCondWrap'); if (w) w.hidden = true;   // collapse the form behind "+" again
@@ -8343,13 +8466,13 @@ function loadAssembly(asmId) {
     const def = state.library.conditions[condId];
     if (!def) continue;
     const now = new Date().toISOString();
-    state.conditions.push({
+    state.conditions.push(seedCondPitch({
       id: uid(), name: def.label, color: PALETTE[order % PALETTE.length],
       type: GEOM_TO_TYPE[def.geometry_type] || 'linear', csi: def.csi || '',
       wbs: '', location: '', unitCost: null, notes: '', tags: [asmId],
       sortOrder: ++order, libRef: condId, assembly: asmId,
       createdAt: now, updatedAt: now,
-    });
+    }, def));
     added++;
   }
   renderCards(); markDirty();
@@ -8368,7 +8491,10 @@ function assemblyMeasured() {
     const c = condById[m.conditionId];
     if (!c || !c.libRef) continue;
     if (m.value == null) continue;           // pending — excluded, like VESCore.rollup
-    byRef[c.libRef] = (byRef[c.libRef] || 0) + m.value;
+    // R-3: the engine is handed the TRUE quantity — measured × the condition's one pitch factor,
+    // the same number VESCore.rollup puts on every face. resolveTakeoff's own pitch layer is
+    // forced to 1 (measuredPitched), so it is applied exactly once, here.
+    byRef[c.libRef] = (byRef[c.libRef] || 0) + m.value * VESCore.condFactor(c);
   }
   /* F18.21: linked quantities — an adhoc condition with qtyLink follows its source
      condition's rollup quantity (pending-aware) instead of its frozen snapshot
@@ -8416,7 +8542,7 @@ function mergedLibrary() {
   };
 }
 function resolveAssembly() {
-  return VESASM.resolveTakeoff({ library: mergedLibrary(), measured: assemblyMeasured(), project: state.assemblyProject });
+  return VESASM.resolveTakeoff({ library: mergedLibrary(), measured: assemblyMeasured(), project: state.assemblyProject, measuredPitched: true });
 }
 
 /* ---------- manual entry (§7) — no geometry required, works without a PDF ---------- */
@@ -8430,10 +8556,10 @@ function addManualQuantity(libRefId, qty) {
   let c = state.conditions.find((x) => x.libRef === libRefId);
   if (!c) {
     const now = new Date().toISOString();
-    c = { id: uid(), name: def.label, color: PALETTE[state.conditions.length % PALETTE.length],
+    c = seedCondPitch({ id: uid(), name: def.label, color: PALETTE[state.conditions.length % PALETTE.length],
       type: GEOM_TO_TYPE[def.geometry_type] || 'count', csi: def.csi || '', wbs: '', location: '',
       notes: '', unitCost: null, tags: [def.assembly], sortOrder: state.conditions.length + 1,
-      libRef: libRefId, assembly: def.assembly, createdAt: now, updatedAt: now };
+      libRef: libRefId, assembly: def.assembly, createdAt: now, updatedAt: now }, def);
     state.conditions.push(c);
   }
   state.measurements.push({ id: uid(), conditionId: c.id, page: null, type: c.type, points: [], value: qty, notes: '', manual: true });
@@ -8498,6 +8624,7 @@ function addManualLine(opts) {
     sortOrder: state.conditions.length + 1, libRef: cid, assembly: asmId, adhoc: true,
     manualKind: kind, manualUnit: unit, manualPrice: price, manualCsi: csi, createdAt: now, updatedAt: now };
   if (opts.qtyLink != null && state.conditions.some((x) => x.id === opts.qtyLink)) c.qtyLink = opts.qtyLink;   // F18.21: qty follows this condition's measurements
+  seedCondPitch(c, null);   // R-4: the manual line's own length kind (an adhoc line carries no pitch of its own)
   state.conditions.push(c);
   const condAt = state.conditions.length - 1;
   synthRegister(c);
@@ -9174,28 +9301,96 @@ function setGeneralField(idx, field, raw) {
   if ((state.gridView || state.mode === 'split') && typeof renderEstimateGrid === 'function') renderEstimateGrid();   // F10: grid shows General lines too
 }
 
-/* ---------- Pitch (§2): ONE per-condition slope multiplier (default 1.0). Writes to the
-   conditionOverride (OBS); the engine lifts BOTH material and labor by it (true = raw × pitch).
-   Accepts a plain multiplier (1.12) or rise/12 sugar (6/12 → √(rise²+144)/12). ---------- */
+/* ── R-3 (Batch B1) · THE ONE PITCH WRITER ────────────────────────────────────────────────────
+   Every door — the ✎ card editor, the depth-panel row, the VESApp export — comes through here.
+   It writes `c.pitch` (a rise per 12), drops any legacy multiplier the file door parked on the
+   condition, and JOURNALS the change by name, so Ctrl+Z takes back the pitch AND the quantity
+   every surface is showing. `setConditionPitch(libRef, raw)` keeps its shape for the callers and
+   probes that address a condition by its library reference; it now walks every condition on that
+   reference, because the store is per-condition.
+
+   `pitchMirror` keeps `conditionOverrides[libRef].pitch` answering as a read-only VIEW of the one
+   store — a non-enumerable accessor, so it never serialises into a takeoff file and never reaches
+   the engine's override layer. It exists because that key was the public shape of the old store
+   and code (and gates) outside this file still ask it what the pitch is. It is a window, not a
+   second store: writing through it writes `c.pitch`. ── */
+function pitchMirror(c) {
+  if (!c || !c.libRef) return;
+  const ap = state.assemblyProject;
+  const co = ap.conditionOverrides || (ap.conditionOverrides = {});
+  const ref = c.libRef;
+  const live = () => state.conditions.filter((x) => x.libRef === ref);
+  const factorNow = () => { for (const x of live()) { const f = VESCore.condFactor(x); if (f !== 1) return f; } return undefined; };
+  if (factorNow() === undefined) {                       // flat: no view, and no empty shell left behind
+    if (co[ref]) { try { delete co[ref].pitch; } catch (_) {} if (!Object.keys(co[ref]).length) delete co[ref]; }
+    return;
+  }
+  const ov = co[ref] || (co[ref] = {});
+  const desc = Object.getOwnPropertyDescriptor(ov, 'pitch');
+  if (desc && desc.get) return;
+  if (desc) delete ov.pitch;
+  Object.defineProperty(ov, 'pitch', {
+    enumerable: false, configurable: true,
+    get: factorNow,
+    set(v) { const rise = VESCore.normRise(v); for (const x of live()) { if (rise > 0) x.pitch = rise; else delete x.pitch; delete x.pitchLegacyFactor; } },
+  });
+}
+function syncPitchMirrors() { const seen = new Set(); for (const c of state.conditions) if (c.libRef && !seen.has(c.libRef)) { seen.add(c.libRef); pitchMirror(c); } }
+// The conditionOverrides dictionary as a FILE sees it: real keys only, empty shells pruned.
+function conditionOverridesForFile() {
+  const co = (state.assemblyProject && state.assemblyProject.conditionOverrides) || {};
+  const out = {};
+  for (const k of Object.keys(co)) { const v = co[k]; if (v && typeof v === 'object' && Object.keys(v).length) out[k] = v; }
+  return out;
+}
+/* R-3: a library row's `pitchDefault` (or the engine's own `pitch` column) seeds a condition's
+   pitch ONCE, when the condition is CREATED from that row — never re-applied afterwards, so an
+   estimator who sets 4/12 on a 6/12-default row keeps 4/12 through every reload. R-4: a LINEAR
+   also gets what it is measured along, from its name. Both are money-inert on today's seed book:
+   45 rows, none with a pitch column. */
+function seedCondPitch(c, def) {
+  if (!c) return c;
+  if (c.type === 'linear') c.lenKind = VESCore.lenKindFor(c.name);
+  if (c.type === 'count') return c;
+  const raw = def ? (def.pitchDefault != null ? def.pitchDefault : def.pitch) : undefined;
+  const rise = VESCore.normRise(raw);
+  if (rise > 0) c.pitch = rise;
+  return c;
+}
+function setCondPitch(c, raw, opts = {}) {
+  if (!c) return undefined;
+  const pp = parsePitch(raw);
+  if (!pp.ok) { toast(PITCH_HELP); renderCards(); return undefined; }
+  const prior = (typeof c.pitch === 'number') ? c.pitch : undefined;
+  const priorLegacy = c.pitchLegacyFactor;
+  const next = pp.rise;
+  if (next === prior && priorLegacy == null) return prior;
+  const apply = (v, legacy) => { if (v === undefined) delete c.pitch; else c.pitch = v;
+    if (legacy === undefined) delete c.pitchLegacyFactor; else c.pitchLegacyFactor = legacy;
+    c.updatedAt = new Date().toISOString(); syncPitchMirrors(); };
+  apply(next, undefined);
+  /* D-25.2a: a gesture that changes money is ON the stack with a name. The pitch door was the
+     last money door riding the unjournaled-money fallback; it rides the journal now, and the
+     entry says which condition and from what to what. */
+  journalPush({
+    label: 'pitch ' + fmtPitch(prior) + ' → ' + fmtPitch(next) + ' on ' + (c.name || 'condition'),
+    undo() { apply(prior, priorLegacy); renderCards(); renderAssembly(); },
+    redo() { apply(next, undefined); renderCards(); renderAssembly(); },
+  });
+  markDirty();
+  if (!opts.quiet) { renderCards(); renderAssembly(); }
+  return c.pitch;
+}
 function setConditionPitch(libRef, raw) {
   if (!libRef) return undefined;
   if (libRef === '__proto__' || libRef === 'constructor' || libRef === 'prototype') return undefined;  // prototype-pollution guard
-  const co = state.assemblyProject.conditionOverrides || (state.assemblyProject.conditionOverrides = {});
-  const ov = co[libRef] || (co[libRef] = {});
-  const s = String(raw == null ? '' : raw).trim();
-  if (s === '') { delete ov.pitch; }
-  else {
-    const pp = parsePitch(s);   // AH-1: 6/12, 6:12, a bare 6, or a multiplier
-    if (!pp.ok) { toast(PITCH_HELP); renderCards(); return undefined; }
-    if (pp.mult === undefined) delete ov.pitch; else ov.pitch = pp.mult;
-  }
-  if (!Object.keys(ov).length) delete co[libRef];
-  /* D-25.2a, same fallback: the per-condition pitch multiplier lifts BOTH material and labor and
-     is not on the journal. Found by census, not by the finding — marked rather than silently
-     left, and recorded as a CANDIDATE to journal properly (it has a clean commit grammar). */
-  noteUnjournaledMoney('the pitch change');
-  markDirty(); renderCards(); renderAssembly();
-  return co[libRef] ? co[libRef].pitch : undefined;
+  const fam = state.conditions.filter((c) => c.libRef === libRef);
+  if (!fam.length) return undefined;
+  let out;
+  for (const c of fam) out = setCondPitch(c, raw, { quiet: true });
+  syncPitchMirrors(); renderCards(); renderAssembly();
+  const co = state.assemblyProject.conditionOverrides || {};
+  return co[libRef] ? co[libRef].pitch : (out || undefined);
 }
 /* ── Batch AF (ledger F4.1 item 4) · CONDITION WASTE HAS A DOOR ─────────────────────────────────────────
    The Flags tab advised "key a waste %" against conditionOverrides[libRef].waste — the store the engine reads
@@ -9485,10 +9680,7 @@ function renderRecapExceptions() {
   // when they carry DIFFERENT slope factors on one takeoff, surface it. Advisory only —
   // the keyed factor is the estimator's intent (T-07); nothing is recomputed or changed.
   {
-    const factorOf = (c) => {
-      if (c.libRef) { const co = wco[c.libRef]; const p = co && co.pitch; return (typeof p === 'number' && isFinite(p) && p > 0) ? p : 1; }
-      const p = c.pitch; return (c.type !== 'count' && typeof p === 'number' && isFinite(p) && p > 0) ? p : 1;
-    };
+    const factorOf = (c) => VESCore.condFactor(c);   // R-3: the advisory reads the ONE function, not a third formula
     const measured = new Set(state.measurements.map((m) => m.conditionId));
     const sysOf = (c) => c.libRef ? String(c.libRef).split('.')[0] : (c.assembly || '\u2014');
     const isFam = (c, re) => re.test(c.name || '') || re.test(String(c.libRef || '').split('.').pop() || '');
@@ -10559,7 +10751,7 @@ function snapshot() {
     // project-level overrides (in-takeoff formula/price edits) — library stays pristine (#2)
     assemblyProject: {
       lineOverrides: state.assemblyProject.lineOverrides || {},
-      conditionOverrides: state.assemblyProject.conditionOverrides || {},
+      conditionOverrides: conditionOverridesForFile(),   // B1: real keys only; the pitch VIEW is non-enumerable and never serialises
       settings: state.assemblyProject.settings || {},
       general: state.assemblyProject.general || [],
     },
@@ -10960,6 +11152,7 @@ async function applySnapshot(d) {
     state.assemblyProject.conditionOverrides = S.conditionOverrides;
     state.assemblyProject.settings = S.settings || state.assemblyProject.settings || {};
     state.assemblyProject.general = S.general;
+    syncPitchMirrors();   // B1: the read-only pitch VIEW follows the restored conditions
     if (S.dropped) {
       const d1 = S.detail;
       const bits = [];
@@ -11056,6 +11249,77 @@ async function applySnapshot(d) {
         showBanner('libmismatch', 'This takeoff was last priced with the library \u201c' + (fileLib.name || 'unnamed') + '\u201d (' + fileLib.fingerprint + '); this browser prices with \u201c' + here.name + '\u201d (' + here.fingerprint + '). Figures can differ from the file\u2019s last save \u2014 check the Estimate grid before you bid.', [], 'warn');
       } else hideBanner('libmismatch');
     } else hideBanner('libmismatch'); }
+  /* ══ R-3 / R-3a (Batch B1) · WHAT THE v3 → v4 DOOR DID TO THE MONEY, SAID IN FULL, ONCE ═══
+     Two different things happen at that door and they get two different kinds of notice.
+
+     RECONCILE (R-3a, one banner, journaled once). A library-backed condition whose pitch sat in
+     `c.pitch` DISPLAYED pitched and PRICED FLAT on every build up to F18.72 — the engine only ever
+     read the override store. D-26.1 says the displayed quantity is the money quantity, so the
+     reconcile moves the MONEY to the number the estimator was already reading. Every such
+     condition is named with its own delta, in cents, measured by turning its pitch off and on
+     against the app's own recap — the banner is the app reporting its arithmetic, not a forecast.
+
+     LEGACY (per condition, a confirm). A stored `6` cannot be a multiplier a human meant (it
+     implies a 71/12 roof), so it is read as 6/12 — but the money does NOT move until a human says
+     so. The condition keeps `pitchLegacyFactor` and prices exactly as the file was saved; one
+     button drops it and re-prices at the rise. MONEY NEVER MOVES SILENTLY ON RELOAD. ══════════ */
+  { const pmig = (d && d.pitchMigration) || null; if (d && 'pitchMigration' in d) delete d.pitchMigration;
+    hideBanner('pitchreconcile');
+    for (const b of [...document.querySelectorAll('#banners .banner')]) if (/^pitchlegacy:/.test(b.dataset.bid || '')) b.remove();
+    if (pmig) {
+      syncPitchMirrors();
+      const cents = (v) => Math.round(v * 100);
+      const money = (c) => (c < 0 ? '-' : '+') + '$' + (Math.abs(c) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const plain = (c) => '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const conds = pmig.reconcile.map((x) => state.conditions.find((c) => c.id === x.id)).filter(Boolean);
+      if (conds.length) {
+        const held = conds.map((c) => c.pitch);
+        const sellCents = () => cents(recapModel().sell);
+        const setAll = (on) => { conds.forEach((c, i) => { if (on) c.pitch = held[i]; else delete c.pitch; }); syncPitchMirrors(); };
+        setAll(false);
+        const base = sellCents();
+        const parts = conds.map((c, i) => { c.pitch = held[i]; syncPitchMirrors(); const v = sellCents(); delete c.pitch; syncPitchMirrors(); return v - base; });
+        setAll(true);
+        const now = sellCents();
+        // attribution must add up to the cent: any rounding residue rides the largest single delta
+        const residue = (now - base) - parts.reduce((a, b) => a + b, 0);
+        if (residue && parts.length) { let k = 0; for (let i = 1; i < parts.length; i++) if (Math.abs(parts[i]) > Math.abs(parts[k])) k = i; parts[k] += residue; }
+        const said = conds.map((c, i) => {
+          const w = fmtPitch(VESCore.condRise(c));
+          return `${c.name}: displayed ${w}, was priced flat; now priced at ${w}, ${money(parts[i])}`;
+        }).join('. ');
+        showBanner('pitchreconcile',
+          `Pitch reconciled to the displayed quantity on ${conds.length} condition${conds.length === 1 ? '' : 's'} — `
+          + `${said}. Sell ${plain(base)} → ${plain(now)}. These lines showed a pitched quantity and were priced flat; `
+          + `the quantity on the page is the quantity the money is computed on.`, [], 'warn');
+        journalPush({
+          label: 'pitch reconciled on ' + conds.length + ' condition' + (conds.length === 1 ? '' : 's') + ' (file v' + pmig.from + ' → v' + VESCore.TAKEOFF_VERSION + ')',
+          undo() { setAll(false); renderCards(); renderAssembly(); renderRecap(); },
+          redo() { setAll(true); renderCards(); renderAssembly(); renderRecap(); },
+        });
+      }
+      for (const L of pmig.legacy) {
+        const c = state.conditions.find((x) => x.id === L.id); if (!c) continue;
+        const w = fmtPitch(VESCore.condRise(c));
+        const id = 'pitchlegacy:' + c.id;
+        showBanner(id,
+          `${c.name} — pitch was stored as ×${(+L.factor).toFixed(3)} — reads as ${w}; confirm. `
+          + `Until you do it is priced at ×${(+L.factor).toFixed(3)}, exactly as the file was saved.`,
+          [{ label: 'Read it as ' + w, armed: true, run() {
+            const prior = c.pitchLegacyFactor;
+            const apply = (v) => { if (v === undefined) delete c.pitchLegacyFactor; else c.pitchLegacyFactor = v;
+              c.updatedAt = new Date().toISOString(); syncPitchMirrors(); };
+            apply(undefined);
+            journalPush({ label: 'pitch reads as ' + w + ' on ' + c.name + ' (legacy ×' + (+prior).toFixed(3) + ' dropped)',
+              undo() { apply(prior); renderCards(); renderAssembly(); renderRecap(); },
+              redo() { apply(undefined); renderCards(); renderAssembly(); renderRecap(); } });
+            markDirty(); renderCards(); renderAssembly(); renderRecap();
+            toast(`"${c.name}" now prices at ${w}.`, 'ok');
+          } }], 'warn');
+      }
+      renderCards(); renderAssembly(); renderRecap(); updateLive();
+    }
+  }
   // U2 (Batch V): the file door's own drops ride the same toast and the same standing banner.
   { const ing = (d && typeof d.ingressNote === 'string') ? d.ingressNote : ''; if (d && 'ingressNote' in d) delete d.ingressNote;
     if (ing) pendingDropNote = ing + (pendingDropNote ? ' ' + pendingDropNote : ''); }
@@ -11128,7 +11392,7 @@ function exportRollupCSV() {
     // engine actually priced, so a reviewer back-computing $/unit from this row gets the truth.
     // D-26.1 (R1): this local derivation WAS the only place that truth held. It is now the
     // shared helper, and every other display/export consumer of rollup().quantity calls it too.
-    const { qty: dispQty, pitch: dispPitch } = dispQtyOf(r, c);
+    const { qty: dispQty, pitch: dispPitch, rise: dispRise } = dispQtyOf(r, c);
     // S6: the Audit says 'manual entry' — the Rollup must not contradict it
     const condMs = state.measurements.filter((m) => m.conditionId === r.id);
     const manualN = condMs.filter((m) => m.manual || (m.page == null && (!m.points || !m.points.length))).length;
@@ -11148,7 +11412,7 @@ function exportRollupCSV() {
       ext == null ? '' : ext.toFixed(2),
       basis, calCell,
       warnBits.length ? warnBits.join('; ') : 'ok',
-      dispPitch === 1 ? '' : fmtPitch(dispPitch), dispPitch === 1 ? '' : dispPitch.toFixed(4)]);   // AH-1: "6/12" and the factor it stands for
+      dispPitch === 1 ? '' : fmtPitch(dispRise), dispPitch === 1 ? '' : dispPitch.toFixed(4)]);   // AH-1: "6/12" and the factor it stands for
   }
   if (J.projLevelN) {
     out.push([]);
@@ -11227,6 +11491,12 @@ function exportAuditCSV() {
       .filter((x) => !/^unpriced|^invalid unit cost/.test(x));
     if (!covered && c.libRef) warnBits.push(J.gatedRefs.has(c.libRef) ? 'gated at assembly layer \u2014 needs pricing' : 'no priced components');
     else if (!covered && !c.libRef && r.condition !== '\u2014') warnBits.push('unpriced \u2014 no unit cost entered');
+    /* B1 (R-3): the Audit is the per-MEASUREMENT record and its Quantity column is the raw traced
+       figure — that is the point of it. It could not be reconciled against any other face on a
+       sloped condition, because the pitch that turns the strokes into the priced quantity was
+       nowhere on the sheet. The two trailing columns carry it: the fraction the estimator keyed
+       and the factor it stands for, so Σ(strokes) × factor is the number every other door shows. */
+    const pf = VESCore.condFactor(c);
     out.push([r.id, r.condition, manual ? r.type + ' (manual)' : r.type, r.csi, r.wbs, r.location,
       r.page == null ? '\u2014' : r.page, r.page == null ? '\u2014' : r.sheetLabel,
       r.quantity == null ? '' : r.quantity.toFixed(4), r.unit,
@@ -11234,7 +11504,8 @@ function exportAuditCSV() {
       legacyOK && r.extended != null ? r.extended.toFixed(2) : '',
       r.pointCount,
       manual ? 'manual entry' : calCell(r),   // S1: the word AND the scale it was taken at
-      warnBits.length ? warnBits.join('; ') : 'ok', r.notes]);
+      warnBits.length ? warnBits.join('; ') : 'ok', r.notes,
+      pf === 1 ? '' : fmtPitch(VESCore.condRise(c)), pf === 1 ? '' : pf.toFixed(4)]);
   }
   const warns = [];
   {
@@ -11248,13 +11519,13 @@ function exportAuditCSV() {
   const csv = csvIdentityRows().map((r) => r.map(VESCore.csvSafe).join(',')).join('\r\n') + '\r\n'
     + VESX.rowsToCSV(['Measurement ID', 'Condition', 'Type', 'CSI', 'WBS', 'Location', 'Page',
       'Sheet Label', 'Quantity', 'Unit', 'Unit Cost', 'Extended Cost', 'Point Count',
-      'Calibration Status', 'Warning Status', 'Notes'], out);
+      'Calibration Status', 'Warning Status', 'Notes', 'Pitch', 'Pitch factor'], out);   // B1 (R-3): additive, trailing — the fraction and the factor that reconcile these strokes to every other face
   const name = projectSlug() + '-measurement-audit.csv';
   saveBlob(name, csv, 'text/csv');
   const offC = state.conditions.filter((c) => !c.libRef && !c.adhoc && lineOmitted('cond.' + c.id)).length;   // F18.18
   const offMsg = offC ? ` ${offC} condition(s) turned OFF in the estimate are still included — the audit is the measurement record.` : '';
-  const pitchedC = state.conditions.filter((c) => !c.libRef && !c.adhoc && c.type !== 'count' && typeof c.pitch === 'number' && isFinite(c.pitch) && c.pitch > 0 && Math.abs(c.pitch - 1) > 1e-9).length;   // F18.19
-  const pMsg = pitchedC ? ` ${pitchedC} pitched condition(s): the audit lists raw traced values — the rollup carries measured × pitch.` : '';
+  const pitchedC = state.conditions.filter((c) => VESCore.condFactor(c) !== 1).length;   // F18.19 · B1: one test for every condition
+  const pMsg = pitchedC ? ` ${pitchedC} pitched condition(s): the audit lists raw traced values — the Pitch and Pitch factor columns reconcile them to the rollup.` : '';
   toast((warns.length
     ? 'Audit exported with warnings — pending items are flagged, never zeroed.'
     : 'Audit CSV exported.') + offMsg + pMsg, warns.length ? 'warn' : 'ok');
@@ -12040,7 +12311,7 @@ async function printTakeoffDoc() {
     const f = condPitchFactor(cnd); const pitched = Math.abs(f - 1) > 1e-9;
     const q = r.count > 0 ? VESCore.fmtQty(dispQtyOf(r, cnd).qty) : '';
     conds += `<tr><td>${escA(cnd.name)}</td><td>${typeWord[cnd.type] || escA(cnd.type)}</td><td class="n">${r.count || 0}</td>`
-      + `<td class="n">${r.count > 0 ? VESCore.fmtQty(r.quantity) : '—'}</td><td class="n">${pitched ? '× ' + (+f.toFixed(4)) : '—'}</td>`
+      + `<td class="n">${r.count > 0 ? VESCore.fmtQty(r.raw != null ? r.raw : r.quantity) : '—'}</td><td class="n">${pitched ? fmtPitch(r.rise) + ' (× ' + (+f.toFixed(4)) + ')' : '—'}</td>`
       + `<td class="n">${q || '<span class="tk-nm">not measured</span>'}</td><td>${escA(displayUnit(r.unit))}</td><td>${escA(pagesOf(r.id) || '—')}</td></tr>`;
   }
   conds += '</tbody></table></div>';
@@ -12115,7 +12386,7 @@ async function printTakeoff() {
     const dq = dispQtyOf(r, c);
     const sheets = [...new Set(state.measurements.filter((m) => m.conditionId === c.id && m.page != null).map((m) => pageLabel(m.page)))].join(', ');
     const q = c.type === 'linear' ? VESCore.formatFtIn(dq.qty) : c.type === 'area' ? dq.qty.toFixed(1) : String(dq.qty);
-    const pitch = (c.type !== 'count' && Math.abs((dq.pitch || 1) - 1) > 1e-9) ? fmtPitch(dq.pitch) : '—';   // AH-1
+    const pitch = (c.type !== 'count' && Math.abs((dq.pitch || 1) - 1) > 1e-9) ? fmtPitch(dq.rise) : '—';   // AH-1
     return `<tr><td>${sw(c)} ${esc(c.name)}</td><td>${esc(c.type)}</td><td>${esc(sheets || '—')}</td><td class="n">${q}${r.pending ? ' <small>(' + r.pending + ' pending)</small>' : ''}</td><td>${esc(displayUnit(r.unit))}</td><td class="n">${pitch}</td></tr>`;
   }).join('');
   body += `<section class="tk-qty"><h2>Takeoff quantities</h2><table><thead><tr><th>Condition</th><th>Type</th><th>Sheets</th><th class="n">Quantity</th><th>Unit</th><th class="n">Pitch</th></tr></thead><tbody>${qrows}</tbody></table>`
@@ -13382,7 +13653,7 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.0.0-rc.1';  // 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
+const VES_BUILD = '2.0.0-rc.2';  // 2.0.0-rc.2: Batch B1 — PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION. `c.pitch` is the rise per 12 and the only store (the conditionOverrides pitch key is consumed at the file door and survives only as a non-enumerable read-only VIEW); VESCore.pitchFactor is the only plan→true conversion (area and up-the-slope √(1+(r/12)²), hip/valley √(1+(r/12)²/2), level and counts 1.0); VESCore.rollup applies it to EVERY condition so rollup().quantity is the money quantity on every face and resolveTakeoff is told not to pitch again (measuredPitched); R-4 gives a linear a lenKind (level | slope | hipvalley) beside its pitch, defaulted by name; both doors (✎ card field, depth-panel row) write the one store and are journaled by name; a library row's pitchDefault seeds a condition once at creation; TAKEOFF_VERSION 3→4 converts v3 multipliers to rises unrounded (money-exact), consumes the override store, reconciles R-3a's display-pitched/price-flat library conditions to the DISPLAYED quantity with a per-condition cent delta on one banner, and holds a bare `6` at its legacy ×6 behind a per-condition confirm so no cent moves silently on reload. 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
 // F18.72: Batch AI (persona pass 3 on F18.71 — density 0 refused at the book and gated on the line, never an included $0; the book refuses a formula that cannot parse; a book equal to the seed reads as the seed; the Flags list names an unpriced line and its row is tinted; waste words at four decimals; basis column clean, waste as percent, a linked labor line carries its basis; parser names a stray operator and a case mismatch; lens Escape says nothing when nothing was typed; landing/README say which lines carry a formula)  // F18.71: Batch AH (persona pass 2 on F18.70 — a malformed number literal and a wrong function arity gate the line; an empty unit / zero production rate refused in the Library lens and the unit gate never prints "undefined"; the cue follows the Qty cell and dies with the takeoff; lens selects carry the seed mark; waste words at two decimals and the box says what it did on blur; the phone pin follows the wordless segments; segment names; tr.gated; coarse ＋ Add; lens Escape/Enter grammar)  // F18.70: Batch AG (persona pass 1 on F18.69 — P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic fixtures; triage by the NOTES.md rubric; owner's word 2026-09-04 "run persona pass; if accepted finalize build and push to main") — WHAT THE PERSONAS SAW, ANSWERED. Money-honesty: a line formula that evaluates to 0 now gates (ZERO_QTY — flagged, excluded, said on the row) instead of pricing an included $0 (P-TRADE 5); a formula typed while a Qty is typed is checked and the cue says the typed qty stands and whether the dormant formula evaluates (P-TRADE 7); the parser names the token it choked on instead of "trailing tokens" (P-TRADE 8). Library: the authored-item id comes from the library's own counter, so a fresh takeoff's ＋ Add never replaces yesterday's item (P-MARKET 1); a blank CSI lands under the assembly's code (P-MARKET 7); edited cells read in the accent against the built-in seed, items the seed lacks say "authored here", match code is a column, ＋ Add sits by the description, cells meet the coarse-pointer rule (P-MARKET 6/9, P-GAME 9/10); the toast says every takeoff priced from the book follows — no project override written (P-TRADE 10, P-GAME 10). Grid: the derivation names the item waste that turns needed into ordered and the Waste header says which waste it is (P-MARKET 2); a FIXED formula reads "fixed Q"; a line-level number is "line value", a formula "line formula"; Q's meaning by kind is in the cell title and the sheet foot names the whole scope (P-TRADE 9/11, P-MARKET 5); the lens cue clears after a good commit (P-GAME 5); Escape in a cell stops at the cell (P-GAME 3, control). Entry row: the funnel line sits under the description, the measure select follows the unit in the Tab walk, an empty row explains both paths, a partial names the closest library name, the name match forgives case and dash (P-GAME 6/7/8, P-TRADE 12). Toolbar: the fourth lens segment no longer covers Files & exports (the document-door pin moved with it) and the segments drop their words under 720 px (P-GAME 1/2). Waste door: "abc" gets its own sentence and a refused value never stays in the box (P-GAME 12, P-TRADE 13). Exports: qty needed is a number cell and the ladder labels read "(× Pct)" (P-TRADE 2); BOM headers in Title Case (P-GAME 16). Landing + README name the derivation, the line formula and the Library lens (P-MARKET 10, P-TRADE 16). CI: probe-af fetches the F18.68 bytes by full sha (P-SEAT 2). Recorded, not built (LEDGER §Batch AG): cost per estimated unit, auto-round control, grid CSI column, item creation from the grid, recap-drawer derivation, phone segment height, Library lens first frame 265 ms, the guard hook's text match, stale D-series line citations. Gates: probe-af 29/29 (RED-first 16/29 on F18.69 — 13 of the 14 new rows red, AF19 a control) · probe-v · probe-u · probe-z · probe-ab · probe-ad · probe-ae · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress.  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
 // F18.71: Batch AI (Patrick's rulings P3-R2 + P3-R3, 2026-09-03: "top and side drop down are still weird", "a lot of the language is AI speak and not construction talk") — TWO DROPDOWNS IN TRADE WORDS. Files & exports: Project · Print (Takeoff, Bid, Cost sheet, Proposal) · Spreadsheets (Estimate .xlsx, Client review .xlsx, Estimate CSV, Supplier RFQ) · Settings; the bill-of-materials, condition-totals and audit CSVs live under Setup as 'Working files' (same ids, same functions). The rack drops the Type group (the condition you click decides linear/area/count; Rect and Poly are the two ways to draw an area). Setup headings and the price-source legend in plain words; the Estimate lens's buttons name the same files. Gates: probe-ai (RED-first on F18.70), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.70: Batch AH (Patrick's review of F18.66, 2026-09-03: "still don't like the way pitch is done, should be a fraction 2/12") — PITCH READS AS RISE OVER 12. fmtPitch/parsePitch: the card chip, both pitch fields, the toasts, the rollup CSV (a 'Pitch factor' column keeps the multiplier) and the takeoff quantities page say 6/12; input takes 6/12, 6:12 or a bare 6 (a decimal multiplier still works). Storage stays the multiplier in both stores (D-26.1) — the engine and G0's goldens do not move. Gates: probe-ah (RED-first on F18.69), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.69: Batch AG (Patrick's ruling P3-R1, 2026-09-03: "clicking from conditions isn't smooth, I find myself still on the old condition a lot") — ONE CLICK MEANS ONE THING. A click on a condition card arms it (the card is D-24.5c's explicit gesture; digits still never re-arm); clicking the armed card keeps it armed; ⌖, Esc and the pill stop. The open condition detail follows the arm (a plain condition closes it). L-05's highlight-only state (selectedCondId, .card.selected) is gone; hints and the empty-state step say 'click the condition'. Gates: probe-ag (RED-first on F18.68), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.68: Batch AF (Patrick's review of F18.66, 2026-09-03: "unable to easily click items so I can modify them, i.e. flashings over field conditions") — THE CLICK PICKS WHAT YOU AIMED AT. selectAt ranks what the pointer is ON (stroke, vertex, marker within 8 px; nearest, then line/marker before area, then smaller area) before the area that merely contains the point (smallest first); a repeat click within 4 px steps through the stack; the message names the condition and how many shapes sit under it. VESCore untouched (fenced). Gates: probe-af (RED-first on F18.67), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.67: Batch AE (Patrick's review of F18.66, 2026-09-03: "there is no way to just print a takeoff") — THE TAKEOFF IS A DOCUMENT. Print takeoff… prints every sheet carrying measurements whole and landscape with its markup, a per-sheet legend (that sheet's quantities, pitched per D-26.1) and a closing quantities page (the card numbers, never money); the proposal's plan snapshot and the takeoff share one compositor (compositeSheet — the proposal's bytes are unchanged, probe-ae AE7). No identity gate (nothing on it is a price); every early return releases the latch (D-24.7a); a sheet that fails prints a marked placeholder (MED-4); the toast names the document (AD-3). Gates: probe-ae 7/7 (RED-first 0/7 on F18.66), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
 // F18.56: Batch R (P-CODE pass 1 fixes: P0-1/P0-2/P0-3 + HIGH-1/HIGH-2 + MED-1/4/5/6 + MED-2 removal; rulings D-26.1 + D-26.2) — MONEY IS PRICED BY THE ENGINE ONLY, AND A DISPLAYED QUANTITY IS THE QUANTITY THE MONEY WAS COMPUTED ON. Pitch lived in two stores read by four implementations, so the proposal Scope list, its legend, and the rail card printed a library condition's FLAT quantity beside money computed on the PITCHED one (a client back-computing $/unit landed 11.8-41.4% high on the line they check most); one shared dispQtyOf/condPitchFactor helper now applies pitch exactly once for every display/export consumer of rollup().quantity. Four separate copies of the General/Equipment pricing rule (engine, Equipment tab, grid, rail footer) disagreed about qty-0 and negative unit costs — the tab printed a firm $0.00 for a line every other surface excluded, and a negative unit cost from a loaded file printed real negative money with the firm dot; all read VESASM.resolveGeneral now. applySnapshot took the ENTIRE money-override layer verbatim from the takeoff file (the one artifact that travels between machines) — it now validates at the door: reserved keys refused, engine numeric domains enforced, invalid values DROPPED never clamped, everything counted into the ONE load toast. A failed pdf.js page render was an unhandled rejection: blank/stale raster under CORRECT overlays, wrong GEOMETRY with no signal — renderPane now badges the pane head, veils the sheet ('do not measure on it'), toasts once per episode, clears only on a raster that LANDS. renderCardsNow rebuilt the open Estimate grid TWICE per pass (both predicates held) — once now. Autosave quota is named AS quota with a standing red save-dot (visible drawer-closed) and re-warns per episode. A failed proposal plan-snapshot prints a marked placeholder instead of silently not existing. Three dead VESCore exporters (buildWarnings/toRollupCSV/toAuditCSV, wrong money model, zero callers) removed; the state literal now declares every money store. D-26.2: makeCQty refuses a negative condition waste (parity with itemWaste — adj = raw*(1+w) SUBTRACTED silently). Gates: G0 4/4 golden-identical, probe-w2r 175/175 both engines (RED-first 72/173 + 2 new D-26.2 rows RED on the pre-guard build), w2q 95/95, w2e, print-pdf, e2e-smoke. F18.55: Batch Q (D-25.3a/b/c + the P-FRESH MED/LOW rows) — THE DOOR NEXT TO THE GUARDED ONE. D-25.3a (P0): a complete priced takeoff died on a document load with no confirmation before and no notice after, while the New button ONE POSITION LEFT guarded the identical consequence with a modal. The trigger is the LOAD, not the click (the persona's title says "clicking Open PDF destroyed"; a real-pointer click destroys nothing — it opens a file picker), so the guard sits at openDocument, the funnel the picker, drag-drop, the landing list's PDF cards, the F18.5 JSON re-entry and the test seam all land in, and it asks BEFORE anything is cleared — a refusal leaves the session byte-identical. The saved-takeoff door (loadFromData) got the same question: a matching identity, or a Path-A grid takeoff, applied straight over live work with no gate at all, because the identity modal only ever fires on a MISMATCH and reviews the DOCUMENT, not the loss. The autosave story was worse than the finding knew: the supersession rule tested only the OLD key, so a grid→PDF swap DELETED the grid slot on the very next flush — measured, 'ves:auto:grid:recon-job' with 2 measurements gone within a second of the load, and the landing list with it. Supersession is now a within-family rule, the swap flushes BEFORE it asks (so "your work is autosaved" is true at the moment it is offered), and the post-load toast names the door the work went to. D-25.3b: the new-line entry row's five inputs carry `gen-edit` but no data-item/-cond/-gen, so the money grid's Tab handler read their row key as undefined and treated them as one row of the committed grid — the kind <select> is not an `input` and was invisible to the walk, and the commit branch (written for cells that RE-RENDER, where gridFocus carries the caret) blurred the field and focused nothing. One Tab out of a field you had typed into dropped focus to <body> and every keystroke after it was silently discarded. The row has its own stated walk now: Description → CSI → kind → qty → unit → $, Enter commits, locked fields stepped over. D-25.3c: fixedAllowanceNote() — the ONE sentence both money faces already share — fires as the standard toast the first time fixed allowances reach half the sell on a takeoff (a call site, not a second definition; journalReset is the takeoff boundary), and the landing hint says the tools are at the edges. F5 (CLIENT PAPER): the Amount column summed a penny off the printed subtotal and the subtotals a penny off the Total, because each line printed round(exact) and each total printed round(sum of exacts). The rounding pennies are apportioned largest-remainder onto the biggest lines, so the printed rows sum to the printed subtotal and the subtotals to the Total — while the Total stays byte-identical to the recap's sell, which naive round-then-sum would have moved a penny off the screen. Presentation only: G0 and every on-screen figure untouched. F6: ＋ labor names its line "<material> — labor" and every paper face appended a second " — labor"; one suffixKind() states the kind once, for the bid, the cost sheet and the not-included list. F7: the grand Total was the only money figure outside the money column. F8: the signature page identifies the bid it signs, and Terms keeps it company. F4: a line added through the entry row is scrolled into view and the toast names the section it landed in (reveal + name — regrouping is Wave-3). F9: measured, not assumed — with a draft open NOTHING on screen carries the word Esc (the pill's is a title attribute, #toolMsg is collapsed by the F18.22 rest rule), so the pill says it while body.drafting; the arming grammar is untouched. F10: the file:// banner was five flex items (every bare text run its own column, cutting through the one sentence that states the data-safety story), the price placeholder read "$ or bla", the Prepared-by placeholders were a real person and a real LLC, the welcome said the recap was at the bottom, and the confidence dots had no legend. probe-w2q-guarded-doors, proven RED on F18.54 first, both engines, with the paper lanes on rendered PDF bytes.  // F18.54: Batch P (D-25.2a/b/c + the D-25.1 orphans) — THE THIRD HEAD OF THE HYDRA DIES. D-25.2a: a gesture that changes money is either ON the undo stack with a name, or Ctrl+Z says plainly that it cannot undo it — it never reaches past silently. The Estimate grid's edit funnels (editLine unit price/qty/waste, setLineOmit, addManualLine, setGeneralField, the plain-condition cost cell, the entry row's library door) journal with named undo/redo; the margin inputs and the pitch multiplier ride the stated FALLBACK (per-keystroke input handlers, no commit grammar) and mark themselves, so the first Ctrl+Z refuses, names what it cannot take back and names what the next press will. The undo/redo name lands in the Estimate lens through Batch O's L-A cue idiom, as a pointer-transparent band above the money footer. D-25.2b: a pending typed quantity is dropped, and said, when a trace begins. D-25.2c: the not-included list disambiguates a still-billed sibling ("Primer — material") and the OFF toggle says what stays priced. N3b: the grid's add doors are a row of the sheet. N4: the internal cost sheet carries the material/labor cost split. One export-layer number rule (no thousands separators, unit-appropriate rounding). N-2 Plan pill, N-3 Condition sets (opened BEHIND Setup), N-6 split (the dead 372px was a percentage read against the window), N-7 margin labels, N-8 sticky total column, N-9 reserved scrollbar gutter, N-10 Esc, N-11 MEASURING, N-14 local timestamps, N-16 allowances out of the supplier RFQ. F18.53: Batch O (D-24.10 pass-2 remainder + C-N1) — TEN SURFACES STOP LYING OR HIDING. C-N1 (C2 REACHABILITY): the summoned recap panel rendered 390px ABOVE the viewport. #drawerBody has been position:absolute bottom:100% since the §4d summoned-panel ruling, anchored to the resident summary strip; R1 later set #drawer to position:static, which took it out of the containing-block chain, so bottom:100% resolved against #dock — whose top IS the top of the pane. Measured at 1440x900: dock [1080,24,360,852], panel [1081,-390,359,414], and the three client-document buttons at y -209 / -165 / -121, unreachable by any pointer; the M-8 fixed-allowance sentence the recap carries could not be read either. #drawer is position:relative again; nothing else moves (relative with no offsets changes no layout) and z-index:21, dead on a static box, finally means something. Reaching the panel was only half of it: .recap-summary is a 1fr+280px grid written for the pre-R1 full-width drawer, and its own narrow fallback reads the VIEWPORT, so inside a 360px dock it never fires — Chrome laid the three client-document buttons 27px past the window and Gecko, which will not shrink a table below min-content, laid them 75px past it. A container query on #drawerBody asks the PANEL's width instead of the window's, with minmax(0,1fr) so the single track is the panel's width in both engines. The division table's own horizontal overflow inside the panel is pre-existing and recorded as C-O1, not widened into. A correctly-placed panel then exposed a collision the defect had been hiding: it floats up over the condition-detail panel, and elementFromPoint at the pitch input's own centre returned a recap table cell — a live editor behind a surface you read. One line, one principle: the surface being EDITED wins over the surface being READ (#depthPanel.show takes the higher stacking level — z-index alone, since it is a flex item, so D-24.5f's "static sibling" refutation stays literally true). Residual, stated: an expanded detail panel covers part of the recap ladder, and its own ✕ is always on top. M-A: the Plan bar's four figures ARE labelled on intent and the OH/MU/PR inputs ARE reachable on intent — measured, both already true on F18.52, and the persona compared two at-rest screenshots without hovering, so those halves of the finding are refuted and gated as controls. What was true: the allowance figure read "Incl. fixed", which names nothing, and T-H6's ruling — that this figure is DELIBERATELY narrower than the Rollup CSV's PROJECT-LEVEL line — lived on the LEDGER and nowhere in the product, so the persona's $550 gap looked like a disagreement. The label now says "Fixed allowances" and fixedAllowanceNote(), the ONE function both faces share, states the boundary in one sentence. No figure moved. M-B: a toast that expired moved the whole condition list ~41px under the pointer — #toast was flex:1 1 100% in the drawer strip (D-24.6c, so a warning wraps), so every appearance and every 4.2s expiry changed #drawer's height and #cards absorbed it. Measured with the list scrolled to the bottom: #drawer 150->190px, #cards clientHeight 668->628, scrollTop clamped 316->356, every card's ⌖ 40px up, then 40px back down on expiry — and the ◉ disable control sits in that band. The messages moved OUT of the flex line into an overlay band anchored above the strip, pointer-events:none, so geometry is invariant by construction; accepted trade, stated: a message paints over the bottom ~40px of the list for 4.2s and clicks pass straight through. M-C (CLIENT PAPER): the proposal spent two of four pages on white space — PLAN SNAPSHOT over an empty page 1 with the snapshot on page 2, SCOPE orphaned at the foot of page 2, a footer-only page 4. Two causes, both at the print layer: an <img> is atomic and at width:100% a 1128x1173 canvas renders 7.28in tall, a few pixels more than the page box could hold beside its own heading; and nothing told the paginator that a heading belongs with what follows. max-height:6.5in plus break-after/break-inside/break-before rules. Judged on rendered PDF bytes. M-D: the grid CSV was the one export writing raw floats (122.50000000000013, footers at 70420.64488286857) while the BOM, rollup and audit have always stated their precision — money on cents, unit cost on four places; the on-plan inspector printed the raw engine float beside its own formatted money ("11.150921261240814 SQ  $1,672.64") and now goes through VESCore.fmtQty like every other quantity face. FORMATTING LAYER ONLY: state untouched, G0 goldens identical, and the sum of the rounded rows still equals the rounded footer — delta 0.0000 across three assemblies at 22 / 42 / 65 rows, gated. M-E: the disarm toast named one condition and counted the whole takeoff ("Disarmed Slate — ridge — 2 measurements kept" when ridge had one). It counts that condition's. L-A: ✓ Add with an empty description did nothing — but NOT silently: addManualLine refused and toast()ed the reason into #toast, which the Estimate lens (#gridview, fixed inset:0 z-index:30) paints straight over; measured, elementFromPoint at the toast's own centre returns #estgridFoot. The reason is not restated — the funnel is asked and whatever it said lands on a cue row inside the lens, one definition of the refusal on two surfaces. L-B: a CSI code is one token — "07 31 26" broke across two lines in the internal cost sheet's eleven-column table; td.csi is nowrap on both documents. L-C: the expanded tool rail (:focus-within or :hover, 36->62px, overlaying the stage by design) covered 16px of the sheet header — "…eet [1] A-2.500"; the header reserves that band CONSTANTLY rather than sliding sideways when the pointer passes, because a header that moves under the pointer is M-B in a second place. L-D: the proposal keeps "Plan page N of M · measured markup as of DATE" and drops the source PDF's file name — the sheet reference is the client's business, the estimator's filing is not. probe-w2o-faces2, proven RED on F18.52 first, both engines, with the paper lanes on rendered PDF bytes and the proposal lane on the real fixture plan.  // F18.52: Batch N (D-24.9a/b/c + D-24.10 endgame rulings) — THE UNDO THAT ATE THE TAKEOFF, AND THE CLIENT PROPOSAL THAT PRINTED NOTHING. D-24.9a (P0, MONEY): commitQtyBuffer forked the typed-quantity commit on whether the armed condition was a LIBRARY one, and the library fork called addManualQuantity, which is "not itself journaled" — so after any assembly load (when EVERY condition is a library condition) a typed quantity went on the money with nothing on the journal. Ctrl+Z did not fail; it worked perfectly on the wrong entry, eating the estimator's last trace, then the one before it, while a mistyped 7,419,017,419 SF sat untouched: four presses, a bare canvas and a $215B total still on screen. Measured 3/3 across nine cells — library door journaled 0/3, plain door 3/3. The fork now journals at the CALLER, the narrow boundary: the money door's own contract is unchanged, and undo restores the state BEFORE the gesture — if the typed quantity created the condition (addManualQuantity makes one when none carries that libRef) the undo removes the condition too, so no orphan card is left on the rail; redo remakes both. The other two un-journaled doors (the Estimate-grid entry row and addManualLine) are recorded as still open rather than quietly widened into. D-24.9b (CLIENT PAPER): the proposal printed one blank page — window.open makes the OPENER hidden, proposalHTML was at that moment awaiting a pdf.js canvas render whose continuation rides the opener's requestAnimationFrame, and a hidden page gets no frames, so the await never returned and the window that was already open was never written to. No error, no toast, no title. 6/6 with a real plan on every build back to F18.41, 0/12 without one — structurally invisible to every PDF-free gate. The snapshot now renders with pdf.js intent:'print', the flag that turns the rAF continuation off (useRequestAnimationFrame:!intentPrint), so the render finishes whether the app window is on top or not; plus a write-verification toast, labelled in the code as a NET and not a cure, because a blank page that looks like a successful export is the thing that gets emailed to a client. The await-first/open-second reordering was REJECTED by ruling: it trades a silent blank for a popup-blocked path on a transient-activation timing constant we do not control. D-24.9c: Files & exports was pinned into the 24px rest sliver for the Estimate and Schedule lenses and NOT for the Plan lens — the document door was reachable at rest on every screen except the one where the takeoff happens. Pinned for the Plan lens too, with the expanded bar reserving its band so a wrapped row cannot paint under it. F-C1: while the exports menu is open a scrim takes the next click — it closes the menu and never lets it reach the money cell underneath (the persona's own misaimed-click path); menu items, the button and Esc are untouched. T-J3 + D-24.7e: all six print-return release sites route through ONE releasePrintDoc() helper beside identityGate, and a released latch now carries a placeholder that says what happened instead of printing a blank sheet — one greppable place the policy can change. probe-w2j-printlatch's "latch empty" assertions were updated to "holds only the placeholder, and no internal margin word" — a sanctioned gate change, reported with RED and GREEN, never quiet. C-K1: #recapClientBtn is bound to printProposal and was labelled "Client review…" — relabelled to what it does; printClientReview stays dead. T-5: reachability established first — printClientReview and clientReviewHTML are dead code, but exportClientReviewXLSX IS reachable from the recap ladder and named no scope at all, so it now shares notIncludedNames() with the bid and the proposal: client paper tells one story. probe-w2n-endgame, proven RED on F18.51 first, both engines, with the proposal lane on a real plan fixture.  // F18.51: Batch M (D-24.8a P0 + D-24.8b) — THE TYPED-QUANTITY DOOR EXISTS ONLY WHERE IT CAN BE SEEN, AND ONE MARGIN TRUTH AT EVERY INSTANT. P0 CLOSED: D-24.5d built the typed door exactly as ruled — "digit keys feed a visible entry buffer IN the banner" — and the banner only exists over the Plan sheet, so everywhere else the same key handler was a SILENT GLOBAL KEYSTROKE SINK POINTED AT MONEY. A seasoned estimator clicked a few pixels outside a grid input in the ESTIMATE lens, typed four digits with focus on <body>, pressed Enter once, and committed 7,419,017,419 SF — a takeoff of $215,434,861,792.31 — with no on-screen representation of the buffer anywhere. The door is NOT reverted (the banner promised it long before Batch F and the estimator wants it): it is SCOPED. Digits accumulate, and Enter commits, only while the slot that carries them is genuinely on screen — hit-tested against its own rect at 15 sample points, so ANY occluder closes it (a lens overlay, a modal scrim, the split dock, one added years from now) without being named in the code. Occlusion is the whole point and the reason the cheap tests do not work: inside the lens the banner is still display:flex with a live 519×46 rect, hidden is false and Element.checkVisibility() returns TRUE. A refused digit is silent and cannot re-arm a card (D-24.5c holds); a pending quantity never outlives the surface that showed it (cleared at the lens/split doors and by every disarm door, not just disarmCondition). ACCEPTED TRADE: the door also closes in SPLIT mode, where #measurebar and #keyInput paint over two thirds of the buffer chip (5 of 15 sample points reach it) — the key-entry box is the typed door there. ONE MARGIN TRUTH AT EVERY INSTANT: Batch E fixed WHERE margins live; the margin input handler still called renderHud() alone, so the Estimate footer AND the recap sat on the OLD sell until something else re-rendered them — the estimator read SELL $81,335.84 on screen while the client's bid printed $88,730.01, a $7,394.17 gap between the screen and the paper (reproduced here at a $28,565.00 gap). Margins now propagate through renderCards(), the app's existing full re-read, so a surface added later is covered without being enumerated. No arithmetic moved: G0 goldens and probe-w2e-margins are penny-identical. probe-w2m-typedqty, proven RED on F18.50 first (30 failures, 52 controls passing so the RED discriminates), both engines.  // F18.50: Batch F (D-24.5a/c/d/e + H-3) — INTERACTION SAFETY: the measuring mode can be LEFT. Esc now walks outward (typed-quantity buffer → in-progress draft → DISARM), the measuring pill is a control with a visible ✕ and disarms on click (it was pointer-events:none, so every click aimed at it fell through to the sheet), and a second click on the armed card's ⌖ disarms it — toggle symmetry. Disarm never discards a committed measurement; it ends the mode. Before this, an armed condition had NO exit: Esc, the pill, the card body and the card's ⌖ were each inert, the arm outlived an Estimate-lens visit and a BOM export, and the persona's next stray click put a second $12,000 count on the wrong condition (recap +$6,000). The typed-quantity door now works where the banner promises it: while ARMED, digits feed a visible buffer IN the pill carrying the condition's own unit, Enter commits through addManualQuantity (L-02, append semantics) and 1–9 no longer re-arm other cards — one meaning per keyboard state (the persona typed "128" into an armed ridge and watched the digits arm cards 1, 2 and 8). ⌖ reads as a control on every card and the ◉ hide-on-plan toggle shrinks to a corner affordance, says what it did, and rides the journal (it was the WIDEST target on an unmeasured card and fired silently); the card name's right reserve grew 48→96px so a long name stops painting straight through ⌖ and ◉. ONE TOOLBAR PER LENS: while the Estimate or Schedule lens is open the top row is frozen — Plan controls do not render, the bar never changes height for hover/focus/an open menu, and only the lens door and the project-wide Files & exports door remain; before this the sheet-live bar hover-expanded to position:absolute z-index:70 OVER the lens, painting #btnZoomOut across the ESTIMATE · CSI band and, with the menu open, #btnProject across #gExportGrid's own centre. D-24.5b and D-24.5f are REFUTED on this build with evidence (the toolbar is never removed in measuring mode — it is the F18.22 sheet-live sliver, hittable at six widths while armed; the condition-detail panel is a static sibling in the dock, overlap with the rail 0 px² at three widths in both its states). probe-w2f-interaction, proven RED on F18.49 first (23 failures, 22 controls passing so the RED discriminates), both engines.  // F18.49: D-24.7d — the latch policy covers ALL SIX live print returns, not the four the ruling happened to enumerate: printProposal's nothing-to-propose (9134) and popup-blocked (9140) now release #printDoc too. Before this, asking for a proposal with nothing priced — or having the browser block the popup — left the internal cost sheet latched, and the next print put INTERNAL/Markup/Profit/Total sell on paper (proven on rendered bytes, 4 assertions RED on F18.48). Census in the findings file: six live returns, all six release; printClientReview's two are dead code (no caller anywhere).  // F18.48: Batch J (D-24.7a P0 + D-24.7c) — THE PRINT LATCH AND THE DEAD OVERLAY. P0 LEAK CLOSED: #printDoc is the whole page on any print (print CSS 699-700) and nothing ever cleared it, so a print path that returned early left the PREVIOUS document on the paper — an estimator who printed the internal cost sheet, then asked for the client bid and hit F18.46's identity gate, got INTERNAL/Markup/Profit/Total sell on the paper they asked to be a bid (reproduced on rendered PDF bytes, twice, independently). All four early returns now empty the latch on the way out: printBidDoc's identity gate + nothing-priced bail, printCostSheet's bail, printProposal's deferral. A deferral now prints a blank sheet rather than someone else's document. DEAD OVERLAY FIXED: renderPane capped the raster canvas at MAX_PIXELS but sized the overlay canvas uncapped, so past the browser's 2^28 canvas-area limit the allocation failed silently and painted an opaque white box with a broken-image glyph OVER a perfectly good raster, surviving every later resize including fit — on a HiDPI screen a 30x42 sheet died at 321% zoom, ordinary working depth. The overlay now takes the raster's own outScale and drawOverlay draws at pane.oScale (accepted trade: softer overlay ink at extreme zoom, the same trade the raster already makes — soft beats invisible). probe-w2j-printlatch, proven RED on F18.47 first (17 failures, 15 controls passing so the RED discriminates).  // F18.47: Batch H (D-24.6, persona M-5+M-8+M-4+M-6+L-1+L-2+L-4) — HONEST FACES: the Setup LIVE BILL OF MATERIALS now reads the same record its own BOM CSV does (COMPONENT names on library rows, not just manual ones; OFF rows read OFF instead of 'Priced'; the totals state the OFF difference in the CSV's own words — the $785 Solder divergence had nothing on screen saying why). Fixed allowances are STATED where the total first appears (recap ladder + HUD, one shared fixedAllowanceNote() sentence carrying sell AND cost so two surfaces cannot quote two numbers) — a statement only, no figure moves: G0 and probe-w2e-margins penny-identical. Rail prose wraps or fits at the docked width so a warning sentence never truncates (the persona's 5 sites were natural-width layout cut by a 360px dock, NOT ellipsis clipping — M-4's title is wrong, T-H1). Division chips derive from the divisions the meta line counts, and the grid filter moved to collection time so a Div 02 chip cannot open an empty grid — the screen now filters rows like exportGridCSV always did, despite the comment claiming it already did (T-H3). Pitch Enter commits through the app's own binding and the caret stays put (a physical Enter already committed via the UA default but ejected focus to body — T-H2). Sticky header flush at the scrollport top (6px band). The sheet label opens the EXISTING sheet picker. probe-w2h-faces, proven RED on F18.46 first (20 failures).  // F18.46: Batch G (D-24.4, persona H-5+H-6+M-3) — CLIENT PAPER: identity routing (first bid/proposal print with no company AND no name opens the existing Project info modal ONCE per document class, one-line reason + 'Save & print' / 'Print anyway' — never blocks, never nags twice); ONE shared notIncludedNames() list names, deduped and in client words, the scope a client does not get — loaded-but-unmeasured conditions, lines toggled OFF, and excluded/unpriced lines — on BOTH the bid ('Not included in this bid') and the proposal, which previously had no such section at all and printed a literal 'Exclusions: ______' fill-in blank (now gone; 'conditions' left the client sentence too, D-23.6); proposal plan snapshot frames what will actually PAINT (orphan measurements no longer win the page pick or set the bbox — a page of blank plan) and the bbox now includes the value-label chips, not just the geometry, so labels stop clipping at the frame edge (measured: src rendered label ink to maxX 215 of a 216px frame). probe-w2g-clientpaper, proven RED on F18.45 first (19 failures).  // F18.45: Batch E (D-24.3, persona P0-1+H-1+M-11) — ONE margin authority: assemblyProject.settings; Setup mkPct/pfPct and the drawer strip are two views of it (both write, both reflect); bidCollect's print-time DOM fallback + dead shadow-writes removed. Proposal Total investment == bid Total == cost-sheet Total sell == recap sell == footer Sell, both doors, save/reload intact (probe-w2e-margins, proven RED on F18.44 first). -0 qty collapses.  // F18.44: W2-05/06 — estimate grid: display-formatted/edit-raw money cells (focus swaps to raw, defaultValue follows, commit re-formats; $-and-comma input parses; grid spinners gone) + loud locks (engine rows say WHY name/kind/unit edit in the library). Verified real-pointer+keys both engines.  // F18.43: W2-02/03/04 (D-24.2) — the bid split: client bid prints SELL only (CSI/Description/Sheet/Qty/Unit/Unit price/Amount, division+grand totals, exclusions in words, terms + acceptance block, identity from Project info preparedBy — the 'Contractor: ___ · Prepared with VES' jargon line is gone, zero-qty rows dropped with a toast, colliding names disambiguated by system); margins moved to the new internal Cost sheet PDF (full Cost/OH/Markup/Profit/Sell + flags detail + INTERNAL mark). Client Total == cost-sheet Total sell == recap sell, asserted on rendered PDF bytes in both engines. Print body forced white so the dark shell never bleeds onto paper.  // F18.42: W2-01 — print CSS flattens the app shell (html/body height:auto overflow:visible display:block) so Gecko paginates the bid; before this Firefox printed page 1 of 1 and every total fell off the paper. Gated by probe-print-pdf.mjs in BOTH engines from this build on.  // F18.22c: L-07c — the lens control (Plan/Estimate/Schedule) leaves the toolbar's flex line in sheet-live and is pinned at one position, identical at rest and hovered. Before this it was a 34px control inside a 24px overflow:hidden bar (visible, not clickable — the real hit-test gave the click to #toolbar) that then wrapped 50px DOWN out from under the pointer at any viewport under ~1700px. Verified with real Input.dispatchMouseEvent at 1280/1366/1440/1600/1920/2560 — rest-click and hover-click PASS at all six, dy 0. The stamp is bumped because F18.22b shipped in two different files with the same stamp and no way to tell them apart on screen.  // F18.22b+: plain rows carry kind 'material' (recapData always priced them so; the kind cell now says it) and the F18.10 gesture gate opens to plain material rows — ＋L reaches the manual family, lzero stays engine-labor-only by ternary order. // F18.22b: rest polish — hud labels hidden at rest (values + risk bar only; labels return on intent), sell ladder (OH/MU/PR) intent-only, tucked Conditions pill dropped below the pane header (MEASURING badge collision found in the rendered rest-state screenshot).  // F18.22: CONSOLE RESHAPE — the old ≤8%-at-rest chrome rule OBTAINED, not relaxed: sheet-live compresses toolbar/statusbar to 24px glanceable slivers (brand + lens segs up top; SELL/Material/Labor/risk bar below) and the rack to 36px icons; each piece expands on its own hover/focus OVER the stage (negative margin — the sheet never reflows); empty screen keeps full chrome for the novice; measured at rest 1440×900 and 1600×900 by the rendered audit.  // F18.21: LINKED QUANTITIES (E3 answered — "conditional linked to measurements"): ＋L arms a live link — the labor line's qty follows the source condition's rollup (pitched per F18.19, pending-aware) through ONE interception in assemblyMeasured; the frozen measurement stays as the deleted-source fallback; ⛓ marks linked rows, the entry row carries a "follows <name>" chip with ✕, the ✎ editor has the Unlink door (freezes at the current followed value); goldens: unlinked assemblyMeasured byte-identical.  // F18.20: rail card name↔glyph collision — .card .name right-reserve 22→48px (eye + ✎ both live there since F18.14; long names ran beneath them — caught by the rendered layout audit, all 8 stress cards)  // F18.19: PITCH LANDS ON THE PLAIN PATH (Patrick's field report — the F18.3 door wrote cond.pitch but VESCore.rollup never read it; the engine path always did). Per-line frozen-region diff: rollup gains `pitch` (engine grammar: factor, counts immune, invalid→1) and quantity/extended become measured×pitch; rollup CSV gains additive trailing Pitch column; audit toast states raw-vs-pitched reconcile. Money goldens: unpitched output field-identical pre/post.  // F18.18: uniformity + persistence pass — BOM CSV marks OFF lines (additive Off column + reconcile foot; the BOM stays the whole engine record); Rollup/Audit toasts name OFF conditions still included (takeoff record vs estimate face, stated); recap summary carries the same "N off" note as the grid meta; eye/fills state rides raw beside the D2 view through all four load paths (hidden ids filtered to live conditions); estimator-word titles on the eleven ambiguous doors (ft-grid pickers, excluded chip, HUD mode/ledger, load-anyway, merge/replace/reset, manual path)  // F18.17: entry row reaches the library — type/pick a library condition name and addManualQuantity prices it through the engine (kind/unit/$/CSI lock while matched)  // F18.16: line ON/OFF — a checkbox on every estimate row; OFF = kept + struck + not counted, filtered at consumption only (recap · HUD · grid foot · bid · client review · CSV); flag `omit` rides lineOverrides (saves + adhoc re-synth carry it); the word is "off" — "excluded" stays the flags' word  // F18.15: snap tolerance constant in screen px — zoom no longer changes the feel  // F18.14: plan legibility — per-condition hide/show eye (visibility only, money untouched) + Fills/Faint/No-fill cycle in the rack  // F18.13: plan shapes use condition color, not confidence color  // F18.12: file:// banner tells the truth — conditional wording, auto-clears the moment a PDF actually loads  // F18.11: one pricing face — engine rolled cost wins on assembly cards + HUD; stale per-cond prices from old saves never paint  // F18.10: grid line-kind gestures — ⌀ zero a labor line, ＋L add labor to a material (prefilled entry row)  // F18.9: Estimate grid — inline ＋Line entry row, no modal; same addManualLine funnel  // F18.8: Estimate grid — Kind column (material/labor/equipment) visible per line, field report  // F18.6: two-blues unify — R1's stray #3d9be9 tints (armed rack, dock grip) conform to the --accent #2E75B6 family

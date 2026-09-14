@@ -98,8 +98,8 @@ const af6 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => se
   const json = JSON.stringify(VESApp.snapshot()); window.__saved = json; VESApp.state.conditions = []; VESApp.state.measurements = []; VESApp.newTakeoff(); await wait(100); await VESApp.loadFromData(JSON.parse(json)); await wait(400);
   const l1 = VESApp.resolveAssembly().lines.find(l => l.item === 'ssmr.coil'); const ov = VESApp.state.assemblyProject.lineOverrides['ssmr.coil'] || {};
   return { sell0, sell: VESApp.recapModel().sell, o0: l0.ordered, o1: l1 && l1.ordered, e0: l0.extended, e1: l1 && l1.extended, expr: ov.qty_expr, params: ov.params, banner: [...document.querySelectorAll('.banner .msg')].map(b => b.textContent).join(' | '), toast: document.getElementById('toast').textContent, version: JSON.parse(json).version }; })()`);
-check('AF6 save → reload: 716 LB and the cost identical to the cent, formula and params intact on the override record, takeoff version still 3, no drop banner',
-  !af6.error && af6.o1 === af6.o0 && near(af6.e1, af6.e0) && near(af6.sell, af6.sell0) && af6.expr === 'RAW * width * lbsf' && af6.params && af6.params.width === 1.5 && af6.version === 3 && !/DROPPED|dropped/i.test(af6.banner || '') && !/DROPPED/.test(af6.toast || ''), af6);
+check('AF6 save → reload: 716 LB and the cost identical to the cent, formula and params intact on the override record, takeoff version is the build\'s (≥ 3; 4 since B1), no drop banner',
+  !af6.error && af6.o1 === af6.o0 && near(af6.e1, af6.e0) && near(af6.sell, af6.sell0) && af6.expr === 'RAW * width * lbsf' && af6.params && af6.params.width === 1.5 && af6.version >= 3 && !/DROPPED|dropped/i.test(af6.banner || '') && !/DROPPED/.test(af6.toast || ''), af6);
 const savedJson = af6.error ? null : await tryEv('window.__saved');
 
 // ── AF8: clear the formula — the line returns to the library derivation with the marker gone ──
@@ -130,8 +130,10 @@ if (savedJson && typeof savedJson === 'string') { await nav(OLD, false);
     await VESApp.loadFromData(JSON.parse(${JSON.stringify(savedJson)})); await wait(500); const line = VESApp.resolveAssembly().lines.find(l => l.item === 'ssmr.coil');
     return { build: VESApp.VES_BUILD, ordered: line && line.ordered, banner: [...document.querySelectorAll('.banner .msg')].map(b => b.textContent).join(' | '), toast: document.getElementById('toast').textContent, record: VESApp.state.assemblyProject.lineOverrides['ssmr.coil'] || null }; })()`);
   await nav(VES, true); }
-check('AF7 the F18.68 bytes open the new file with the standing banner naming the dropped override field and reprice the coil line from the library (619 LB) — loud, not silent',
-  !af7.error && af7.build === 'F18.68' && af7.ordered === 619 && /unsupported override field/.test(af7.banner || '') && /DROPPED/.test(af7.toast || '') && !(af7.record && af7.record.qty_expr), af7);
+// B1 (VES 2): the file is version 4 now; the F18.68 bytes REFUSE a newer file outright and say so — a stronger guarantee than the
+// field-drop this row pinned before (the drop path still exists for same-version files). Loud, never silent, is what the row protects.
+check('AF7 the F18.68 bytes refuse the newer (version 4) file loudly — the refusal names the version, the coil line is not priced from it, nothing loads silently',
+  !af7.error && af7.build === 'F18.68' && /newer than this build|version 4/i.test((af7.banner || '') + ' ' + (af7.toast || '')) && !(af7.record && af7.record.qty_expr), af7);
 
 // ── AF10: add-a-line says which funnel it is in before commit; a free LF line is linear, not a count ──
 const af10 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); VESApp.state.conditions = []; VESApp.state.measurements = []; VESApp.newTakeoff(); VESApp.loadAssembly('ssmr'); VESApp.addManualQuantity('ssmr.field', 1000); await wait(100);

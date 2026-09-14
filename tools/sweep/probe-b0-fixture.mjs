@@ -124,8 +124,8 @@ const loaded = await ev(`(async () => {
     condPages: VESApp.core.rollup(VESApp.state.conditions, VESApp.state.measurements).map(r => r.pages.length),
   };
 })()`);
-check('F2 the fixture loads through the version-3 door: nothing dropped, identity matches the open plan, 26 conditions in state',
-  loaded.normOk && loaded.fileVersion === loaded.version && loaded.dropped === 0
+check('F2 the fixture loads through the load door (a file no newer than the build understands): nothing dropped, identity matches the open plan, 26 conditions in state',
+  loaded.normOk && loaded.fileVersion <= loaded.version && loaded.dropped === 0
   && !loaded.idModalOpen && loaded.idCompare.level === 'match' && loaded.conditions === 26,
   { conditions: loaded.conditions, measurements: loaded.measurements, version: loaded.version,
     dropped: loaded.dropped, identity: loaded.idCompare.level, idModalOpen: loaded.idModalOpen,
@@ -271,7 +271,7 @@ if (WRITE) {
   check('F5 per-condition displayed quantities match the golden', qDiff.length === 0,
     { conditions: observed.conditions.length, ids: observed.conditions.map((o) => o.id).join(','), diffs: qDiff.slice(0, 8) });
 
-  check('F6 the bare-6 condition prices at the factor the golden records (documents the P0; B1 flips this row)',
+  check('F6 the bare-6 condition prices at the factor the golden records (since B1: reads 6/12, legacy ×6 held behind a confirm banner)',
     !!bare6 && !!g.bare6 && bare6.appliedFactor === g.bare6.appliedFactor && bare6.pricedQtyMilli === g.bare6.pricedQtyMilli,
     { name: bare6 && bare6.name, storedPitch: bare6 && bare6.storedPitch, appliedFactor: bare6 && bare6.appliedFactor,
       goldenFactor: g.bare6 && g.bare6.appliedFactor, readsAs: bare6 && bare6.readsAs });
