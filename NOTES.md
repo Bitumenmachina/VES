@@ -13,6 +13,13 @@ truth first, history compressed.
 > synthetic takeoff prices identically on F18.68 and F18.72; one ruling for Patrick (a seed library formula at zero
 > quantity now gates ZERO_QTY and prints under "Not included"); drift is in the record, not the product.
 
+- **VES 2 · Batch B0 LANDED on branch `ves2` — build 2.0.0-rc.1** (2026-09-14, box seat). sha256 `f2236808566338d51fd087bf367fcbdeacd4d2b1b6e31dad360fd527f2dae112`, 3685619 bytes.
+  ONE LINEAGE: F18.72 + Patrick's 9/03 kind-curie fixes (takeoff-is-a-document multi-sheet print, click-picks-aim, one-click
+  rail, pitch reads rise/12 with `parsePitch`/`fmtPitch`, trade-word dropdowns) content-merged from their true base F18.66.
+  G0 GREEN 4/4, ves-verify PASS, sweep green except probe-ae AE2/AE5 = declared red until B4 (LEDGER §Batch B0). The plan
+  that drives B0→B7 is `~/.claude/plans/swift-percolating-orbit.md` (Patrick-approved; local). **PICKUP: next = Batch B1
+  (pitch: one store, one function, rise/12 canonical, TAKEOFF_VERSION 3→4 with a named migration banner).** Open for
+  Patrick: the licence word (R-8) before B7.
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
@@ -193,6 +200,8 @@ truth first, history compressed.
   closed by Batch Q.
 
 ## Queue (in order)
+
+> **VES 2 (branch `ves2`) supersedes this queue while it runs: B1 pitch → B2a/B2b sections → B3 colors → B4 multi-sheet print (+ flips probe-ae fatal) → B5 EDGE-word descriptions → B6 persona (one fix batch cap) → B7 release 2.0.0. Rows below stay the roadmap for what VES 2 does not touch.**
 
 1. ✅ **P-CODE** pass 1 DONE 2026-09-01 (15 findings: 3 P0 · 3 HIGH · 6 MED · 3 LOW; zero-egress
    positively verified at code level). All BUILD-scored rows fixed in **Batch R** same day.

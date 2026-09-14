@@ -5,6 +5,50 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch B0 — VES 2 · ONE LINEAGE (build 2.0.0-rc.1 on branch `ves2`, 2026-09-14)
+
+Plan (Patrick-approved 2026-09-14, the deliverable of the architect's revisit): `~/.claude/plans/swift-percolating-orbit.md`
+(local, not in the repo). Base = F18.72 bytes (`d2bcf6a`). Product after B0: sha256 `f2236808566338d51fd087bf367fcbdeacd4d2b1b6e31dad360fd527f2dae112`, md5 `5c48c64a7d1b89033e2a67816a39340f`, 3685619 bytes.
+
+### VES 2 rulings (orchestrator's, per the 2026-08-23 delegation; reversible on Patrick's word)
+| id | ruling |
+|---|---|
+| R-1 | Base = F18.72 bytes; work branch `ves2` from d2bcf6a; `main` untouched until Patrick's word. |
+| R-2 | Stamp line is semver: `VES_BUILD = '2.0.0-rc.N'` → `2.0.0` at release. The F18.x line ended because kind-curie and estimate-sheet-depth both stamped F18.69–F18.71 with different content. |
+| R-3 | Pitch stored ONCE as rise-per-12 on `c.pitch` (0 = flat); one `pitchFactor(rise, kind)`; library `pitchDefault` seeds `c.pitch` at creation only; both doors journaled; every surface via `dispQtyOf`. (Batch B1) |
+| R-4 | `c.lenKind ∈ {plan, slope, hipvalley}` on linear conditions, default from the name regex D-23.3 already uses, editable; areas always slope-factored; counts never. (B1) |
+| R-5 | Section = `c.location` (typed, canonical); drawn regions are an input method resolved by containment at tag time — moving a region never retro-changes money; "Unassigned" is a named section. (B2a/B2b) |
+| R-6 | Document columns use Patrick's EDGE report words (Legend · Pitch · Description · SF · LF · EA; Class → cost-code → Subtotal → named adders → Total); app chrome words unchanged; "sheet" stays the chrome word. (B5) |
+| R-7 | Palette 24 + custom hex + hatch/dash for grayscale print; the local GTM bar's B2 measure ("8 distinct colors") is restated and re-run, not reworded. (B3) |
+| R-8 | Free product (Patrick 2026-09-14: "even if it's just a free program for others"). LICENSE in the repo reads "All rights reserved" — NOT an open licence. **Open for Patrick before B7**: which licence, or "free to use, source public, rights reserved" stated plainly. Nothing in B0–B6 depends on it. |
+| R-9 | Out of this run (roadmap, not built): downspout LF door reachability · fab+install pairing · mobile · cost per estimated unit on the grid · CEIL/overhead/zero-qty trio · export-surface collapse. A persona P0 on any of them becomes a numbered fix batch. |
+
+### What B0 did, from bytes
+- **The port, and the trap it stepped in first.** The two lineages fork at `ad07fff` (F18.66), not at `b191423` (F18.68):
+  main carried Batch U (F18.67, Unlink freeze) and its own Batch AE (F18.68, "Print takeoff — the plan as measured")
+  that kind-curie never had, while kind-curie carried its own AE (F18.67, "the takeoff is a document"). A first port
+  diffed from `b191423` and so replayed REVERTS of Batch U and main's AE onto F18.72 — the sweep caught it (probe-u 2/8,
+  probe-ae 2/5, a retired code comment resurrected) and a control run on unpatched F18.72 (probe-u 7/8, probe-ae 5/5)
+  proved the port was the cause. Redone as `git diff ad07fff 7dda549 -- src/VES_PM.html` 3-way onto d2bcf6a: 7 conflict
+  regions, adjudicated: CSS union (main's takeoff paper rules + kind-curie's `@page takeoff` landscape / `.tk-sheet` /
+  `.tk-qty`) · exports menu = Patrick's trade words (P3-R2/R3; BOM/Rollup/Audit CSVs move under Setup as his AI batch
+  put them) · command palette + button → `printTakeoff` (his multi-sheet takeoff) · Estimate CSV keeps F18.72's
+  derivation columns with his toast wording · BOTH print functions kept (`printTakeoffDoc` main AE, now unwired;
+  `printTakeoff` kind-curie AE-2, the door) — one closing brace lost in the concatenation, caught by ves-verify SYNTAX,
+  restored · stamp → 2.0.0-rc.1 with both prior stamp comments kept as history.
+- **Gates on `5c48c64a7d1b89033e2a67816a39340f`** (Chrome `/usr/bin/google-chrome`, headless): `tools/ves-verify.mjs` PASS (SYNTAX 20 blocks 0 failed ·
+  EGRESS 7/7 0 new · FREEZE manifest absent) · `gate/g0.mjs` G0 GREEN 4/4 (A/B/C/D unchanged from F18.72 → the port moved
+  no money) · sweep: v 16/17 (V0 read the stamp as `F\d+.\d+` — regex widened to semver, declared) · x 5/5 · y 4/4 ·
+  z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · **u 8/8** (F18.72 control: 7/8) · **ae 3/5** (see below) · af 40/40 ·
+  Patrick's 9/03 gates ported verbatim as `probe-p903-{doc,aim,rail,pitch,words}`: 8/8 · 7/7 · 5/5 · 6/6 · 5/5.
+- **Declared RED until Batch B4 (in CI, non-gating, output still recorded):** probe-ae **AE2** (the takeoff paper carries
+  every measured condition with the quantity the app displays) and **AE5** (a typed-only takeoff prints its quantity
+  tables; with nothing measured the latch is released and the door says so). The door now prints Patrick's multi-sheet
+  takeoff; main's edge behaviours fold into it in B4, which flips the step back to fatal. AE1 re-pointed to the
+  trade-word label ("Takeoff…") — wording only.
+- `tools/sweep/mkpdf.mjs` takes kind-curie's page-count argument (`<out.pdf> [segments] [pages]`), a superset.
+- CLAUDE.md line 42 declares the new stamp. `.github/workflows/verify.yml` runs the five ported gates (code12–code16).
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |

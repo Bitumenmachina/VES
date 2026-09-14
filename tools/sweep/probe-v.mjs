@@ -15,7 +15,7 @@ async function load(metrics, coarse) { if (metrics) await c.send('Emulation.setD
   await c.send('Page.navigate', { url: 'file://' + VES }); for (let i = 0; i < 300; i++) { try { if (await ev('document.readyState==="complete" && !!window.VESApp')) break; } catch (_) {} await sleep(50); } await ev(`window.print = () => {}; window.__demo = ${demo}; loadFromData.confirmed = true; 1`); await sleep(300); }
 // ---- desktop
 await load({ width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, false);
-const declared = (/^- build: (F\d+\.\d+)/m.exec(readFileSync(join(ROOT, 'CLAUDE.md'), 'utf8')) || [])[1];
+const declared = (/^- build: (F\d+\.\d+|\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)/m.exec(readFileSync(join(ROOT, 'CLAUDE.md'), 'utf8')) || [])[1];
 check('V0 build stamp equals the build CLAUDE.md declares', declared && (await ev('VESApp.VES_BUILD')) === declared, { stamp: await ev('VESApp.VES_BUILD'), declared });
 check('V1 landing data-safety sentence names autosaved takeoffs', await ev(`/autosav/i.test(document.querySelector('.empty-safe').textContent)`));
 const ctrl = await ev(`(async () => { VESApp.loadFromData(window.__demo); await new Promise(r => setTimeout(r, 400)); return +VESApp.recapModel().sell.toFixed(2); })()`);

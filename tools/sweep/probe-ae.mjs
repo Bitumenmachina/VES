@@ -28,7 +28,7 @@ const traced = await ev(`(async () => { const u8 = new Uint8Array(await (await f
   return { measured: roll.filter(r => r.count > 0).map(r => ({ name: r.name, qty: VESCore.fmtQty(dispQtyOf(r, byId[r.id]).qty), unit: displayUnit(r.unit), color: byId[r.id].color })), sell: VESApp.recapModel().sell }; })()`);
 // AE1 — a door in the exports menu and the command palette
 const doors = await ev(`(async () => { setDataMenu(true); await new Promise(r => setTimeout(r, 100)); const b = document.getElementById('btnMenuTakeoff'); const menu = b ? { text: b.textContent.replace(/\\s+/g, ' ').trim(), visible: b.getBoundingClientRect().width > 0 } : null; setDataMenu(false); openCmd(); await new Promise(r => setTimeout(r, 100)); const pal = [...document.querySelectorAll('#cmdList *')].map(e => e.textContent).some(t => /print takeoff/i.test(t)); closeCmd(); return { menu, pal }; })()`);
-check('AE1 Files & exports carries a "Print takeoff…" door and the command palette lists it', doors.menu && doors.menu.visible && /print takeoff/i.test(doors.menu.text) && doors.pal, doors);
+check('AE1 the exports menu carries the takeoff door (B0: "Takeoff…" in trade words, kind-curie AI) and the command palette lists it', doors.menu && doors.menu.visible && /takeoff/i.test(doors.menu.text) && doors.pal, doors);
 // AE2 — the paper: sheet snapshot with legend, every measured quantity as the app displays it, the print fires, the toast names itself
 await ev(`(async () => { const b = document.getElementById('btnMenuTakeoff'); if (b) b.click(); else if (typeof printTakeoffDoc === 'function') printTakeoffDoc(); await new Promise(r => setTimeout(r, 2500)); return 1; })()`);
 const L1 = await ev(latch);
