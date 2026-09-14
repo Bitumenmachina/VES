@@ -48,6 +48,18 @@ Plan (Patrick-approved 2026-09-14, the deliverable of the architect's revisit): 
   trade-word label ("Takeoff…") — wording only.
 - `tools/sweep/mkpdf.mjs` takes kind-curie's page-count argument (`<out.pdf> [segments] [pages]`), a superset.
 - CLAUDE.md line 42 declares the new stamp. `.github/workflows/verify.yml` runs the five ported gates (code12–code16).
+- **B0f — the synthetic fixture (opus agent, 195K tokens; commit `721b4d4`).** `tools/gen/fixture-3sheet.mjs` (zero-dep, seeded)
+  → `fixtures/synthetic/three-sheet/{plan.pdf (3 sheets A-1/A-2/A-3), takeoff.v3.json (26 conditions, 29 measurements, 4 sections
+  incl. one unassigned, pitches flat/4/6/9, a bare-6 "Cricket framing", a store-B override "SSMR — field area", two conditions
+  spanning sheets), golden.cents.json (sell 49,680,067¢ · cost 39,826,894¢ on F18.72 sha d07cd6ad…), README.md}` +
+  `tools/sweep/probe-b0-fixture.mjs` F1–F7. **7/7 on F18.72 AND 7/7 on the B0 port** — the port moved no money on the fixture.
+  Findings the fixture surfaced (recorded, not fixed here): **R-3a** a library condition whose pitch sits in the plain store
+  DISPLAYS pitched but PRICES flat (fixture ids 4/10/11) — D-26.1 broken on that path; B1 reconciles money to the displayed
+  number with a named delta banner. **C-B0-1** `identity.fileSize` is always 0 on a PDF-backed save (pdf.js detaches the buffer
+  before `buildIdentity` reads byteLength) — the identity door's size test is vacuous; candidate for B4/B6F. No seed-library row
+  carries a pitch (45 rows, 0 with the column) — B1-7 seeds one to test. All 8 hues repeat on 26 conditions (B3 evidence).
+  `.gitignore` now `fixtures/*` + `!fixtures/synthetic/` (a negation never fires inside an ignored DIRECTORY) + `.scratch/`;
+  `.gitattributes` marks the synthetic PDF binary (its xref lines carry required trailing spaces).
 
 ## Rulings cited in the bytes (D-series)
 
