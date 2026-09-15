@@ -469,13 +469,26 @@ if (want('g')) {
       const s = VESApp.snapshot(); return { version: s.version, json: JSON.stringify({ ...s, savedAt: null, identity: null }) }; })()`);
     await boot();
   }
-  const identical = !!(oldClean && clean && oldClean.json === clean.json);
+  // Re-addressed at the Q3 landing (R-13d): Q2 (2.1.0-rc.2) put `viz.hiddenRegions` in the file beside
+  // `viz.hidden`, so a 2.1 save of a deduct-free takeoff is 2.0.0's bytes PLUS that one empty key and
+  // nothing else. The row asserts exactly that — byte identity minus the keys later batches declared —
+  // rather than a byte identity Q2 made impossible. Any other difference, or a non-empty added key, is red.
+  const ADDED_SINCE_2_0_0 = ['viz.hiddenRegions'];   // dotted paths into the snapshot
+  const stripAdded = (json) => { try { const o = JSON.parse(json); const extra = {};
+    for (const path of ADDED_SINCE_2_0_0) { const ks = path.split('.'); let h = o; for (let i = 0; i < ks.length - 1 && h; i++) h = h[ks[i]];
+      const last = ks[ks.length - 1]; if (h && typeof h === 'object' && last in h) { extra[path] = h[last]; delete h[last]; } }
+    return { json: JSON.stringify(o), extra }; } catch (_) { return { json: null, extra: null }; } };
+  const cleanCmp = (clean && clean.json) ? stripAdded(clean.json) : { json: null, extra: null };
+  const identical = !!(oldClean && cleanCmp.json && oldClean.json === cleanCmp.json
+    && cleanCmp.extra && Object.keys(cleanCmp.extra).every((k) => Array.isArray(cleanCmp.extra[k]) && cleanCmp.extra[k].length === 0));
+  const firstDiff = (a, b) => { if (!a || !b) return null; let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; return i >= a.length && i >= b.length ? null : { at: i, new: a.slice(Math.max(0, i - 60), i + 80), old: b.slice(Math.max(0, i - 60), i + 80) }; };
+  const diff = identical ? null : firstDiff(cleanCmp.json, oldClean && oldClean.json);
   const ok = clean && clean.version === 5 && clean.anySign === false
     && dirty && dirty.version === 6
     && (!OLD || (oldRefusal && oldRefusal.ok === false && /version 6/.test(String(oldRefusal.error)) && identical));
-  check('Q1-g TAKEOFF_VERSION is WRITTEN as 6 only when some measurement carries a sign — the fixture with no deduct still saves version 5 and its JSON is byte-for-byte what the 2.0.0 bytes write for the same state; a saved file with a deduct says 6 and the 2.0.0 bytes refuse it by name',
+  check('Q1-g TAKEOFF_VERSION is WRITTEN as 6 only when some measurement carries a sign — the fixture with no deduct still saves version 5 and its JSON is byte-for-byte what the 2.0.0 bytes write for the same state plus only the empty `viz.hiddenRegions` key Q2 added; a saved file with a deduct says 6 and the 2.0.0 bytes refuse it by name',
     ok, { cleanVersion: clean && clean.version, cleanHasSign: clean && clean.anySign, cleanBytes: clean && clean.json ? clean.json.length : null,
-      dirtyVersion: dirty && dirty.version, old: OLD ? { refusal: oldRefusal, byteIdentical: identical, oldVersion: oldClean && oldClean.version, oldBytes: oldClean && oldClean.json ? oldClean.json.length : null } : 'NOT SUPPLIED' });
+      dirtyVersion: dirty && dirty.version, old: OLD ? { refusal: oldRefusal, identicalMinusAddedKeys: identical, addedKeys: cleanCmp.extra, firstDiff: diff, oldVersion: oldClean && oldClean.version, oldBytes: oldClean && oldClean.json ? oldClean.json.length : null } : 'NOT SUPPLIED' });
 }
 
 /* ════════ Q1-h · the exact door takes a magnitude and the sign survives it ════════ */
