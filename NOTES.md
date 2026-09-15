@@ -50,7 +50,9 @@ truth first, history compressed.
   `~/Downloads/VES_2.0.0_NOTES.md`; demo `VES_2.0.0_demo.{json,pdf}`. BUSINESS copy untouched. Full regression green on the release bytes
   (LEDGER §RELEASE 2.0.0). Branch `ves2` is LOCAL (box guard = main only). **PICKUP = Patrick:** (1) cold test (8 steps), (2) one real
   takeoff F18.72 vs 2.0.0 to the cent, (3) the merge word → from `main`: `git merge --ff-only ves2 && git push` (CI on the runner).
-  Nothing runs until then. Candidates on record: F-F7 · E-F4 · C-B2a-1 · C-B5-1.
+  **2026-09-15: MERGED — origin/main = d7f683e, tag v2.0.0 (his word). Guard amended on his word (LEDGER.md + fixtures/synthetic/).**
+- **VES 2.1 · QoL pass RUNNING on `ves2`** (plan §QoL): Q1 deductions (opus, clone `.scratch/q1`) → Q2 hide/solo → Q3 selection →
+  Q4 frictions + exports light touch → Q6 money trio (M-1..M-3, his 9/15 word) → Q5 persona + release 2.1.0. **PICKUP = Q1.**
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

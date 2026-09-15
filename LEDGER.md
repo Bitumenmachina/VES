@@ -14,6 +14,12 @@ untouched (md5 3eb98577 before and after). Words: `README.md`, `RELEASE_NOTES.md
 console errors (`probe-b7-demo` 7/7).
 **Full regression on the release bytes (orchestrator, foreground chunks):** ves-verify PASS (SYNTAX 20/0 · EGRESS 7/7 0 new) · G0 GREEN 4/4
 · vocab-check 0 · b6f ALL GREEN — 17 pass · b5-words 6/6 · b4-print 9/9 · b3-colors 8/8 · b2b-regions 8/8 · b2a-sections 7/7 · b1-pitch 12/12 · b0-fixture 7/7 · b7-demo 7/7 · ae 5/5 · p903-doc 8/8 · p903-aim 7/7 · p903-rail 5/5 · p903-pitch 6/6 · p903-words 5/5 · v 17/17 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · af 40/40 · 
+**MERGED 2026-09-15 on Patrick's word ("it is good i want this to be on the repo"):** `origin/main` b191423 → d7f683e (fast-forward of
+`ves2`, 37 commits), tag `v2.0.0` pushed. The box's pre-push guard first REFUSED the tree for `LEDGER.md` (public on origin/main since
+the 9/01 root — the guard's list was stale) and `fixtures/synthetic/` (generator-written, zero client data); **amended on his word**
+(one pattern: LEDGER removed from the forbidden names, `^fixtures/synthetic/` allowed; everything else under `fixtures/` still
+forbidden; hook is local-only). Local `main` (a stale divergent checkout, 68c8e23) renamed `main-stale-20260901`, new local `main`
+tracks origin/main. CI run id recorded below when read.
 **Bars:** `research/PLATFORM_BAR.md` §5 (the four asks, each with its RED-first gate) · local GTM_BAR.md B2 restated + re-proven.
 **Not done here, by rule:** no push (the box's pre-push guard allows `main` only), no merge to `main`, no `--write-*`. **Patrick's
 part:** the 8-step cold test (`research/COLD_TEST_2.0.0.md` = `~/Downloads/VES_2.0.0_NOTES.md`) and one real takeoff on F18.72 vs 2.0.0
