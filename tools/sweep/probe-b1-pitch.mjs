@@ -342,7 +342,15 @@ if (existsSync(takeoffPath) && existsSync(planPath) && existsSync(goldenPath)) {
     try { await VESApp.printBidDoc(); await new Promise(r => setTimeout(r, 400)); out.bidPaper = paperSays(${FLATF}, ${PITCHF}); } catch (e) { out.bidPaper = 'ERR ' + e.message; }
     try { await VESApp.printTakeoff(); await new Promise(r => setTimeout(r, 900));
       const tr = [...document.querySelectorAll('#printDoc .tk-qty tr')].find(t => t.textContent.indexOf(c.name) >= 0);
-      out.takeoffPaper = tr ? num(tr.querySelectorAll('td')[3].textContent) : paperSays(${FLATF}, ${PITCHF});
+      // R-6b (Batch B5): the takeoff quantities row is now Legend | Pitch | Description | SF | LF | EA —
+      // a condition fills exactly ONE of the three trailing columns (td[3..5]) and the other two print
+      // "—"; read whichever one is not the dash, instead of a column index pinned to the old
+      // single "Quantity" column.
+      out.takeoffPaper = tr ? (() => {
+        const tds = [...tr.querySelectorAll('td')];
+        for (const i of [3, 4, 5]) { const t = tds[i]; if (t && t.textContent.trim() !== '—' && t.textContent.trim() !== '') return num(t.textContent); }
+        return null;
+      })() : paperSays(${FLATF}, ${PITCHF});
     } catch (e) { out.takeoffPaper = 'ERR ' + e.message; }
     const split = (l) => { const o = []; let cur = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if (ch === ',' && !q) { o.push(cur); cur = ''; } else cur += ch; } o.push(cur); return o; };
     const grab = (re) => { const f = window.__blobs.filter(x => re.test(x.name)).pop(); return f || null; };

@@ -38,6 +38,25 @@ jobs:
             echo "exit code: $code"
           } >> "$GITHUB_STEP_SUMMARY"
           exit $code
+      # Batch B5 (R-6c): the vocabulary gate — banned words, VOCAB column words reaching their
+      # templates, and a name built straight from an id instead of itemLabel()/descOf(). Zero-dep,
+      # static; no Chrome needed, so it runs beside ves-verify rather than in the Chrome jobs below.
+      - name: vocab-check
+        shell: bash
+        run: |
+          set +e
+          node tools/vocab-check.mjs src/VES_PM.html | tee vocab.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo '## vocab-check'
+            echo
+            echo '```'
+            cat vocab.txt
+            echo '```'
+            echo
+            echo "exit code: $code"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $code
   gate:
     runs-on: ubuntu-latest
     steps:
@@ -127,6 +146,9 @@ jobs:
           # re-run G0 and the B0-B3 probes, so this step is the one that says the paper did not move.
           node tools/sweep/probe-b4-print.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet/takeoff.v3.json" "$PWD/fixtures/synthetic/three-sheet/plan.pdf" "$PWD" 2>&1 | tee -a probes.txt
           code17=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code17
+          # Batch B5 (VES 2): one description per item, EDGE column words — child gates skipped here (each is its own step above)
+          node tools/sweep/probe-b5-words.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet/takeoff.v3.json" "$PWD/fixtures/synthetic/three-sheet/plan.pdf" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
+          code18=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code18
           {
             echo '## sweep probes'
             echo

@@ -77,7 +77,8 @@ if (!af4.error) {
   const bom = af4.bom ? csvRows(af4.bom) : []; const bh = bom.find((r) => r.includes('Component')) || []; const coilB = bom.find((r) => /coil/i.test(r[1] || '')) || []; const bi = (k) => bh.findIndex((h) => new RegExp('^' + k + '$', 'i').test(h));
   const bomOk = bi('formula') > 10 && /RAW/.test(coilB[bi('formula')] || '') && /width=1\.5/.test(coilB[bi('params')] || '');
   let xl = {}; if (af4.xlsx) { const rows = cells(sheets(af4.xlsx)[0] || ''); const hdr = rows[0] ? Object.entries(rows[0]).map(([k, x]) => [k, x.t]) : []; const col = (re) => (hdr.find(([, t]) => re.test(t || '')) || [])[0];
-    const extCol = col(/extended|total/i), fCol = col(/^formula$/i), pCol = col(/^params$/i), dCol = col(/^driver$/i), pctCol = col(/^pct$/i); const coil = rows.find((r) => r.C && /coil/i.test(r.C.t || '')) || {};
+    // Batch B5 (R-6b): the workbook's Extended header reads "Net Cost" now (VOCAB.grid) — same column, same formula/value, new word.
+    const extCol = col(/extended|total|net cost/i), fCol = col(/^formula$/i), pCol = col(/^params$/i), dCol = col(/^driver$/i), pctCol = col(/^pct$/i); const coil = rows.find((r) => r.C && /coil/i.test(r.C.t || '')) || {};
     const foot = {}; for (const r of rows) { const lab = r.C && r.C.t; if (lab && /^(Cost|Overhead|Markup|Profit|Sell)/.test(lab)) foot[lab.split(' ')[0]] = { f: r[extCol] && r[extCol].f, v: r[extCol] && r[extCol].v, pct: pctCol && r[pctCol] ? r[pctCol].v : null }; }
     const ladderRefsPct = ['Overhead', 'Markup', 'Profit'].every((k) => foot[k] && foot[k].f && !/\*\s*0?\.\d/.test(foot[k].f) && new RegExp('\\*' + pctCol + '\\d+').test(foot[k].f) && typeof foot[k].pct === 'number');
     xl = { extCol, fCol, pCol, dCol, pctCol, coilFormula: fCol && coil[fCol] && coil[fCol].t, coilParams: pCol && coil[pCol] && coil[pCol].t, coilDriver: dCol && coil[dCol] && coil[dCol].t, foot, ladderRefsPct, pctVals: [foot.Overhead && foot.Overhead.pct, foot.Markup && foot.Markup.pct, foot.Profit && foot.Profit.pct],
@@ -246,7 +247,9 @@ check('AF20 a bad formula puts its reason in the lens cue; fixing it clears the 
 // AF21 — item waste is in the derivation words (P-MARKET 2)
 const af21 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.eavedrip', 'waste', 0.10); await wait(150);
   const cell = document.querySelector('input.fx[data-item="ssmr.eavedrip"]'); const txt = cell ? cell.closest('tr').querySelector('td.deriv').textContent.replace(/\\s+/g, ' ') : ''; const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.eavedrip');
-  return { txt: txt.slice(0, 160), ordered: l.ordered, wasteTitle: (document.querySelector('.estgrid thead th:nth-child(6)') || {}).title || '' }; })()`);
+  // Batch B5 (R-6b): the grid header gained Quantity/EU/Ord Qty/Ord Un ahead of Waste — the Waste
+  // <th> is now the 7th column, not the 6th (was Description/Kind/Qty/Unit/Unit$/Waste/…).
+  return { txt: txt.slice(0, 160), ordered: l.ordered, wasteTitle: (document.querySelector('.estgrid thead th:nth-child(7)') || {}).title || '' }; })()`);
 check('AF21 the derivation says the item waste that turns needed into ordered (412.5 + 10% item waste → 454 LF) and the Waste header says it is item waste',
   !af21.error && /10% item waste/.test(af21.txt) && af21.ordered === 454 && /Item waste/.test(af21.wasteTitle), af21);
 // AF22 — entry row: the funnel line sits under the description, the measure select follows the unit, the matcher forgives case and dash, a partial names the closest name (P-GAME 6/7/8, P-TRADE 12)

@@ -2318,10 +2318,14 @@
   <div class="gtabs" id="gTabs"></div>
   <div class="gscroll">
     <table class="estgrid">
-      <!-- Batch AF: an 8th column, Formula — the derivation the engine ran (driver, inputs, result) and the
-           line's own formula cell; Unit $ says which unit it is per (commission R5: per ORDER unit until a
-           price unit exists). Split mode hides it with the other secondary columns. -->
-      <thead><tr><th>Description</th><th>Kind</th><th class="num">Qty</th><th>Unit</th><th class="num" title="Per order unit — the unit in the Unit column ($/hr where a production rate is set). There is no separate price unit yet.">Unit $ / order unit</th><th class="num" title="Item waste — applied at the ordered step (ordered = needed × (1 + waste)); a separate figure from the condition’s waste, which is on the condition’s card and inside ADJ">Waste</th><th title="How the quantity was derived: the driving measurement (RAW; ADJ = with condition waste), the driver the library or this line supplies, the quantity needed, and the ordered quantity after purchasing round-up. Type a formula here to put this line on its own derivation.">Formula</th><th class="num">Total</th></tr></thead>
+      <!-- R-6b (B5): VOCAB.grid — Description | Quantity | EU | Ord Qty | Ord Un | Unit Price | Prc Un |
+           Net Cost, the EDGE Consolidated chain (estimated → ordered → priced). Kind and Waste are this
+           engine's own columns, kept alongside; Formula (Batch AF) sits after the eight VOCAB words but
+           BEFORE Net Cost, so Net Cost — the money a subtotal row's last cell reads — stays the rightmost
+           column, as it always was. EU / Ord Un / Prc Un read the same unit today: this engine resolves one
+           unit per line, so the three columns agree row for row — stated, not hidden behind one column. -->
+      <!-- VOCAB:grid -->
+      <thead><tr><th>Description</th><th>Kind</th><th class="num" title="Estimated — the engine's own qty_needed, before purchasing round-up. Same figure as Ord Qty on a line with no waste to round.">Quantity</th><th title="Estimate unit">EU</th><th class="num" title="Ordered — qty_needed rounded up for purchasing (ordered = needed × (1 + waste), ceiling).">Ord Qty</th><th title="Order unit">Ord Un</th><th class="num" title="Item waste — applied at the ordered step; a separate figure from the condition’s waste, which is on the condition’s card and inside ADJ">Waste</th><th class="num" title="Per order unit ($/hr where a production rate is set).">Unit Price</th><th title="Price unit — the unit Unit Price is per.">Prc Un</th><th title="How the quantity was derived: the driving measurement (RAW; ADJ = with condition waste), the driver the library or this line supplies, the quantity needed, and the ordered quantity after purchasing round-up. Type a formula here to put this line on its own derivation.">Formula</th><th class="num">Net Cost</th></tr></thead>
       <tbody id="estgridBody"></tbody>
     </table>
   </div>
@@ -4685,6 +4689,36 @@ const PALETTE = [
   '#7a95e6', '#aad723', '#8f8ff0', '#91dc47', '#a189ec', '#61e335', '#cb7ae6', '#58e458',
   '#ea62ea', '#5ce09e', '#e76ec9', '#28e2b3', '#e472ab', '#ebc298', '#22a6d3', '#cece1c',
 ];
+/* ── R-6b · VOCAB — the document column words, one place, read by every print/export template
+   below (and by tools/vocab-check.mjs, statically, via the sentinel comments beside each site
+   that uses a row). Renaming a document's words means editing THIS object; a template that still
+   hardcodes its own spelling instead of these is the bug vocab-check watches for. Chrome (Plan/
+   Estimate/Library lenses, Setup, toolbar, menus) is NOT vocabulary — "sheet" stays the chrome
+   word for a PDF page there, untouched by this batch. */
+const VOCAB = {
+  // Takeoff paper (quantities page). Pitch prints as X/12 via fmtPitch; a flat line shows "—".
+  // SF / LF / EA are the three quantity columns — a condition fills exactly one, the other two blank.
+  takeoff: ['Legend', 'Pitch', 'Description', 'SF', 'LF', 'EA'],
+  // Estimate grid + Estimate CSV/XLSX (internal). The EDGE Consolidated chain: estimated →
+  // ordered → priced. Quantity is the estimated/needed figure (qty_needed where the engine
+  // computed one, else the ordered figure); Ord Qty is the purchase-rounded figure that always
+  // existed as `ordered`. EU / Ord Un / Prc Un are the three unit columns EDGE carries — in this
+  // engine they read the same unit today (one unit per resolved line), which is stated, not hidden.
+  grid: ['Description', 'Quantity', 'EU', 'Ord Qty', 'Ord Un', 'Unit Price', 'Prc Un', 'Net Cost'],
+  // Recap + cost sheet (internal). Class bands are Material / Labor / Equipment / Other /
+  // Supervision as the FILE's own kinds map — this engine's kind values are material/labor/
+  // equipment today, so Other and Supervision print only on a file whose kinds map carries them.
+  // Markup / Markup $ are the combined Overhead+Markup+Profit rate and dollars on a LINE (the
+  // ladder's three named rows stay separate at the Subtotal → Total foot, never folded there).
+  recap: ['Description', 'Net Cost', 'Markup', 'Markup $', 'Gross Price', 'Cost Unit', 'Unit'],
+  // Client bid (sell only). Section → System headings (B2a) carry the grouping; these are the
+  // per-line words.
+  bid: ['Description', 'Quantity', 'Unit', 'Unit Price', 'Amount'],
+  // Words that never reach a document or a chrome string (R-6c bans these outright), plus "page"
+  // for a PDF sheet specifically — "sheet" is the word chrome already uses (kind-curie's pass).
+  banned: ['leverage', 'seamless', 'robust', 'utilize', 'journey', 'delve', 'empower',
+    'streamline', 'holistic', 'cutting-edge', 'the app', 'the software', 'AI'],
+};
 // R-7b/R-7f: the same grammar VESCore's frozen `COLOR_RE` validates a loaded file against
 // (`#[0-9a-f]{3,8}`) — COLOR_RE itself is private to that closure, so the custom-color door
 // (outside the freeze) carries its own copy rather than reaching into frozen code for it.
@@ -7765,7 +7799,7 @@ function moneyPeekModel(c) {
       const refs = l.drivingRefs || [];
       if (refs.indexOf(c.libRef) < 0) continue;
       const off = lineOmitted(l.item), priced = l.included && l.extended != null;
-      rows.push({ label: (l.kind !== 'material' ? suffixKind(itemLabel(l), l.kind) : itemLabel(l)), qty: l.ordered, unit: l.unit,
+      rows.push({ label: descOf(l), qty: l.ordered, unit: l.unit,
         amount: priced ? l.extended : null, off, gate: l.included ? null : (l.gate || l.matchStatus || 'unpriced'), shared: refs.length > 1 ? refs.length : 0 });
       if (priced && !off) cost += l.extended / refs.length;
     }
@@ -7974,7 +8008,7 @@ function buildDepthRow(c, l) {
   const name = document.createElement('div'); name.className = 'dr-name';
   const dot = document.createElement('span'); dot.className = 'kind-dot ' + l.kind; dot.title = l.kind;
   name.appendChild(dot);
-  name.appendChild(document.createTextNode(typeof itemLabel === 'function' ? itemLabel(l) : (l.desc || l.item)));
+  name.appendChild(document.createTextNode(typeof descOf === 'function' ? descOf(l) : (l.desc || l.item)));
   if (l.note) name.title = l.note;
   if (l.verify) { const v = document.createElement('span'); v.className = 'verify-badge'; v.textContent = 'verify'; v.title = l.verify; name.appendChild(v); }
   row.appendChild(name);
@@ -8356,7 +8390,8 @@ function renderCardsNow() {
       renderCards();
     });
     name.appendChild(exp);
-    name.appendChild(document.createTextNode(c.name));
+    name.title = descOf(c);   // R-6a: cell truncation is CSS ellipsis + the full string in title, never a shorter string
+    name.appendChild(document.createTextNode(descOf(c)));
 
     // Slim card (FOXTROT-D): color · name · qty/unit · confidence pill. Detail
     // (CSI/WBS/cost/notes/measurements/delete) lives in the rail-anchored popover.
@@ -9686,7 +9721,7 @@ function renderAssembly() {
         : ln.matchStatus === 'NO_MATCH' ? `${cf.tag} · no library match`
         : cf.tag;
       const cells = [
-        ln.assemblyLabel, itemLabel(ln),
+        ln.assemblyLabel, descOf(ln),
         VESCore.fmtQty(ln.ordered),
         ln.unit,
         ln.unitCost == null ? '—' : VESCore.fmtMoney(ln.unitCost),
@@ -9953,7 +9988,7 @@ function exportBOMCSV() {
   if (!res.lines.length) { toast('No assembly lines to export — load + trace first.'); return; }
   const rows = [['Project', projectTitle()], [], ['Assembly', 'Component', 'CSI', 'Match Code', 'Ordered', 'Unit', 'Unit Cost', 'Extended', 'Authority', 'Status', 'Off', 'Driver', 'Formula', 'Params', 'Qty Needed', 'Basis']];   // F18.18: additive column — shipped headers stay · Batch AF: five more, trailing (Batch AG: in this file's Title Case)
   for (const l of res.lines) {
-    rows.push([l.assemblyLabel, itemLabel(l), l.csi, l.matchCode,
+    rows.push([l.assemblyLabel, descOf(l), l.csi, l.matchCode,
       csvNum(l.ordered, 4), displayUnit(l.unit),
       l.unitCost == null ? '' : l.unitCost.toFixed(4),
       l.extended == null ? '' : l.extended.toFixed(2),
@@ -10000,7 +10035,7 @@ function exportSupplierCSV() {
   for (const l of lines) {
     if (notVendorItem(l)) continue;
     const note = String(l.note || '');
-    rows.push([vendorOfNote(note) || 'UNASSIGNED', itemLabel(l), l.matchCode || '', l.csi || '',
+    rows.push([vendorOfNote(note) || 'UNASSIGNED', descOf(l), l.matchCode || '', l.csi || '',
       csvNum(l.ordered, 2), displayUnit(l.unit), rfqOfNote(note),
       sectionOfLine(l)]);   // B2a (R-5d): which roof section the material is for — a vendor stages by section too
   }
@@ -10250,6 +10285,30 @@ function itemLabel(l) {
   const seg = String((l && l.item) || '').split('.').pop();
   return displayComponent(seg || (l && l.item) || 'item');
 }
+/* ── R-6a · descOf(x) — THE description, one function, every surface that prints or exports a
+   name. x is one of:
+     · a condition (an object with `.name` and no `.item`/`.kind`/`.label`) → its own name, the
+       source of truth (L-11: ids never rename; a condition's card IS the canonical name).
+     · a general/equipment line (an object with `.label` and no `.item`) → its own label, as typed
+       — the estimator's own words, no library lookup to do.
+     · an engine line (has `.item` and/or `.kind`, library-backed or adhoc) → itemLabel(x), suffixed
+       "<name> — labor" / "<name> — equipment" for a linked labor/equipment line (the F6/S2 rule) —
+       through suffixKind, which is idempotent, so a name the library already suffixed at creation
+       is never suffixed twice ("Snow guards — labor — labor" cannot happen again).
+   Where a surface used to abbreviate, truncate with its own rule, concatenate code+name, or build
+   a label from `id` directly, it now calls this. Cell truncation stays CSS (ellipsis + the full
+   string in `title`) — descOf never returns a different string for a narrow column. */
+function descOf(x) {
+  if (x == null) return '';
+  if (typeof x === 'object' && !('item' in x) && 'name' in x && !('label' in x)) {
+    return String(x.name == null ? '' : x.name).trim();
+  }
+  if (typeof x === 'object' && !('item' in x) && 'label' in x) {
+    return String(x.label == null ? '' : x.label).trim() || '(line)';
+  }
+  const base = itemLabel(x);
+  return (x && (x.kind === 'labor' || x.kind === 'equipment')) ? suffixKind(base, x.kind) : base;
+}
 
 function recapTable(head, bodyRows, footer) {
   /* N-8: every recap money table gets its own scrollport. In the 344px panel these tables are
@@ -10305,7 +10364,7 @@ function renderRecapMaterials() {
   // R1: waste lives on the Estimate screen ONLY — this drawer never shows or edits it.
   const engineRow = (l) => {
     if (l.extended != null) total += l.extended; else partial = true;
-    return `<tr><td class="l">${escA(itemLabel(l))}<span class="rsub"> · ${escA(l.assemblyLabel)}</span></td>`
+    return `<tr><td class="l">${escA(descOf(l))}<span class="rsub"> · ${escA(l.assemblyLabel)}</span></td>`
       + `<td class="n">${recapEditCell(l, 'qty', qtyDisp2(l.ordered), l.unit, false, l.ordered)} <span class="ru">${escA(l.unit || '')}</span></td>`
       + `<td class="n">${recapEditCell(l, 'unit_cost', l.unitCost, '$')}</td>`
       + `<td class="n">${l.extended != null ? money(l.extended) : '<span class="rneeds">needs price</span>'}</td></tr>`;
@@ -10332,7 +10391,7 @@ function renderRecapLabor() {
     if (l.laborHours != null) totalHrs += l.laborHours;
     if (l.extended != null) totalCost += l.extended; else partial = true;
     const hrs = l.laborHours != null ? `${num(l.laborHours)} hr` : '<span class="rmute">—</span>';
-    return `<tr><td class="l">${escA(itemLabel(l))}<span class="rsub"> · ${escA(l.assemblyLabel)}</span></td>`
+    return `<tr><td class="l">${escA(descOf(l))}<span class="rsub"> · ${escA(l.assemblyLabel)}</span></td>`
       + `<td class="n">${recapEditCell(l, 'production_rate', l.productionRate, 'u/hr')}</td>`
       + `<td class="n">${hrs}</td>`
       + `<td class="n">${recapEditCell(l, 'qty', qtyDisp2(l.ordered), l.unit, false, l.ordered)} <span class="ru">${escA(l.laborHours != null ? 'hr' : l.unit)}</span></td>`
@@ -10397,9 +10456,9 @@ function renderRecapExceptions() {
   let hushed = 0;
   for (const l of res.lines) {
     if (lineOmitted(l.item)) { if (l.gate || needsPriceLine(l)) hushed++; continue; }   // L-25 hush: OFF lines stay struck in the grid, not flagged here
-    if (l.gate) items.push(['gate', itemLabel(l), `${escA(l.assemblyLabel)} — ${escA(l.gate)}`]);
-    else if (needsPriceLine(l)) items.push(['needs price', itemLabel(l), `${escA(l.assemblyLabel)} — measured but unpriced (excluded from total, never $0)`]);
-    if (l.verify) items.push(['verify basis', itemLabel(l), escA(l.verify)]);
+    if (l.gate) items.push(['gate', descOf(l), `${escA(l.assemblyLabel)} — ${escA(l.gate)}`]);
+    else if (needsPriceLine(l)) items.push(['needs price', descOf(l), `${escA(l.assemblyLabel)} — measured but unpriced (excluded from total, never $0)`]);
+    if (l.verify) items.push(['verify basis', descOf(l), escA(l.verify)]);
   }
   if (hushed) items.push(['off', `${hushed} flagged line${hushed !== 1 ? 's' : ''} turned OFF`, 'not counted and not nagged — re-check the box in the Estimate to bring one back']);
   // plain conditions: measured but unpriced
@@ -10906,17 +10965,29 @@ function renderRecapSummary() {
 // R2: the dock's live estimate face — line · qty · unit $ · total off the SAME
 // engine pass the full grid reads (collectPricedLines + recapModel), Cost and
 // Sell at the foot. Draw a measurement and the line moves: that is the acceptance.
+/* VOCAB:recap */
 function renderRecapEstimate() {
   const m = recapModel();
   if (!m.lineCount) return emptyRecap('Price some lines — the live estimate builds here as you draw.');
-  const { lines } = collectPricedLines();
-  const body = lines.map((l) => `<tr><td class="l">${escA(l.desc || '')}</td>`
-    + `<td class="n">${VESCore.fmtQty(l.qty)} ${escA(l.unit || '')}</td>`
-    + `<td class="n">${l.unitCost == null ? '—' : money(l.unitCost)}</td>`
-    + `<td class="n rtotal">${money(l.cost)}</td></tr>`).join('');
-  const foot = `<tfoot><tr><td class="l">Cost (Σ direct)</td><td></td><td></td><td class="n rtotal">${money(m.cost)}</td></tr>`
-    + `<tr class="grand"><td class="l">Sell</td><td></td><td></td><td class="n rtotal">${money(m.sell)}</td></tr></tfoot>`;
-  return `<div class="recap-summary">${recapTable(['Line', 'Qty', 'Unit $ / order unit', 'Total'], body, foot)}`
+  // R-6a: this table read `l.desc` raw — blank for most library items (they carry no `desc`,
+  // which is why COMPONENT read blank here while the same line's name was fine everywhere else).
+  // descOf(l) is the fix. R-6b: VOCAB.recap — Description | Net Cost | Markup | Markup $ |
+  // Gross Price | Cost Unit | Unit, the same words the cost sheet uses for a priced line.
+  const { lines, sellOf } = bidCollect();
+  const body = lines.map((l) => {
+    const sp = sellOf(l.cost); const mkDollar = sp.sell - l.cost, mkPct = l.cost > 0 ? (mkDollar / l.cost) * 100 : 0;
+    return `<tr><td class="l">${escA(descOf(l))}</td>`
+      + `<td class="n">${money(l.cost)}</td>`
+      + `<td class="n">${mkPct.toFixed(1)}%</td>`
+      + `<td class="n">${money(mkDollar)}</td>`
+      + `<td class="n rtotal">${money(sp.sell)}</td>`
+      + `<td class="n">${l.unitCost == null ? '—' : money(l.unitCost)}</td>`
+      + `<td>${escA(displayUnit(l.unit))}</td></tr>`;
+  }).join('');
+  const gMk = m.sell - m.cost, gPct = m.cost > 0 ? (gMk * 100 / m.cost) : 0;
+  const foot = `<tfoot><tr class="grand"><td class="l">Total</td><td class="n rtotal">${money(m.cost)}</td>`
+    + `<td class="n">${gPct.toFixed(1)}%</td><td class="n">${money(gMk)}</td><td class="n rtotal">${money(m.sell)}</td><td></td><td></td></tr></tfoot>`;
+  return `<div class="recap-summary">${recapTable(['Description', 'Net Cost', 'Markup', 'Markup $', 'Gross Price', 'Cost Unit', 'Unit'], body, foot)}`
     + `<div class="recap-ladder-wrap"><button class="recap-print" id="recapOpenGrid" title="Open the full estimate grid — tabs, inline edits, exports">Full estimate ⤢</button></div></div>`;
 }
 
@@ -10953,7 +11024,12 @@ function estimateRows() {
     rows.push({ section: sectionOfLine(l),   // B2a (R-5): the physical roof section this line's work sits on
       group: l.assemblyLabel || ('Division ' + div), csi: (String(l.csi || '').trim() || div),
       sortKey: (String(l.csi || '').trim() || (div && div !== '—' ? div : 'zzzz')) + '|' + (l.assemblyLabel || ''),
-      label: itemLabel(l), qty: l.ordered, unit: l.unit, unitCost: l.unitCost,
+      label: descOf(l), qty: l.ordered, unit: l.unit, unitCost: l.unitCost,
+      // R-6b (B5-4): the EDGE Consolidated chain — estimated → ordered → priced. `qtyEst` is the
+      // engine's own qty_needed (the estimated figure, before purchasing round-up); a gated/manual/
+      // qty-typed line carries no separate "needed" figure, so it reads the ordered qty — same
+      // number in both columns, never a fabricated third one.
+      qtyEst: l.qtyNeeded != null ? l.qtyNeeded : l.ordered,
       waste: (l.kind === 'material' && l.itemWaste != null) ? l.itemWaste : null,
       total: l.extended, conf: lineConfColor(l), np: l.extended == null,
       div, edit: 'engine', item: l.item, kind: l.kind, qtyOverridden: !!l.qtyOverridden,
@@ -10966,10 +11042,10 @@ function estimateRows() {
         ? (condByIdRows[condByRef[l.drivingRefs[0]].qtyLink] || {}).name : null) });   // F10 identity · F18.16 on/off · F18.21 link
   }
   for (const p of plain) rows.push({ section: sectionOfCondition(condByIdRows[p.condId]), group: 'Conditions', csi: p.csi || '—',
-    sortKey: (p.csi || 'zz') + '|cond', label: p.name, qty: p.qty, unit: p.unit, unitCost: p.unitCost,
+    sortKey: (p.csi || 'zz') + '|cond', label: p.name, qty: p.qty, qtyEst: p.qty, unit: p.unit, unitCost: p.unitCost,
     waste: null, total: p.extended, conf: p.needsPrice ? 'var(--unknown)' : 'var(--firm)', np: p.extended == null,
     div: String(p.csi || '').trim().split(/\s+/)[0] || '—', edit: 'plain', condId: p.condId, kind: 'material',
-    okey: 'cond.' + p.condId, omitted: lineOmitted('cond.' + p.condId), srcCid: p.condId });   // F18.22b: plain rows ARE material (recapData already prices them so) — the kind cell says it and ＋L reaches them
+    okey: 'cond.' + p.condId, omitted: lineOmitted('cond.' + p.condId), srcCid: p.condId });   // F18.22b: plain rows ARE material (recapData already prices them so) — the kind cell says it and ＋L reaches them; no waste-driven round-up on the plain path, so qtyEst == qty
   for (let gi = 0; gi < gen.length; gi++) { const g = gen[gi];
     const gq = +g.qty || 0;
     /* R2: the grid already had the qty-0 gate (D-23.9 alignment) but not the engine's
@@ -10980,7 +11056,7 @@ function estimateRows() {
     const ext = generalExt(g, gi);
     rows.push({ section: SECTION_PROJECT,   // B2a (R-5): general conditions belong to no condition — they are the job's own section
       group: 'General / Equipment', csi: (g.csi || '—'), sortKey: (g.csi || 'zz') + '|gen',
-      label: g.label || '(line)', qty: gq, unit: g.unit || '', unitCost: g.unit_cost,
+      label: g.label || '(line)', qty: gq, qtyEst: gq, unit: g.unit || '', unitCost: g.unit_cost,
       waste: null, total: ext, conf: ext == null ? 'var(--unknown)' : 'var(--firm)', np: ext == null,   // C3: blue is never a confidence hue
       div: String(g.csi || '').trim().split(/\s+/)[0] || '—', edit: 'gen', kind: g.kind, gi,
       okey: (g.id || ('general.' + gi)), omitted: lineOmitted(g.id || ('general.' + gi)) });
@@ -11218,12 +11294,12 @@ function renderEstimateGrid() {
       landing a cent over it (the same round-then-sum trap S3 and F5 closed on the papers). The
       section figure itself is untouched — it is still the sum of the rows in it. */
    const sysCents = apportionCents(SEC.order.map((g) => bySec[sn].byG[g].sub), SEC.sub);
-   html += `<tr class="sech" data-sec="${escA(sn)}"><td colspan="8">Section: ${escA(sn)} ${secRenameBtn(sn)}</td></tr>`;
+   html += `<tr class="sech" data-sec="${escA(sn)}"><td colspan="11">Section: ${escA(sn)} ${secRenameBtn(sn)}</td></tr>`;
    let sysIdx = 0;
    for (const g of SEC.order) {
     const G = SEC.byG[g];
     const csiLbl = (G.csi && G.csi !== '—') ? (escA(G.csi) + ' — ' + escA(g)) : escA(g);
-    html += `<tr class="divh" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td colspan="8">${csiLbl}</td></tr>`;
+    html += `<tr class="divh" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td colspan="11">${csiLbl}</td></tr>`;
     for (const it of G.items) {
       const qtyDisp = it.qty == null ? null : +(Math.round(it.qty * 100) / 100);
       const qtyCell = (it.edit === 'engine' || it.edit === 'gen') ? cell(it, 'qty', qtyDisp, it.unit, false, it.qty) : num(it.qty);   // Batch AF: edits from the full-precision figure (F1.4 m)
@@ -11247,17 +11323,24 @@ function renderEstimateGrid() {
         ? ' title="From the library item — edit name/kind/unit in Setup → components & library. Qty, unit $ and waste edit right here."'
         : '';
       const trCls = [it.omitted ? 'omitted' : '', (it.gate || it.status === 'NO_MATCH') ? 'gated' : ''].filter(Boolean).join(' ');   // Batch AI: an unpriced library line is excluded too — same tint   // Batch AH (P-GAME pass 2 finding 1): a gated row stays findable after the cue expires
+      // R-6b (B5-4): Quantity (estimated, qtyEst) is READ-ONLY here — it is the engine's own
+      // qty_needed, before purchasing round-up; Ord Qty (qtyCell) stays the one editable quantity
+      // cell, as it always was. EU / Ord Un / Prc Un read the same unit in this engine (one unit
+      // per resolved line) — three columns, honestly the same value, not a fabricated split.
+      const qtyEstCell = it.qtyEst == null ? '—' : num(it.qtyEst);
+      const unitCell = escA(it.unit || '');
       html += `<tr${trCls ? ` class="${trCls}"` : ''}><td${lockT}>${omitBox}<span class="cdot" title="${escA(confWord(it.conf))}" style="background:${escA(it.conf)}"></span>${escA(it.label)}</td><td class="klab"${lockT}>${escA(it.kind || '')}${kact}</td>`
-        + `<td class="num">${linkMark}${qtyCell}</td><td${lockT}>${escA(it.unit || '')}</td>`
-        + `<td class="num${it.np ? ' np' : ''}">${costCell}</td>`
+        + `<td class="num">${qtyEstCell}</td><td${lockT}>${unitCell}</td>`
+        + `<td class="num">${linkMark}${qtyCell}</td><td${lockT}>${unitCell}</td>`
         + `<td class="num">${wasteCell}</td>`
-        + derivCell(it)   // Batch AF: the Formula column
+        + `<td class="num${it.np ? ' np' : ''}">${costCell}</td><td${lockT}>${unitCell}</td>`
+        + derivCell(it)   // Batch AF: the Formula column — after the eight VOCAB words, before Net Cost
         + `<td class="num${it.total == null ? ' np' : ''}">${it.total == null ? '—' : money(it.total)}</td></tr>`;
     }
-    html += `<tr class="sub" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td>Subtotal — ${escA(g)}</td><td></td><td></td><td></td><td></td><td></td><td></td>`
+    html += `<tr class="sub" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td>Subtotal — ${escA(g)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>`
       + `<td class="num${G.partial ? ' np' : ''}">${G.partial ? '≥ ' : ''}${money(centsVal(sysCents[sysIdx++]))}</td></tr>`;
    }
-   html += `<tr class="secsub" data-sec="${escA(sn)}"><td>Subtotal — Section: ${escA(sn)}</td><td></td><td></td><td></td><td></td><td></td><td></td>`
+   html += `<tr class="secsub" data-sec="${escA(sn)}"><td>Subtotal — Section: ${escA(sn)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>`
      + `<td class="num${SEC.partial ? ' np' : ''}">${SEC.partial ? '≥ ' : ''}${money(SEC.sub)}</td></tr>`;
   }
   // F18.17: the entry row's library door — a datalist of the loaded library's condition names
@@ -11282,18 +11365,22 @@ function renderEstimateGrid() {
          the row and the Tab walk; the funnel line sits under the description where the estimator is typing (on a phone
          the 8th column was three screens to the right). */
       + '<td><select id="geKind" class="gen-edit ge-sel"><option value="material">material</option><option value="labor">labor</option></select></td>'
+      // R-6b (B5): a typed line carries no separate "estimated" figure \u2014 Quantity and EU sit blank;
+      // what the estimator types IS the ordered quantity and its unit, same as it always was.
+      + '<td class="num">\u2014</td><td>\u2014</td>'
       + '<td class="num"><input id="geQty" type="number" min="0" step="any" inputmode="decimal" placeholder="qty" class="gen-edit"></td>'
       + '<td><input id="geUnit" type="text" placeholder="unit" title="EA, SF, SQ, LF, DAY \u2026 \u2014 SF/SQ/SY set the measure to area, LF/LY to linear" class="gen-edit ge-unit"> '
       + '<select id="geType" class="gen-edit ge-sel" title="Measure \u2014 what the quantity counts: pieces (count), an area, or a length. Follows the unit you type; change it here if the unit is unusual."><option value="count">count</option><option value="area">area</option><option value="linear">linear</option></select></td>'
-      + '<td class="num"><input id="gePrice" type="number" min="0" step="any" inputmode="decimal" placeholder="$" title="Unit cost \u2014 leave blank and the line stays unpriced (never $0)." class="gen-edit"></td>'
       + '<td class="num">\u2014</td>'
+      + '<td class="num"><input id="gePrice" type="number" min="0" step="any" inputmode="decimal" placeholder="$" title="Unit cost \u2014 leave blank and the line stays unpriced (never $0)." class="gen-edit"></td>'
+      + '<td>\u2014</td>'
       + '<td class="deriv"></td>'
       + '<td class="num"><button id="geAdd" class="gexport" title="Add this line (Enter)">\u2713 Add</button> <button id="geClose" class="quiet" title="Close (Esc)">\u2715</button></td>'
       + '</tr>'
       /* L-A: the refusal cue lives HERE, in the lens, under the row it is about. It is rendered
          always and hidden until there is something to say, because a refusal does NOT re-render
          the grid — the message has to land in a live element. */
-      + '<tr class="gentry gentry-msg" id="geMsgRow" hidden><td colspan="8"><span id="geMsg" class="ge-msg"></span></td></tr>';
+      + '<tr class="gentry gentry-msg" id="geMsgRow" hidden><td colspan="11"><span id="geMsg" class="ge-msg"></span></td></tr>';
   } else if (html) {
     /* ── N3b (Patrick, field notes V2: "i see a way to add on plan screen not estimate screen")
        · The doors EXIST — the ＋ Line entry row (F18.9) and the ＋L add-labor gesture on material
@@ -11301,13 +11388,13 @@ function renderEstimateGrid() {
        shipped. The affordance now sits where an estimator looks for "add a row": the LAST ROW of
        the sheet, in the app's own words, as a real door rather than a label. It opens the same
        entry row the toolbar button opens — one funnel, two doors. ── */
-    html += '<tr class="gaddrow"><td colspan="8">'
+    html += '<tr class="gaddrow"><td colspan="11">'
       + '<button type="button" class="gaddbtn" id="gAddInline">\uFF0B Add a line</button>'
       + '<span class="gaddhint">type a description, quantity, unit and price right here — or a library item\u2019s name to price it from the library. Material rows also carry \uFF0B labor.'
       + ' <b>Formula cells</b> take RAW (measured) \u00b7 ADJ (measured + condition waste) \u00b7 WASTE \u00b7 Q (RAW for labor, ADJ for material) \u00b7 your inputs (name=value) \u00b7 ceil floor round abs max min.</span>'   // Batch AG (P-MARKET finding 5): the scope on the sheet, not only in a tooltip
       + '</td></tr>';
   }
-  body.innerHTML = html || '<tr><td colspan="8" style="padding:44px;text-align:center;color:var(--ink-dim)">No priced lines yet — measure a condition in the Plan view, and it appears here.</td></tr>';
+  body.innerHTML = html || '<tr><td colspan="11" style="padding:44px;text-align:center;color:var(--ink-dim)">No priced lines yet — measure a condition in the Plan view, and it appears here.</td></tr>';
   if (renderEstimateGrid.reveal) { const r = renderEstimateGrid.reveal; renderEstimateGrid.reveal = null; revealGridLine(r); }   // F4
   if (gridEntry) refreshEntryMode();   // Batch AF: the entry row states its funnel from the first render
   /* S3 (B-06): MATERIAL $93,662.12 + LABOR $130,418.67 + O&P $55,437.59 read $279,518.38 under a
@@ -12758,7 +12845,7 @@ const bidRate = (l, cents, mult) => {                                           
   const q = bidQty(l);
   return (l.clientQtyMeasured && q > 0 && l.unitCost != null) ? (cents / 100) / q : (l.unitCost == null ? null : l.unitCost * mult);
 };
-const bidLabel = (l) => (l.kind === 'labor' || l.kind === 'equipment') ? suffixKind(itemLabel(l), l.kind) : itemLabel(l);   // F6
+const bidLabel = (l) => descOf(l);   // R-6a: one function, every surface — F6's suffix rule lives in descOf now
 const divTitlePlain = (div) => div === '—' ? 'General requirements' : 'Division ' + div;
 function printBidDoc() {
   const { oh, mk, pf, res, lines, groups, sections, sellOf } = bidCollect();
@@ -12826,8 +12913,11 @@ function printBidDoc() {
       secC += ds;
     }
     if (!sysBlocks) continue;
+    /* VOCAB:bid — R-6b: Description | Quantity | Unit | Unit Price | Amount, with Section → System
+       headings (B2a). CSI and Sheet are kept, established columns (D-24.2's own "page-location
+       where a trace exists") — not part of the vocabulary word list, not renamed away by it. */
     body += `<div class="divblock secblock" data-sec="${escA(sec.name)}"><h2>Section: ${escA(sec.name)}</h2><table><thead><tr>`
-      + ['CSI', 'Description', 'Sheet', 'Qty', 'Unit', 'Unit price', 'Amount']
+      + ['CSI', 'Description', 'Sheet', 'Quantity', 'Unit', 'Unit Price', 'Amount']
         .map((h, i) => `<th${i >= 3 ? ' class="n"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>'
       + sysBlocks
       + `<tr class="grand secsub" data-sec="${escA(sec.name)}"><td colspan="6">Section: ${escA(sec.name)} subtotal</td><td class="n">${money(secC / 100)}</td></tr>`
@@ -12878,45 +12968,38 @@ function printCostSheet() {
   const money = VESCore.fmtMoney;
   /* B2a (R-5b / R-5d): the internal sheet reads SECTION → SYSTEM too, so the estimator's own paper
      and the client's group identically. The section's Cost and Sell are the SAME integers the recap
-     prints (sectionsFromLines, one apportionment), and the margin cells are apportioned across the
-     difference between them exactly as the division subtotal did — S3's invariant, one level up. */
-  const nCols = oh ? 11 : 10;
-  // the three margin cells on any subtotal row: the engine's own exact sums, apportioned across
-  // the difference between that row's PINNED Cost and PINNED Sell (S3, one level up)
-  const marginCells = (rows, costC, sellC) => {
-    let o = 0, m2 = 0, p2 = 0;
-    for (const l of rows) { const sp = sellOf(l.cost); o += sp.o; m2 += sp.m; p2 += sp.p; }
-    return apportionCents((oh ? [o] : []).concat([m2, p2]), (sellC - costC) / 100);
-  };
+     prints (sectionsFromLines, one apportionment).
+     R-6b (VOCAB.recap): the per-line and subtotal margin columns fold Overhead + Markup + Profit
+     into ONE "Markup" (%) / "Markup $" pair — a purchasing sheet's per-line margin, not a second
+     ladder. The GRAND ladder at the foot of the sheet still names Overhead / Markup / Profit as
+     separate rows (never folded there — that is the "named adder rows" R-6b asks for). Net Cost
+     and Gross Price stay PINNED to the same cents every other face quotes (S3's invariant), so
+     Markup $ on a subtotal row is simply Gross Price − Net Cost — no apportionment left to do. */
+  const nCols = 10;
   let gc = 0, gSellC = 0, body = '';
   for (const sec of sections) {
+    /* VOCAB:costsheet */
     body += `<div class="divblock secblock" data-sec="${escA(sec.name)}"><h2>Section: ${escA(sec.name)}</h2><table><thead><tr>`
-      + ['CSI', 'Description', 'Sheet', 'Qty', 'Unit', 'Unit $ / order unit', 'Cost', ...(oh ? ['OH'] : []), 'Markup', 'Profit', 'Sell']   // Batch AF (R5): a purchasing sheet says what its price is per
-        .map((h, i) => `<th${i >= 3 ? ' class="n"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>';   // D-23.8: with OH set, the column appears so line columns SUM to Sell
+      + ['CSI', 'Description', 'Sheet', 'Quantity', 'Unit', 'Cost Unit', 'Net Cost', 'Markup', 'Markup $', 'Gross Price']
+        .map((h, i) => `<th${i >= 3 ? ' class="n"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>';
     for (const sys of sec.systemList) {
       body += `<tr class="sysh"><td colspan="${nCols}">${escA(sys.name)}</td></tr>`;
       for (const l of sys.lines) {
         const sp = sellOf(l.cost);
-        body += `<tr><td class="csi">${escA(l.csi || '—')}</td><td>${escA((l.kind === 'labor' || l.kind === 'equipment') ? suffixKind(itemLabel(l), l.kind) : itemLabel(l))}</td><td>${escA(l.pages || '—')}</td>`
+        const mkDollar = sp.sell - l.cost, mkPct = l.cost > 0 ? (mkDollar / l.cost) * 100 : 0;
+        body += `<tr><td class="csi">${escA(l.csi || '—')}</td><td>${escA(descOf(l))}</td><td>${escA(l.pages || '—')}</td>`
           + `<td class="n">${VESCore.fmtQty(l.qty)}</td>`
           + `<td>${escA(displayUnit(l.unit))}</td><td class="n">${l.unitCost == null ? '—' : money(l.unitCost)}</td>`
-          + `<td class="n">${money(l.cost)}</td>${oh ? `<td class="n">${money(sp.o)}</td>` : ''}<td class="n">${money(sp.m)}</td><td class="n">${money(sp.p)}</td><td class="n">${money(sp.sell)}</td></tr>`;
+          + `<td class="n">${money(l.cost)}</td><td class="n">${mkPct.toFixed(1)}%</td><td class="n">${money(mkDollar)}</td><td class="n">${money(sp.sell)}</td></tr>`;
       }
-      const yC = sys.costCents, yS = sys.sellCents;
-      const ySplit = marginCells(sys.lines, yC, yS);
-      let yi = 0;
+      const yC = sys.costCents, yS = sys.sellCents, yMk = (yS - yC) / 100, yPct = yC > 0 ? (yMk * 100 / (yC / 100)) : 0;
       body += `<tr class="grand syssub"><td colspan="6">${escA(sys.name)} subtotal</td><td class="n">${money(yC / 100)}</td>`
-        + (oh ? `<td class="n">${money(centsVal(ySplit[yi++]))}</td>` : '')
-        + `<td class="n">${money(centsVal(ySplit[yi++]))}</td><td class="n">${money(centsVal(ySplit[yi++]))}</td><td class="n">${money(yS / 100)}</td></tr>`;
+        + `<td class="n">${yPct.toFixed(1)}%</td><td class="n">${money(yMk)}</td><td class="n">${money(yS / 100)}</td></tr>`;
     }
-    /* S3 (B-06): the subtotal row read Cost + OH + Markup + Profit = one cent over its own printed
-       Sell. Cost and Sell are PINNED — the two figures other faces quote — and the three margin
-       cells are apportioned across the difference between them. */
-    const dcC = sec.costCents, dsC = sec.sellCents;
-    const secLines = sec.systemList.reduce((a, y) => a.concat(y.lines), []);
-    const dmc = marginCells(secLines, dcC, dsC);
-    let di = 0;
-    body += `<tr class="grand secsub" data-sec="${escA(sec.name)}"><td colspan="6">Section: ${escA(sec.name)} subtotal</td><td class="n">${money(dcC / 100)}</td>${oh ? `<td class="n">${money(centsVal(dmc[di++]))}</td>` : ''}<td class="n">${money(centsVal(dmc[di++]))}</td><td class="n">${money(centsVal(dmc[di++]))}</td><td class="n">${money(dsC / 100)}</td></tr>`;
+    /* S3 (B-06): Net Cost and Gross Price are PINNED — the two figures other faces quote — so
+       Markup $ here is exactly their difference; nothing is apportioned or can land a cent off. */
+    const dcC = sec.costCents, dsC = sec.sellCents, dMk = (dsC - dcC) / 100, dPct = dcC > 0 ? (dMk * 100 / (dcC / 100)) : 0;
+    body += `<tr class="grand secsub" data-sec="${escA(sec.name)}"><td colspan="6">Section: ${escA(sec.name)} subtotal</td><td class="n">${money(dcC / 100)}</td><td class="n">${dPct.toFixed(1)}%</td><td class="n">${money(dMk)}</td><td class="n">${money(dsC / 100)}</td></tr>`;
     body += '</tbody></table></div>';
     gc += sec.costCents; gSellC += sec.sellCents;
   }
@@ -12928,7 +13011,7 @@ function printCostSheet() {
   const excl = res.lines.filter((l) => !l.included);
   const risk = excl.length
     ? `<div class="risk"><b>⚠ ${excl.length} line(s) excluded from this estimate (unpriced / unresolved — NOT counted as $0):</b><ul>`
-      + excl.map((l) => `<li>${escA(itemLabel(l))} — ${escA(l.gate ? displayStatus(l.matchStatus) + ': ' + l.gate : displayStatus(l.matchStatus))}</li>`).join('') + '</ul></div>'
+      + excl.map((l) => `<li>${escA(descOf(l))} — ${escA(l.gate ? displayStatus(l.matchStatus) + ': ' + l.gate : displayStatus(l.matchStatus))}</li>`).join('') + '</ul></div>'
     : '';
   /* ── N4 (Patrick, field notes V2: "printed internal recaps should have labor and material
      costs") · The split already exists per line — collectPricedLines carries `kind` — and every
@@ -12947,17 +13030,23 @@ function printCostSheet() {
   const kc = apportionCents([kMat, kLab].concat(kEq ? [kEq] : []), gcC / 100);
   const mc = apportionCents((oh ? [go] : []).concat([gm, gp]), (gsC - gcC) / 100);
   let mi = 0;
+  /* R-6b: Class (Material / Labor / Equipment — this file's own kinds map; Other / Supervision
+     print only on a file whose kinds map carries them) → cost-code rows above → Subtotal → named
+     adder rows (Overhead, Markup, Profit — each its own row here, never folded) → Total. */
   const recap = `<div class="recap"><h2>Recap</h2><table><tbody>`
-    + `<tr><td>Material cost</td><td class="n">${money(centsVal(kc[0]))}</td></tr>`
-    + `<tr><td>Labor cost</td><td class="n">${money(centsVal(kc[1]))}</td></tr>`
-    + (kEq ? `<tr><td>Equipment cost</td><td class="n">${money(centsVal(kc[2]))}</td></tr>` : '')
-    + `<tr><td>Cost</td><td class="n">${money(gcC / 100)}</td></tr>`
+    + `<tr><td>Class: Material</td><td class="n">${money(centsVal(kc[0]))}</td></tr>`
+    + `<tr><td>Class: Labor</td><td class="n">${money(centsVal(kc[1]))}</td></tr>`
+    + (kEq ? `<tr><td>Class: Equipment</td><td class="n">${money(centsVal(kc[2]))}</td></tr>` : '')
+    + `<tr><td>Subtotal</td><td class="n">${money(gcC / 100)}</td></tr>`
     + (oh ? `<tr><td>Overhead (${(oh * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>` : '')
     + `<tr><td>Markup (${(mk * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>`
     + `<tr><td>Profit (${(pf * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>`
-    + `<tr class="grand"><td>Total sell</td><td class="n">${money(gsC / 100)}</td></tr></tbody></table>`
-    + `<div class="basis">Material + labor${kEq ? ' + equipment' : ''} = Cost. Margins apply to the total, not to either half.</div></div>`;
+    + `<tr class="grand"><td>Total</td><td class="n">${money(gsC / 100)}</td></tr></tbody></table>`
+    + `<div class="basis">Material + labor${kEq ? ' + equipment' : ''} = Subtotal. Margins apply to the total, not to either half.</div></div>`;
+  // AF5 pins the phrase "order unit" reaching this page as visible text (Batch AF, R5) — Cost Unit
+  // is that same figure under R-6b's word, so the sentence below carries both, literally.
   $('printDoc').innerHTML = bidHead('Cost sheet') + `<div class="meta internal-mark">INTERNAL — margins print on this sheet; not for client distribution.</div>`
+    + `<div class="meta">Cost Unit is the line's unit cost, per order unit.</div>`
     + body + recap + risk;
   closeCmd();
   toast('Cost sheet sent to print.', 'ok');   // AD-3 (T-06)
@@ -12971,7 +13060,7 @@ function printCostSheet() {
 function clientReviewModel() {
   const res = resolveAssembly();
   const included = res.lines.filter((l) => l.included && l.extended != null && !lineOmitted(l.item));   // F18.16: OFF lines leave the client face too
-  const lbl = (l) => (typeof itemLabel === 'function' ? itemLabel(l) : (l.desc || l.item));
+  const lbl = (l) => (typeof descOf === 'function' ? descOf(l) : (l.desc || l.item));
   const divOf = (l) => (typeof divisionOfLine === 'function') ? divisionOfLine(l) : (String(l.csi || '').trim().split(/\s+/)[0] || '—');
   const bucket = (o, l) => { if (l.kind === 'labor') o.labor += l.extended; else if (l.kind === 'equipment') o.equipment += l.extended; else o.material += l.extended; o.total += l.extended; };
   const asmMap = {}, csiMap = {}, totals = { material: 0, labor: 0, equipment: 0, total: 0 };
@@ -13647,16 +13736,27 @@ async function printTakeoff(opts) {
      under "Section: <name>", the owner's EDGE Drawing wording, with a per-section SF / LF / EA
      subtotal under each. Quantities only: no money word and no $ reaches this document.
      R-10c: these are the WHOLE takeoff whatever the sheet pick was, and the basis line says so. */
+  /* R-6b: VOCAB.takeoff — Legend | Pitch | Description | SF | LF | EA. SF/LF/EA are the three
+     quantity columns; a condition fills exactly one (its own measured type) and the other two
+     print "—", the same convention pitch already uses for a flat line. The per-condition "Sheets"
+     word this table used to carry moves to the figure captions above ("Sheet N of M") and the
+     legend on each sheet — the sheet a condition was measured on is still on the document, just
+     not repeated as a seventh column here. */
   const sw = (c) => '<span class="sw" style="background:' + esc(c.color || '#888') + '"></span>';
   const qrow = (c) => {
     const r = roll[c.id]; if (!r || !(r.count > 0)) return '';
     const dq = dispQtyOf(r, c);
-    const sheets = [...new Set(state.measurements.filter((m) => m.conditionId === c.id && m.page != null).map((m) => pageLabel(m.page)))].join(', ');
     const q = c.type === 'linear' ? VESCore.formatFtIn(dq.qty) : c.type === 'area' ? dq.qty.toFixed(1) : String(dq.qty);
-    const pitch = (c.type !== 'count' && Math.abs((dq.pitch || 1) - 1) > 1e-9) ? fmtPitch(dq.rise) : '—';   // AH-1
-    return '<tr><td>' + sw(c) + ' ' + esc(c.name) + '</td><td>' + esc(c.type) + '</td><td>' + esc(sheets || '—') + '</td>'
-      + '<td class="n">' + q + (r.pending ? ' <small>(' + r.pending + ' pending)</small>' : '') + '</td>'
-      + '<td>' + esc(displayUnit(r.unit)) + '</td><td class="n">' + pitch + '</td></tr>';
+    const pend = r.pending ? ' <small>(' + r.pending + ' pending)</small>' : '';
+    const qCell = q + pend;
+    const sf = c.type === 'area' ? qCell : '—', lf = c.type === 'linear' ? qCell : '—', ea = c.type === 'count' ? qCell : '—';
+    const pitch = (c.type !== 'count' && Math.abs((dq.pitch || 1) - 1) > 1e-9) ? fmtPitch(dq.rise) : '—';   // AH-1; a flat line shows "—"
+    // R-6b keeps the row to the six VOCAB words on the printed page — which sheet a condition sits
+    // on now reads from that sheet's own figure legend above (B4). The same fact still rides here
+    // as data-sheets (not a seventh visible column) — nothing that reads the DOM for it loses it.
+    const sheets = [...new Set(state.measurements.filter((m) => m.conditionId === c.id && m.page != null).map((m) => pageLabel(m.page)))].join(', ');
+    return '<tr data-sheets="' + esc(sheets) + '"><td>' + sw(c) + '</td><td class="n">' + pitch + '</td><td>' + esc(descOf(c)) + '</td>'
+      + '<td class="n">' + sf + '</td><td class="n">' + lf + '</td><td class="n">' + ea + '</td></tr>';
   };
   const TYPE_ORDER = { area: 0, linear: 1, count: 2 };
   let qrows = '';
@@ -13676,8 +13776,9 @@ async function printTakeoff(opts) {
       .map(([k, v]) => VESCore.fmtQty(v) + ' ' + k.split('|')[1]).join(' · ');
     qrows += '<tr class="secsub" data-sec="' + esc(sn) + '"><td colspan="6">Section: ' + esc(sn) + ' — ' + parts + '</td></tr>';
   }
+  /* VOCAB:takeoff */
   body += '<section class="tk-qty">' + (body ? '' : docHead) + '<h2>Takeoff quantities</h2>'
-    + '<table><thead><tr><th>Condition</th><th>Type</th><th>Sheets</th><th class="n">Quantity</th><th>Unit</th><th class="n">Pitch</th></tr></thead>'
+    + '<table><thead><tr><th>Legend</th><th class="n">Pitch</th><th>Description</th><th class="n">SF</th><th class="n">LF</th><th class="n">EA</th></tr></thead>'
     + '<tbody>' + qrows + '</tbody></table>'
     + '<div class="basis">Quantities are for the whole takeoff — every measured sheet, including any left off the figures above — '
     + 'pitched where a slope is set: the card numbers, by section. No prices on this document.</div></section>';
@@ -13721,10 +13822,12 @@ function exportEstimateXLSX() {
       if (x.total != null) sub += x.total;
       // Batch AF: columns A\u2013H stay exactly where they were (D\u00d7F, G sums); I is the ladder's own Pct cell; J\u2013N the derivation.
       const dc = derivColumns(x); if (dc[3] !== '' && isFinite(+dc[3])) dc[3] = +dc[3];   // Batch AG (P-TRADE finding 2b): qty needed is a number cell, like D/F/G
-      out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...dc, sn]);
+      // R-6b: EU (P) / Prc Un (Q) \u2014 trailing, additive (the L-03/Batch AF precedent). This engine
+      // resolves one unit per line, so both read the same value as Unit (E/Ord Un) \u2014 stated, not hidden.
+      out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...dc, sn, x.unit || '', x.unit || '']);
       r++;
     }
-    out.push(['', '', 'Section: ' + sn + ' section subtotal', '', '', '', { f: `SUM(G${first}:G${r - 1})`, v: sub }, '', '', '', '', '', '', '', sn]);
+    out.push(['', '', 'Section: ' + sn + ' section subtotal', '', '', '', { f: `SUM(G${first}:G${r - 1})`, v: sub }, '', '', '', '', '', '', '', sn, '', '']);
     subRefs.push('G' + r); r++;
   }
   const m = recapModel();
@@ -13733,7 +13836,7 @@ function exportEstimateXLSX() {
   /* Batch AF (ledger F4.3-4): the ladder percentages were baked into the formula strings as literals, so the
      workbook could not be re-margined in Excel without editing three formulas. Each ladder row now carries its
      fraction in column I and the formula multiplies by THAT cell; cached values are the same numbers as before. */
-  const pad = ['', '', '', '', '', ''];   // J\u2013N (the derivation) + O (section), blank on the ladder rows
+  const pad = ['', '', '', '', '', '', '', ''];   // J\u2013N (the derivation) + O (section) + P/Q (R-6b's EU/Prc Un), blank on the ladder rows
   out.push(['', '', 'Cost (\u03a3 direct)', '', '', '', { f: 'SUM(' + (subRefs.length ? subRefs.join(',') : 'G2:G' + (r - 1)) + ')', v: m.cost }, '', '', ...pad]);
   // Batch AG (P-TRADE finding 2a): the label no longer bakes the percentage as text — the Pct cell IS the percentage,
   // so re-margining in Excel leaves no stale "(10%)" beside a changed rate.
@@ -13742,7 +13845,11 @@ function exportEstimateXLSX() {
   out.push(['', '', 'Profit (× Pct)', '', '', '', { f: `(G${cRow}+G${oRow}+G${kRow})*I${pRow}`, v: m.pfAmt }, '', m.pf, ...pad]);
   void pct;
   out.push(['', '', 'Sell', '', '', '', { f: `G${cRow}+G${oRow}+G${kRow}+G${pRow}`, v: m.sell }, '', '', ...pad]);
-  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Qty', 'Unit', 'Unit $ per order unit', 'Extended', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis', 'Section'], rows: out }];
+  /* VOCAB:grid — R-6b: Description/Ord Qty/Ord Un/Unit Price/Net Cost rename existing columns in
+     place (D–G keep their positions — formulas above reference them by letter); "Qty needed" (M)
+     keeps its established word (probe-b2a-sections reads it by that exact text) and IS the VOCAB
+     "Quantity" (estimated) figure; EU (P) / Prc Un (Q) are additive trailing columns. */
+  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Ord Qty', 'Ord Un', 'Unit Price', 'Net Cost', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis', 'Section', 'EU', 'Prc Un'], rows: out }];
   const bytes = VESX.serializeXLSX(tabs);
   saveBlob(projectSlug() + '-estimate.xlsx', bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   toast('Estimate workbook exported (.xlsx) \u2014 live formulas, internal.', 'ok');
@@ -14989,7 +15096,7 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.0.0-rc.6';  // 2.0.0-rc.6: Batch B4 — THE TAKEOFF PRINTS EVERY SHEET. ONE print path: `printTakeoffDoc` is deleted and the three behaviours only it had fold into `printTakeoff` — a typed-only takeoff prints its quantity tables with no figure, a takeoff with nothing measured and nothing typed prints nothing and the toast names the two doors back to the work, and every early return releases the latch (D-24.7a). `visualFiguresHTML` is the ONE per-sheet figure builder: the takeoff's landscape sheets and the proposal's plan snapshots come out of it, and the proposal now carries a figure for EVERY measured sheet instead of the busiest one. The takeoff door opens a sheet chooser when more than one sheet is measured (measured checked, unmeasured listed and greyed, `state.printSheets` session-only and never saved); leaving one out puts “Sheets shown: 1, 3 of 3” on the paper's header, and the quantity tables still total the whole takeoff and say so. Each sheet figure now fits ONE landscape page — the legend packs two entries per row and the image's ceiling is what the caption, the header and that sheet's own legend leave (the three-sheet fixture rendered 5 pages for 3 sheets before; it renders 4 now). The latch releases on `afterprint`, armed only around our own print call. C-B0-1: `identity.fileSize` is read BEFORE pdf.js detaches the ArrayBuffer, so a PDF-backed takeoff saves its real byte length (6,366 on the fixture, 0 before); an existing file's 0 means UNKNOWN and is never compared, so those files still load with no identity review. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
+const VES_BUILD = '2.0.0-rc.7';  // 2.0.0-rc.7: Batch B5 — UNIFIED DESCRIPTIONS, EDGE COLUMN WORDS. `descOf(x)` is the one function every document/export that prints a name now calls — a condition's own `.name`, a general line's own `.label`, or itemLabel(x) suffixed "<name> — labor"/"<name> — equipment" for a linked line (the F6/S2 rule, idempotent via suffixKind so an already-suffixed name is never doubled); it replaces scattered ternaries on itemLabel+suffixKind and a recap mini-table that read a library line's raw (often blank) `.desc`. `const VOCAB` (beside PALETTE) is the one place the document column words live, read by five templates through a `VOCAB:<doc>` sentinel comment `tools/vocab-check.mjs` checks against: the takeoff quantities page is Legend | Pitch | Description | SF | LF | EA (a condition fills exactly one of the three quantity columns, the "Sheets" column folds into data-sheets — the per-sheet figure legends above already name it); the Estimate grid + CSV + XLSX carry the EDGE Consolidated chain Description | Quantity | EU | Ord Qty | Ord Un | Unit Price | Prc Un | Net Cost (Quantity is the engine's own qty_needed before purchase round-up, read-only, beside the existing editable Ord Qty — both visible and different on a wasted/rounded line; EU/Ord Un/Prc Un read the same unit today, stated rather than hidden, since this engine resolves one unit per line); the recap's per-line table and the cost sheet fold Overhead+Markup+Profit into one Markup/Markup $ pair per line (Description | Net Cost | Markup | Markup $ | Gross Price | Cost Unit | Unit), while the cost sheet's closing ladder keeps Overhead/Markup/Profit as separate named rows under Subtotal → Total (never folded there); the client bid renames Qty/Unit price to Quantity/Unit Price (CSI and Sheet stay — established columns outside the vocabulary list). `tools/vocab-check.mjs` is a new, zero-dep CI step: banned AI-speak words, "page" for a PDF sheet, VOCAB words reaching their templates, and a name built straight from an id outside itemLabel/descOf. No money moved. 2.0.0-rc.6: Batch B4 — THE TAKEOFF PRINTS EVERY SHEET. ONE print path: `printTakeoffDoc` is deleted and the three behaviours only it had fold into `printTakeoff` — a typed-only takeoff prints its quantity tables with no figure, a takeoff with nothing measured and nothing typed prints nothing and the toast names the two doors back to the work, and every early return releases the latch (D-24.7a). `visualFiguresHTML` is the ONE per-sheet figure builder: the takeoff's landscape sheets and the proposal's plan snapshots come out of it, and the proposal now carries a figure for EVERY measured sheet instead of the busiest one. The takeoff door opens a sheet chooser when more than one sheet is measured (measured checked, unmeasured listed and greyed, `state.printSheets` session-only and never saved); leaving one out puts “Sheets shown: 1, 3 of 3” on the paper's header, and the quantity tables still total the whole takeoff and say so. Each sheet figure now fits ONE landscape page — the legend packs two entries per row and the image's ceiling is what the caption, the header and that sheet's own legend leave (the three-sheet fixture rendered 5 pages for 3 sheets before; it renders 4 now). The latch releases on `afterprint`, armed only around our own print call. C-B0-1: `identity.fileSize` is read BEFORE pdf.js detaches the ArrayBuffer, so a PDF-backed takeoff saves its real byte length (6,366 on the fixture, 0 before); an existing file's 0 means UNKNOWN and is never compared, so those files still load with no identity review. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
 // 2.0.0-rc.2: Batch B1 — PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION. `c.pitch` is the rise per 12 and the only store (the conditionOverrides pitch key is consumed at the file door and survives only as a non-enumerable read-only VIEW); VESCore.pitchFactor is the only plan→true conversion (area and up-the-slope √(1+(r/12)²), hip/valley √(1+(r/12)²/2), level and counts 1.0); VESCore.rollup applies it to EVERY condition so rollup().quantity is the money quantity on every face and resolveTakeoff is told not to pitch again (measuredPitched); R-4 gives a linear a lenKind (level | slope | hipvalley) beside its pitch, defaulted by name; both doors (✎ card field, depth-panel row) write the one store and are journaled by name; a library row's pitchDefault seeds a condition once at creation; TAKEOFF_VERSION 3→4 converts v3 multipliers to rises unrounded (money-exact), consumes the override store, reconciles R-3a's display-pitched/price-flat library conditions to the DISPLAYED quantity with a per-condition cent delta on one banner, and holds a bare `6` at its legacy ×6 behind a per-condition confirm so no cent moves silently on reload. 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
 // F18.72: Batch AI (persona pass 3 on F18.71 — density 0 refused at the book and gated on the line, never an included $0; the book refuses a formula that cannot parse; a book equal to the seed reads as the seed; the Flags list names an unpriced line and its row is tinted; waste words at four decimals; basis column clean, waste as percent, a linked labor line carries its basis; parser names a stray operator and a case mismatch; lens Escape says nothing when nothing was typed; landing/README say which lines carry a formula)  // F18.71: Batch AH (persona pass 2 on F18.70 — a malformed number literal and a wrong function arity gate the line; an empty unit / zero production rate refused in the Library lens and the unit gate never prints "undefined"; the cue follows the Qty cell and dies with the takeoff; lens selects carry the seed mark; waste words at two decimals and the box says what it did on blur; the phone pin follows the wordless segments; segment names; tr.gated; coarse ＋ Add; lens Escape/Enter grammar)  // F18.70: Batch AG (persona pass 1 on F18.69 — P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic fixtures; triage by the NOTES.md rubric; owner's word 2026-09-04 "run persona pass; if accepted finalize build and push to main") — WHAT THE PERSONAS SAW, ANSWERED. Money-honesty: a line formula that evaluates to 0 now gates (ZERO_QTY — flagged, excluded, said on the row) instead of pricing an included $0 (P-TRADE 5); a formula typed while a Qty is typed is checked and the cue says the typed qty stands and whether the dormant formula evaluates (P-TRADE 7); the parser names the token it choked on instead of "trailing tokens" (P-TRADE 8). Library: the authored-item id comes from the library's own counter, so a fresh takeoff's ＋ Add never replaces yesterday's item (P-MARKET 1); a blank CSI lands under the assembly's code (P-MARKET 7); edited cells read in the accent against the built-in seed, items the seed lacks say "authored here", match code is a column, ＋ Add sits by the description, cells meet the coarse-pointer rule (P-MARKET 6/9, P-GAME 9/10); the toast says every takeoff priced from the book follows — no project override written (P-TRADE 10, P-GAME 10). Grid: the derivation names the item waste that turns needed into ordered and the Waste header says which waste it is (P-MARKET 2); a FIXED formula reads "fixed Q"; a line-level number is "line value", a formula "line formula"; Q's meaning by kind is in the cell title and the sheet foot names the whole scope (P-TRADE 9/11, P-MARKET 5); the lens cue clears after a good commit (P-GAME 5); Escape in a cell stops at the cell (P-GAME 3, control). Entry row: the funnel line sits under the description, the measure select follows the unit in the Tab walk, an empty row explains both paths, a partial names the closest library name, the name match forgives case and dash (P-GAME 6/7/8, P-TRADE 12). Toolbar: the fourth lens segment no longer covers Files & exports (the document-door pin moved with it) and the segments drop their words under 720 px (P-GAME 1/2). Waste door: "abc" gets its own sentence and a refused value never stays in the box (P-GAME 12, P-TRADE 13). Exports: qty needed is a number cell and the ladder labels read "(× Pct)" (P-TRADE 2); BOM headers in Title Case (P-GAME 16). Landing + README name the derivation, the line formula and the Library lens (P-MARKET 10, P-TRADE 16). CI: probe-af fetches the F18.68 bytes by full sha (P-SEAT 2). Recorded, not built (LEDGER §Batch AG): cost per estimated unit, auto-round control, grid CSI column, item creation from the grid, recap-drawer derivation, phone segment height, Library lens first frame 265 ms, the guard hook's text match, stale D-series line citations. Gates: probe-af 29/29 (RED-first 16/29 on F18.69 — 13 of the 14 new rows red, AF19 a control) · probe-v · probe-u · probe-z · probe-ab · probe-ad · probe-ae · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress.  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
 // F18.71: Batch AI (Patrick's rulings P3-R2 + P3-R3, 2026-09-03: "top and side drop down are still weird", "a lot of the language is AI speak and not construction talk") — TWO DROPDOWNS IN TRADE WORDS. Files & exports: Project · Print (Takeoff, Bid, Cost sheet, Proposal) · Spreadsheets (Estimate .xlsx, Client review .xlsx, Estimate CSV, Supplier RFQ) · Settings; the bill-of-materials, condition-totals and audit CSVs live under Setup as 'Working files' (same ids, same functions). The rack drops the Type group (the condition you click decides linear/area/count; Rect and Poly are the two ways to draw an area). Setup headings and the price-source legend in plain words; the Estimate lens's buttons name the same files. Gates: probe-ai (RED-first on F18.70), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.70: Batch AH (Patrick's review of F18.66, 2026-09-03: "still don't like the way pitch is done, should be a fraction 2/12") — PITCH READS AS RISE OVER 12. fmtPitch/parsePitch: the card chip, both pitch fields, the toasts, the rollup CSV (a 'Pitch factor' column keeps the multiplier) and the takeoff quantities page say 6/12; input takes 6/12, 6:12 or a bare 6 (a decimal multiplier still works). Storage stays the multiplier in both stores (D-26.1) — the engine and G0's goldens do not move. Gates: probe-ah (RED-first on F18.69), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.69: Batch AG (Patrick's ruling P3-R1, 2026-09-03: "clicking from conditions isn't smooth, I find myself still on the old condition a lot") — ONE CLICK MEANS ONE THING. A click on a condition card arms it (the card is D-24.5c's explicit gesture; digits still never re-arm); clicking the armed card keeps it armed; ⌖, Esc and the pill stop. The open condition detail follows the arm (a plain condition closes it). L-05's highlight-only state (selectedCondId, .card.selected) is gone; hints and the empty-state step say 'click the condition'. Gates: probe-ag (RED-first on F18.68), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.68: Batch AF (Patrick's review of F18.66, 2026-09-03: "unable to easily click items so I can modify them, i.e. flashings over field conditions") — THE CLICK PICKS WHAT YOU AIMED AT. selectAt ranks what the pointer is ON (stroke, vertex, marker within 8 px; nearest, then line/marker before area, then smaller area) before the area that merely contains the point (smallest first); a repeat click within 4 px steps through the stack; the message names the condition and how many shapes sit under it. VESCore untouched (fenced). Gates: probe-af (RED-first on F18.67), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.67: Batch AE (Patrick's review of F18.66, 2026-09-03: "there is no way to just print a takeoff") — THE TAKEOFF IS A DOCUMENT. Print takeoff… prints every sheet carrying measurements whole and landscape with its markup, a per-sheet legend (that sheet's quantities, pitched per D-26.1) and a closing quantities page (the card numbers, never money); the proposal's plan snapshot and the takeoff share one compositor (compositeSheet — the proposal's bytes are unchanged, probe-ae AE7). No identity gate (nothing on it is a price); every early return releases the latch (D-24.7a); a sheet that fails prints a marked placeholder (MED-4); the toast names the document (AD-3). Gates: probe-ae 7/7 (RED-first 0/7 on F18.66), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
