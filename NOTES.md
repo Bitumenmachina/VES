@@ -45,7 +45,12 @@ truth first, history compressed.
 - **VES 2 · B6 persona pass DONE on rc.7** (2026-09-14): P-ESTIMATOR 1/2/4/4, P-FRESH 2/1/3/1, P-CODE 3/5/3/0 (P0/HIGH/MED/LOW);
   reports in `research/persona-2.0.0/`; triage → 16 rulings in `research/persona-2.0.0/CHARTER-B6F.md` (LEDGER §Batch B6).
 - **VES 2 · Batch B6F LANDED — build 2.0.0-rc.8** (2026-09-15). sha256 `74b33ac897f46c28cc3aaf34f4038c64842dd2cfd82e4a9bf0b0fcb6f8760107`. Every persona P0/HIGH closed RED-first
-  (probe-b6f 17/17, 1/17 on base); full sweep green (LEDGER §Batch B6F). Release bar met. **PICKUP = B7 release** (`.scratch/charter-b7.md`).
+  (probe-b6f 17/17, 1/17 on base); full sweep green (LEDGER §Batch B6F). Release bar met.
+- **VES 2 · RELEASE 2.0.0 SHIPPED (2026-09-15).** src sha256 `52a0c0f0a0b11a4324472bf1147b6082d0c9d23b0e29d3ea4de4b369a12d9374` = `~/Downloads/VES_2.0.0.html`; notes + cold test =
+  `~/Downloads/VES_2.0.0_NOTES.md`; demo `VES_2.0.0_demo.{json,pdf}`. BUSINESS copy untouched. Full regression green on the release bytes
+  (LEDGER §RELEASE 2.0.0). Branch `ves2` is LOCAL (box guard = main only). **PICKUP = Patrick:** (1) cold test (8 steps), (2) one real
+  takeoff F18.72 vs 2.0.0 to the cent, (3) the merge word → from `main`: `git merge --ff-only ves2 && git push` (CI on the runner).
+  Nothing runs until then. Candidates on record: F-F7 · E-F4 · C-B2a-1 · C-B5-1.
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

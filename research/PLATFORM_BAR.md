@@ -86,3 +86,13 @@ estimating-software · getclue.com/blog/top-construction-estimating-software ·
 conest.com/how-to-choose-electrical-estimating-software-in-2026 ·
 webuildcs.com/blog/how-to-select-the-best-construction-software-for-you-in-2026 ·
 impactbuying.com/software-vendor-due-diligence-checklist · mitratech.com/resource-hub/blog/vendor-due-diligence
+
+## 5 · The 2.0.0 bar (VES 2, 2026-09-15) — Patrick's four asks, each proven by a RED-first gate on the release bytes
+Release `src/VES_PM.html` sha256 `52a0c0f0a0b11a4324472bf1147b6082d0c9d23b0e29d3ea4de4b369a12d9374` (3845864 bytes, build 2.0.0, MIT).
+| ask (2026-09-14) | what 2.0.0 does | gate on the release bytes |
+|---|---|---|
+| print a takeoff that spans several PDF sheets | every measured sheet is a landscape figure with its own legend, a sheet chooser, a whole-job quantities page with Section subtotals; typed-only and empty edges kept | probe-b4-print 9/9 (1/9 on rc.5) · probe-ae 5/5 · probe-p903-doc 8/8 |
+| library items and new conditions used pitch differently | one store (rise/12 on the condition), one `pitchFactor`, every surface reads it; a bare 6 is 6/12; input bounded; old files migrate with named banners and two doors | probe-b1-pitch 12/12 (1/12 on rc.1) · probe-b6f C3/C4 · probe-p903-pitch 6/6 |
+| too few colors, need custom | 24 hues (first 8 unchanged) + any hex + dash/hatch patterns for grayscale print + readable ink; quick-adds cycle the palette | probe-b3-colors 8/8 (1/8 on rc.4) · probe-b6f B6F-3 |
+| subtotals by roof section type | Section → System nested subtotals on recap, grid, bid, cost sheet, takeoff paper, CSV/XLSX; typed sections and drawn regions; one section key | probe-b2a-sections 7/7 (0/7 on rc.2) · probe-b2b-regions 8/8 (0/8 on rc.3) · probe-b6f C5 |
+Colors row of the local GTM bar (B2) restated the same day: "≥ 24 distinct + custom hex + grayscale-separable + paginating legend", proven by probe-b3-colors rows B3-1/2/4/6.

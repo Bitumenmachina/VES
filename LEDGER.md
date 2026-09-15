@@ -5,6 +5,35 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## RELEASE 2.0.0 — VES 2 (2026-09-15)
+
+Product `src/VES_PM.html`: **sha256 `52a0c0f0a0b11a4324472bf1147b6082d0c9d23b0e29d3ea4de4b369a12d9374` · md5 `b1898283f693a23e3e1040c1d50915fd` · 3845864 bytes · `VES_BUILD = '2.0.0'`** · MIT line inside the
+file (first comment) · shipped as `~/Downloads/VES_2.0.0.html` (byte-identical) beside `VES_F18.72_WORKING.html`; `~/BUSINESS/VES_PM.html`
+untouched (md5 3eb98577 before and after). Words: `README.md`, `RELEASE_NOTES.md`, `release/README.md`, `research/COLD_TEST_2.0.0.md`
+(sonnet agent, 242K); demo `release/demo/demo-two-sheet.{json,pdf}` (v5, 2 sheets, 2 sections) cold-loads on a clean profile with 0
+console errors (`probe-b7-demo` 7/7).
+**Full regression on the release bytes (orchestrator, foreground chunks):** ves-verify PASS (SYNTAX 20/0 · EGRESS 7/7 0 new) · G0 GREEN 4/4
+· vocab-check 0 · b6f ALL GREEN — 17 pass · b5-words 6/6 · b4-print 9/9 · b3-colors 8/8 · b2b-regions 8/8 · b2a-sections 7/7 · b1-pitch 12/12 · b0-fixture 7/7 · b7-demo 7/7 · ae 5/5 · p903-doc 8/8 · p903-aim 7/7 · p903-rail 5/5 · p903-pitch 6/6 · p903-words 5/5 · v 17/17 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · af 40/40 · 
+**Bars:** `research/PLATFORM_BAR.md` §5 (the four asks, each with its RED-first gate) · local GTM_BAR.md B2 restated + re-proven.
+**Not done here, by rule:** no push (the box's pre-push guard allows `main` only), no merge to `main`, no `--write-*`. **Patrick's
+part:** the 8-step cold test (`research/COLD_TEST_2.0.0.md` = `~/Downloads/VES_2.0.0_NOTES.md`) and one real takeoff on F18.72 vs 2.0.0
+to the cent (or a named banner per difference); then the merge word — from `main`: `git merge --ff-only ves2 && git push` (CI runs on
+the runner on that push). Candidates on record: F-F7 · E-F4 · C-B2a-1 · C-B5-1.
+
+### VES 2 rulings, collected (R-series; detail in each batch section)
+| id | ruling | where |
+|---|---|---|
+| R-1 | base = F18.72 bytes; branch `ves2`; `main` untouched until the word | B0 |
+| R-2 | semver stamp line `2.0.0-rc.N` → `2.0.0`; the F18.x line ended on the stamp collision | B0 |
+| R-3 / R-3a / R-3b / R-3c | pitch = one store (rise/12), one `pitchFactor(rise, kind)`, every surface; money reconciled TO the displayed number with named deltas; multiplier reading bounded at `pitchFactor(24)`; flat = absence of a rise | B1, B6F |
+| R-4 | `lenKind` on linears (level / slope / hipvalley), migrated as slope | B1 |
+| R-5, R-5b..h, R-5i..o | Section = `c.location`; Section → System nested; Unassigned / Project / Multiple named; nested apportion; regions tag at measure time, never retro; anchors; smallest region wins; one `sectionKeyOf` (B6F-C5) | B2a, B2b, B6F |
+| R-6, R-6a..e | `descOf`, VOCAB column words, vocab-check in CI; takeoff "Sheets" column → data attribute | B5 |
+| R-7, R-7a..f | 24 hues (first 8 fixed), custom hex, patterns, readable ink, paginating legends | B3 |
+| R-8 | MIT (Patrick's word 2026-09-14) | — |
+| R-9 | out of this run: O1/O2/O3/O8/O12, export-surface collapse | plan |
+| R-10, R-10a..h | one print path (`printTakeoff`), per-sheet figures, chooser, latch released after `window.print()` + placeholder as the empty state, identity size recorded, CI probe-ae fatal | B4, B6F |
+
 ## Batch B0 — VES 2 · ONE LINEAGE (build 2.0.0-rc.1 on branch `ves2`, 2026-09-14)
 
 Plan (Patrick-approved 2026-09-14, the deliverable of the architect's revisit): `~/.claude/plans/swift-percolating-orbit.md`
