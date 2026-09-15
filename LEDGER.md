@@ -250,6 +250,35 @@ reload; C-B2a-1; F-F5 form collapses per add (cheap → built). Rulings B6F-1…
 (copied into this section's commit as `research/persona-2.0.0/CHARTER-B6F.md`). One fix batch; if a P0/HIGH remains after it, the
 run halts per the plan.
 
+## Batch B6F — VES 2 · THE PERSONA FIX BATCH (build 2.0.0-rc.8, 2026-09-15)
+
+Rulings B6F-1…9 + B6F-C1…C7 (`research/persona-2.0.0/CHARTER-B6F.md`). Opus agent (454K), RED-first: `tools/sweep/probe-b6f.mjs`
+**1/17 on the base (md5 0df93f7b) → 17/17 on the patch**; applied by md5 contract (declared `354191718ade3f573ab4bc9eea5aa990` = applied). Product: sha256
+`74b33ac897f46c28cc3aaf34f4038c64842dd2cfd82e4a9bf0b0fcb6f8760107`, 3845254 bytes.
+- Money/journal: `addGeneralItem`/`removeGeneralItem` journaled by name, phantom undos gone, undo toast formats every value; a
+  measurement on a sheet with no scale is PENDING on every money surface (recap, grid, bid, cost sheet, CSV/XLSX — named, never a
+  silent 0; the bid's "Sheet" note lists only sheets IN the number; the scale notice is job-scoped); the reconcile undo sets the
+  three conditions flat by name and the banner rewrites itself (reload: flat, no banner); one `sectionKeyOf` (trim, case-fold) on
+  every grouping surface — renaming into a case-variant MERGES, the takeoff page never drops a condition, proposal/recap/bid agree
+  on the section count; regions loaded without ids get their own; `releasePrintDoc()` runs unconditionally after `window.print()`
+  returns (headless Chrome fires no `afterprint`).
+- Bar-backed: the 2-pt scale tool arms on EVERY unscaled sheet on arrival (E-F1's cause: `openDocument` armed it on sheet 1 only, and
+  the collapsed 24 px toolbar measured the button 0×0 until hovered); quick-add takes the next unused palette entry (22 adds → 22
+  colors); a new card scrolls into view and arms; the add form stays open for the next one; the resume card opens the picker and a
+  matching open PDF reattaches without asking; the bid's refusal names the unpriced lines; recap strip reads "by section, then
+  system, then CSI"; both migration banners carry two doors in plain words.
+- **Ratified deviations (agent-declared, orchestrator-accepted):** **R-3b** the pitch door's decimal-multiplier reading stays (Patrick's
+  9/03 gate AH3 pins it) but is BOUNDED at `pitchFactor(24)` — 25, 999, 1e9, -6, abc, 6/13, 6/1 all refuse; **R-10h** after a print
+  `#printDoc` holds B4's placeholder, never a document (seven landed probes that read `#printDoc` after the print were re-addressed
+  to snapshot inside the print stub — assertions unchanged); **R-3c** flat is the ABSENCE of a rise (`pitch: 0` would make every
+  `c.pitch != null` reader count flat conditions) — the reconcile undo deletes the rise by name and the banner says so. B6F-6 was
+  already met at HEAD. **C-B5-1 stays a candidate** (collapsing the three identical unit columns changes `VOCAB.grid` → B5-2 red).
+- **Gates on `354191718ade3f573ab4bc9eea5aa990` (orchestrator rerun, foreground chunks after the harness memory guard killed the background sweep — page
+  cache read as used, 25 GB actually free):** G0 GREEN 4/4 · ves-verify PASS · vocab-check 0 · b6f ALL GREEN — 17 pass · b5-words 6/6 · b4-print 9/9 · b3-colors 8/8 · b2b-regions 8/8 · b2a-sections 7/7 · b1-pitch 12/12 · b0-fixture 7/7 · ae 5/5 · p903-doc 8/8 · p903-aim 7/7 · p903-rail 5/5 · p903-pitch 6/6 · p903-words 5/5 · v 17/17 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · af 40/40 · 
+- **Wave verdict:** after ONE fix batch every proven P0/HIGH from the three personas is closed by a RED-first row, and no new
+  P0/HIGH surfaced in the rerun — the plan's bar for release is met. Candidates left open (taste, on record): F-F7 recap collapsed
+  by default · E-F4 undo-after-reload wording · C-B2a-1 recap dock width · C-B5-1 unit columns.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
