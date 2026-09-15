@@ -96,13 +96,21 @@ in the same hue.
    store B, so those three price flat and display pitched. That is real, it is in the golden, and it
    is not something this fixture invented.
 2. **`identity.fileSize` is 0, and it is not a typo.** `buildIdentity` reads `meta.size`, which
-   `openFromBytes` sets from `data.byteLength` *after* pdf.js has already transferred the same
-   `Uint8Array` to its worker — the transfer detaches the buffer, so the length reads 0. Measured on
-   this PDF, not assumed. Every PDF-backed takeoff F18.72 saves therefore carries `fileSize: 0`, and
-   `compareIdentity` calls a fileSize difference MAJOR — so writing the true 6,366 here would raise
-   the identity-review modal on every load and the fixture would never reach the app. If a later
-   build fixes the detach, probe row F2 will say `fileSize: 0 saved vs 6366 open` in its detail; the
-   repair is one line in the generator (`identityFor`).
+   `openFromBytes` set from `data.byteLength` *after* pdf.js had already transferred the same
+   `Uint8Array` to its worker — the transfer detaches the buffer, so the length read 0. Measured on
+   this PDF, not assumed. Every PDF-backed takeoff F18.72 … 2.0.0-rc.5 saved therefore carries
+   `fileSize: 0`, and `compareIdentity` calls a fileSize difference MAJOR — so writing the true 6,366
+   here would have raised the identity-review modal on every load and the fixture would never have
+   reached the app.
+
+   **Fixed in 2.0.0-rc.6 (Batch B4, R-10f / C-B0-1), and this file deliberately still carries 0.**
+   `openFromBytes` now reads `byteLength` BEFORE handing the buffer to pdf.js, so a takeoff saved from
+   here on records the real size (6,366 for this PDF). A saved **0 means UNKNOWN** and is never compared,
+   so every takeoff written by an earlier build still loads with no review — and THIS FILE IS THE ONE
+   THAT PROVES IT. It is the repo's only pre-rc.6 identity, so the generator keeps writing 0 on purpose
+   and re-running it still reproduces these bytes. Probe row F2 now reads `fileSize: 0 saved vs 6366
+   open` in its detail and tolerates exactly that one difference; probe-b4-print row B4-7 checks both
+   halves — a fresh save carries 6,366, and this file still loads with no identity modal.
 
 ## The golden, on F18.72
 

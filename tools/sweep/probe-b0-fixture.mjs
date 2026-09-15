@@ -124,9 +124,19 @@ const loaded = await ev(`(async () => {
     condPages: VESApp.core.rollup(VESApp.state.conditions, VESApp.state.measurements).map(r => r.pages.length),
   };
 })()`);
-check('F2 the fixture loads through the load door (a file no newer than the build understands): nothing dropped, identity matches the open plan, 26 conditions in state',
+/* R-10f (Batch B4) — the change this fixture's own README forecast. This file was written by a build
+   that could not read its PDF's byte length (pdf.js detaches the ArrayBuffer before buildIdentity gets
+   to it), so its identity.fileSize is 0. 2.0.0-rc.6 reads the size before the hand-off, so the open
+   plan now reports 6,366 — and a saved 0 means UNKNOWN, never a mismatch, or every takeoff every earlier
+   build saved would raise the identity review on load. The raw core compare still names the difference;
+   the LOAD DOOR is what this row is about, and that ONE difference is the only one tolerated here.
+   Any other diff, a modal, a drop, or a missing condition still fails the row. */
+const idDiffs = loaded.idCompare.diffs || [];
+const idOK = loaded.idCompare.level === 'match'
+  || (idDiffs.length === 1 && /^File size differs: 0 bytes saved vs \d+ bytes open\.$/.test(idDiffs[0]));
+check('F2 the fixture loads through the load door (a file no newer than the build understands): nothing dropped, 26 conditions in state, and the identity matches the open plan — a saved fileSize of 0 is UNKNOWN, not a mismatch (R-10f)',
   loaded.normOk && loaded.fileVersion <= loaded.version && loaded.dropped === 0
-  && !loaded.idModalOpen && loaded.idCompare.level === 'match' && loaded.conditions === 26,
+  && !loaded.idModalOpen && idOK && loaded.conditions === 26,
   { conditions: loaded.conditions, measurements: loaded.measurements, version: loaded.version,
     dropped: loaded.dropped, identity: loaded.idCompare.level, idModalOpen: loaded.idModalOpen,
     idDiffs: loaded.idCompare.diffs });

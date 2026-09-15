@@ -67,3 +67,17 @@ probe-ae/probe-af collided with ours by file name with different content. Ported
                                             # containment answers are the fixture's arithmetic and not the snap's. The v5
                                             # refusal row opens a second tab on the OLD build — the last argument, or
                                             # `git show ves2:src/VES_PM.html` when it is left out.
+
+## Batch B3 / B4 (VES 2) — the print gates
+
+    node tools/sweep/probe-b3-colors.mjs <html> fixtures/synthetic/three-sheet/takeoff.v3.json <plan.pdf> "$PWD" [--no-subgates]
+                                            # Batch B3 gate — COLORS (R-7): 24 hues, custom hex, dash×hatch patterns,
+                                            # readableInk, paginating legends. 8 rows, RED-first 1/8 on 2.0.0-rc.4.
+    node tools/sweep/probe-b4-print.mjs  <html> fixtures/synthetic/three-sheet/takeoff.v3.json <plan.pdf> "$PWD" [--no-subgates]
+                                            # Batch B4 gate — THE TAKEOFF PRINTS EVERY SHEET (R-10a…g): one print path,
+                                            # one per-sheet figure builder, a sheet chooser, the latch released in all
+                                            # three states, identity.fileSize read before pdf.js detaches the buffer.
+                                            # 9 rows, RED-first 1/9 on 2.0.0-rc.5 (the one green row is B4-9, the
+                                            # "B0–B3 still hold" subgate, which was already green on that base).
+                                            # --no-subgates skips B4-8/B4-9's eight child gates (probe-ae,
+                                            # probe-p903-doc, G0, probe-b0-fixture, -b1-pitch, -b2a, -b2b, -b3).

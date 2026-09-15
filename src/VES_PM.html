@@ -684,6 +684,15 @@
   .modal .row { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
   .modal input { width: 100%; font-family: var(--mono); font-size: 16px; }
   #secNameModal .modal .row { justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  /* R-10c (B4): the takeoff sheet chooser */
+  #tkSheetModal .modal { width: 420px; }
+  .tk-pick { max-height: 46vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; padding: 3px; }
+  .tk-pick label { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+  .tk-pick label:hover { background: rgba(255,255,255,.05); }
+  .tk-pick label.empty { color: var(--ink-dim); cursor: default; }
+  .tk-pick label.empty:hover { background: none; }
+  .tk-pick input[type=checkbox] { width: auto; min-height: 0; margin: 0; }
+  .tk-pick .n { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-dim); }
   #projModal .modal { width: 460px; }
   /* ── S2 (B-04), measured consequence of adding one field. The Project info form was ALREADY
      taller than its own `.modal { max-height: 84vh; overflow-y: auto }` box — at 1440×900,
@@ -2127,6 +2136,22 @@
     <div class="row">
       <button id="secNameCancel" class="quiet">Cancel</button>
       <button id="secNameOk" class="armed">Save region</button>
+    </div>
+  </div>
+</div>
+<!-- R-10c (B4): WHICH SHEETS GO ON THE TAKEOFF PAPER. PlanSwift's "print visible items" convention —
+     the estimator picks per sheet and the legend rides every printed sheet. Every measured sheet is
+     checked by default; a sheet with nothing on it is listed, greyed and not selectable, so it reads as
+     "seen and empty" rather than "forgotten". The pick is session state (state.printSheets) and is never
+     written to a takeoff file. -->
+<div class="modalBack" id="tkSheetModal">
+  <div class="modal">
+    <h3>Print takeoff — which sheets?</h3>
+    <p>Every measured sheet prints by default. Leave one out and the paper's first line says which sheets it is showing — the quantity tables still total the whole takeoff.</p>
+    <div id="tkSheetList" class="tk-pick"></div>
+    <div class="row">
+      <button id="tkSheetCancel" class="quiet">Cancel</button>
+      <button id="tkSheetPrint" class="armed">Print takeoff</button>
     </div>
   </div>
 </div>
@@ -4573,6 +4598,7 @@ const state = {
   grid: null,                     // {ftPerSquare, page} when the active sheet is a blank scaled grid (Path A)
   identity: null,
   pageLabels: null,               // from pdf.getPageLabels(), or null
+  printSheets: null,              // R-10c (B4): the sheets the NEXT takeoff prints. Session only — snapshot() is a whitelist and never sees it
   mode: 'single',                 // single | split | ledger (pane layout)
   recapTab: 'summary',            // summary | materials | labor | exceptions | ledger(=Audit) (drawer content)
   gridDiv: 'all',                 // F10: Estimate-lens division tab ('all' | CSI division token)
@@ -5223,6 +5249,13 @@ async function openPDF(file) {
 
 async function openFromBytes(bytes, name) {
   const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  /* ── C-B0-1 (R-10f, Batch B4) · READ THE SIZE BEFORE pdf.js TAKES THE BUFFER.
+     pdf.js TRANSFERS this Uint8Array's ArrayBuffer to its worker, which DETACHES it here — so the
+     `data.byteLength` openDocument used to read below had already gone to 0 by the time it ran, and
+     every PDF-backed takeoff this build has ever saved carries identity.fileSize: 0. Measured on the
+     synthetic three-sheet fixture: 6,366 bytes on disk, 0 in the file it wrote. The number is read
+     once, HERE, before the hand-off, and kept; nothing re-reads it afterwards. ── */
+  const byteSize = data.byteLength;
   let pdf;
   try {
     /* ── Batch X (PASS_2026-09 row T2, root cause) · THE PARSER RUNS OFF THE MAIN THREAD UNDER file://.
@@ -5253,7 +5286,7 @@ async function openFromBytes(bytes, name) {
     }
     if (!pdf) pdf = await pdfjsLib.getDocument(baseOpts).promise;
   } catch (e) { toast('Could not open that file as a PDF: ' + e.message); return; }
-  await openDocument(pdf, { name: name || 'document.pdf', size: data.byteLength });
+  await openDocument(pdf, { name: name || 'document.pdf', size: byteSize });
 }
 
 /* ── D-25.3a · THE OPEN DOOR ASKS THE QUESTION THE NEW DOOR ALREADY ASKS.
@@ -6195,7 +6228,10 @@ function syncState() {
   gateCtl('btnSave', hasCond || hasMeas, 'Nothing to save yet.');
   gateCtl('btnCSVRoll', hasCond, 'Add a condition first.');
   gateCtl('btnCSVAudit', hasMeas, 'Measure something first.');
-  gateCtl('btnMenuTakeoff', hasMeas, 'Measure something first.');   // AE-2
+  /* R-10a (B4): the takeoff door is NOT gated. §B's rule is that invalid machinery is disabled with a
+     reason — but this gesture is never invalid: it prints figures, or tables, or it says out loud that
+     nothing is measured and names the two doors back to the work (probe-ae AE5). A disabled button
+     says none of that; it just does nothing when an estimator clicks it. */
   gateCtl('btnCSVBOM', hasMeas, 'Trace or load a system first.');   // AI-2: the button moved into Setup's working files
   // body state classes for CSS-driven visibility (thin rail / quiet total before work)
   document.body.classList.toggle('no-pdf', !sheet);
@@ -7609,7 +7645,7 @@ function openCmd() {
     { k: 'Setup — components, library & bid', when: true, run: openAssemblies },
     { k: 'Enter a priced quantity', when: true, run: openAssemblies },
     { k: 'Fit sheet to view', when: hasPDF && AP().page, run: () => fitToView(AP()) },
-    { k: 'Print takeoff (sheets + quantities)', when: hasMeas, run: printTakeoff },   // AE-2
+    { k: 'Print takeoff (sheets + quantities)', when: hasMeas, run: takeoffDoor },   // AE-2 · R-10c: same door, same chooser
     { k: 'Print bid document', when: hasMeas, run: printBidDoc },
     { k: 'Keys \u2014 what the keyboard does', when: true, run: openHotkeys },
   ].filter((c) => c.when);
@@ -11873,6 +11909,20 @@ function releasePrintDoc() {
   if (d) d.innerHTML = '<p class="print-ph">Nothing to print — use Files &amp; exports.</p>';
 }
 
+/* ── R-10e (Batch B4) · THE LATCH EMPTIES WHEN THE PRINT IS OVER.
+   D-24.7a released the latch on every path that printed NOTHING. A path that DID print left its
+   document sitting in #printDoc afterwards — and the print stylesheet makes whatever sits there the
+   WHOLE page — so the next Ctrl+P on the sheet re-emitted a takeoff that had already gone out.
+   Chrome fires `afterprint` when the print is finished, which is exactly when that document stops
+   being the thing on the paper. The release is ARMED only around our own window.print() call: a print
+   the estimator started some other way is printing the document they are looking at, and clearing the
+   latch out from under it would be the same bug pointed the other way. ── */
+let printLatchArmed = false;
+window.addEventListener('afterprint', () => { if (printLatchArmed) { printLatchArmed = false; releasePrintDoc(); } });
+function printNow() {
+  setTimeout(() => { printLatchArmed = true; try { window.print(); } finally { printLatchArmed = false; } }, 30);
+}
+
 // true == the print was DEFERRED into the modal and the caller must return.
 function identityGate(cls, reason, go) {
   const pb = (state.projectMeta || {}).preparedBy || {};
@@ -11945,7 +11995,16 @@ function loadFromData(d) {
       false);
     return;
   }
-  const cmp = VESCore.compareIdentity(norm.data.identity, state.identity);
+  /* ── C-B0-1 (R-10f) · A SAVED fileSize OF 0 IS UNKNOWN, NOT A MISMATCH. Every PDF-backed takeoff
+     written before 2.0.0-rc.6 carries 0 (the detach closed above), and compareIdentity calls a size
+     difference MAJOR — so the moment the real size started being saved, every one of those files would
+     have raised the identity-review modal on load. 0 means "this file never recorded a size": it is not
+     compared. Nothing else about the gate moves — name, page count, fingerprint and the per-page
+     signatures all still speak. VESCore is fenced, so the substitution is made HERE, at the one caller. */
+  const savedId = norm.data.identity;
+  const cmpId = (savedId && savedId.fileSize === 0 && state.identity)
+    ? Object.assign({}, savedId, { fileSize: state.identity.fileSize }) : savedId;
+  const cmp = VESCore.compareIdentity(cmpId, state.identity);
   if (cmp.level === 'match') { applyProjectMeta(d && d.projectMeta); applyScheduleRaw(d && d.schedule); applyViewRaw(d && d.view); applyVizRaw(d && d.viz); applySheetDoneRaw(d && d.sheetDone); applySnapshot(norm.data); return; }
   const ul = $('idDiffs');
   ul.innerHTML = '';
@@ -13177,18 +13236,69 @@ async function compositeSheet(pageNum, opts = {}) {
    used to either clip against a fixed-height box or break unpredictably mid-row). R-7c: each row
    carries the condition's own pattern glyph, ink from readableInk (R-7d) against the swatch's own
    color, so the glyph reads on that hue whatever it is. ── */
-function legendRowsHTML(conds, qtyOf) {
-  return conds.map((c) => {
-    const bg = c.color || '#888';
-    const glyph = patternOf(patternIndexFor(c)).glyph;
-    const q = qtyOf ? qtyOf(c) : '';
-    return '<tr><td class="lgsw"><span class="sw" style="background:' + escA(bg) + ';color:' + readableInk(bg) + '">' + escA(glyph) + '</span></td>'
-      + '<td class="lgnm">' + escA(c.name) + (q ? ' <span class="lgq">' + q + '</span>' : '') + '</td></tr>';
-  }).join('');
+function legendCellsHTML(c, qtyOf) {
+  const bg = c.color || '#888';
+  const glyph = patternOf(patternIndexFor(c)).glyph;
+  const q = qtyOf ? qtyOf(c) : '';
+  return '<td class="lgsw"><span class="sw" style="background:' + escA(bg) + ';color:' + readableInk(bg) + '">' + escA(glyph) + '</span></td>'
+    + '<td class="lgnm">' + escA(c.name) + (q ? ' <span class="lgq">' + q + '</span>' : '') + '</td>';
 }
-function legendTableHTML(conds, qtyOf) {
+/* R-10d (B4): `cols` packs N legend entries per ROW. The rows, the <thead> and the fragmentation
+   behaviour R-7e depends on are unchanged — this only decides how many entries share a printed line.
+   The landscape takeoff sheet is a fixed 7.4in box with a figure in it: a thirteen-condition legend
+   at one entry per line is 2 inches of the page and pushed the figure onto a second one (measured:
+   five rendered pages for the three-sheet fixture's three sheets). The portrait proposal has the room
+   and stays at one. */
+function legendRowsHTML(conds, qtyOf, cols) {
+  const n = Math.max(1, cols || 1);
+  let out = '';
+  for (let i = 0; i < conds.length; i += n) {
+    out += '<tr>';
+    for (let k = 0; k < n; k++) out += conds[i + k] ? legendCellsHTML(conds[i + k], qtyOf) : '<td class="lgsw"></td><td class="lgnm"></td>';
+    out += '</tr>';
+  }
+  return out;
+}
+function legendTableHTML(conds, qtyOf, cols) {
   if (!conds || !conds.length) return '';
-  return '<table class="plegend"><thead><tr><th colspan="2">Legend</th></tr></thead><tbody>' + legendRowsHTML(conds, qtyOf) + '</tbody></table>';
+  const n = Math.max(1, cols || 1);
+  return '<table class="plegend"><thead><tr><th colspan="' + (n * 2) + '">Legend</th></tr></thead><tbody>' + legendRowsHTML(conds, qtyOf, n) + '</tbody></table>';
+}
+
+/* ── R-10b (Batch B4) · ONE PER-SHEET FIGURE BUILDER FOR EVERY PAPER.
+   Hand it the sheet numbers and it composes each one the same way: the raster through compositeSheet
+   (AE-1), the markup the screen shows, the drawn section regions when the paper is the estimator's own
+   (B2b R-5h), a legend of the conditions measured ON THAT SHEET carrying their pattern swatches
+   (B3 R-7c/R-7e), and a "Sheet N of M" caption. A sheet that fails to compose comes back with its
+   REASON instead of a url — the caller prints a marked placeholder and counts it (MED-4: a failed
+   section must not look like an intended one), never silence and never a gap in the numbering.
+   `imgMaxIn` is the one piece of layout the builder owns, and only when the caller says the page is a
+   fixed box: what is left for the image after the caption, the document header on the first page, and
+   the legend THIS sheet actually needs. Without it a sheet with a long legend strands its own figure
+   onto a second page, which is the complaint this batch exists to close. ── */
+async function visualFiguresHTML(pages, opts = {}) {
+  const o = opts || {};
+  const cols = Math.max(1, o.legendCols || 1);
+  const total = o.total != null ? o.total
+    : (state.pdf ? (state.numPages || (pages.length ? pages[pages.length - 1] : 1)) : 1);
+  const figures = [];
+  let failed = 0;
+  for (let i = 0; i < pages.length; i++) {
+    const n = pages[i];
+    const cap = 'Sheet ' + escA(pageLabel(n)) + ((state.pdf && total > 1) ? ' of ' + total : '')
+      + ((o.marks && state.sheetDone && state.sheetDone[n]) ? ' \u00b7 swept' : '');
+    const cs = await compositeSheet(n, { crop: !!o.crop, regions: !!o.regions });
+    if (cs.fail) { failed++; figures.push({ page: n, cap, fail: cs.fail, legend: '', rows: 0 }); continue; }
+    const legend = legendTableHTML(cs.conds, o.qtyOf ? (c) => o.qtyOf(c, cs) : null, cols);
+    const rows = Math.ceil(cs.conds.length / cols);
+    // inches, measured against the rendered page: 0.30 caption · the document header on sheet one
+    // · 0.22 legend head + 0.16 per legend row. Floor 2.2in — a legend long enough to eat the page
+    // paginates (R-7e) rather than squeezing the drawing down to a stamp.
+    const spent = 0.30 + (i === 0 ? (o.firstHeadIn || 0) : 0) + (rows ? 0.22 + rows * 0.16 : 0);
+    const imgMaxIn = o.boxIn ? Math.max(2.2, Math.min(o.imgMaxIn || 5.6, o.boxIn - spent)) : null;
+    figures.push({ page: n, cap, url: cs.url, conds: cs.conds, onPage: cs.onPage, legend, rows, imgMaxIn });
+  }
+  return { figures, failed, total };
 }
 async function proposalVisualHTML(pb, today) {
   if (!hasSheet()) return '';
@@ -13209,48 +13319,58 @@ async function proposalVisualHTML(pb, today) {
      The two INTENDED-empty paths above (no sheet, nothing drawn) stay empty and stay silent —
      a typed-only proposal legitimately has no plan snapshot, and a placeholder there would be
      noise on client paper. The estimator can now tell the two apart: a placeholder means it
-     FAILED, absence means there was nothing to draw. ── */
+     FAILED, absence means there was nothing to draw.
+     B4 (R-10b): the placeholder no longer carries the section heading — with a figure per sheet
+     the heading is written once, above the loop, so one failed sheet cannot print a second one. ── */
   let pvizSaid = false;
   const pvizFail = (why) => {
     if (!pvizSaid) {
       pvizSaid = true;
       try { toast('Plan snapshot failed to render (' + why + ') — the proposal prints a marked placeholder in its place. Money and quantities are unaffected.', 'warn'); } catch (_) {}
     }
-    return '<h2 class="sec">Plan snapshot</h2><figure class="pviz"><div class="pviz-miss">'
-      + 'Plan snapshot unavailable — this section did not render (' + escA(why) + ').'
+    return '<figure class="pviz"><div class="pviz-miss">'
+      + 'Plan snapshot unavailable — this sheet did not render (' + escA(why) + ').'
       + '</div><figcaption>The scope and pricing in this proposal are unaffected.</figcaption></figure>';
   };
-  // page pick: the sheet page carrying the most drawn shapes (ties → lowest)
-  const perPage = {};
-  for (const m of drawn) perPage[m.page] = (perPage[m.page] || 0) + 1;
-  const pageNum = +Object.keys(perPage).sort((a, b) => perPage[b] - perPage[a] || a - b)[0];
-  const cs = await compositeSheet(pageNum, { crop: true });   // AE-1: the shared compositor, framed on the drawn work
-  if (cs.fail) return pvizFail(cs.fail);   // R7
-  const url = cs.url;
+  /* ── R-10b (Batch B4) · EVERY MEASURED SHEET, NOT THE BUSIEST ONE.
+     This used to pick ONE page — "the sheet page carrying the most drawn shapes (ties → lowest)" —
+     so on a three-sheet job the client saw a third of the work and nothing said the rest existed.
+     The takeoff and the proposal now compose their figures through the SAME builder, so a sheet
+     cannot look like one thing on the estimator's paper and another on the client's. ── */
+  const pages = [...new Set(drawn.map((m) => m.page))].sort((a, b) => a - b);
   // L-09: legend closes the color→condition→quantity loop (work-order spec). Quantities are
   // takeoff rollup totals — the same numbers the Scope list prints, never page-partial.
-  const lgConds = cs.conds;
-  const lgRoll = Object.fromEntries(VESCore.rollup(state.conditions, state.measurements).map((r) => [r.id, r]));
   // D-26.1 (R1): the legend states it prints "the same numbers the Scope list prints" — it now
-  // does, on library conditions too.
-  const legend = legendTableHTML(lgConds, (c) => {
-    const r = lgRoll[c.id];
-    return (r && r.quantity > 0) ? VESCore.fmtQty(dispQtyOf(r, c).qty) + ' ' + escA(displayUnit(r.unit)) : '';
+  // does, on library conditions too. That convention is unchanged by the split into per-sheet
+  // figures: the takeoff's own legends carry the PER-SHEET number, the client's carry the job's.
+  const lgRoll = Object.fromEntries(VESCore.rollup(state.conditions, state.measurements).map((r) => [r.id, r]));
+  const built = await visualFiguresHTML(pages, {
+    crop: true,   // AE-1: the shared compositor, framed on the drawn work
+    regions: false,   // B2b (R-5h): how the office files the job is not the client's business
+    qtyOf: (c) => {
+      const r = lgRoll[c.id];
+      return (r && r.quantity > 0) ? VESCore.fmtQty(dispQtyOf(r, c).qty) + ' ' + escA(displayUnit(r.unit)) : '';
+    },
   });
-  // R8: the §2 visual names its source — the reader must know which sheet this is
-  const src = state.pdf
-    /* L-D: the sheet reference is exactly right and stays — a client needs to know WHICH sheet
-       was measured. The source PDF's file name is the estimator's own filing, not the client's
-       business, and it travels on paper that leaves the building. Dropped; nothing else moves. */
-    ? 'Plan page ' + pageNum + (state.numPages ? ' of ' + state.numPages : '')
+  // R8: the §2 visual names its source — the reader must know which sheet this is.
+  /* L-D: the sheet reference is exactly right and stays — a client needs to know WHICH sheet
+     was measured. The source PDF's file name is the estimator's own filing, not the client's
+     business, and it travels on paper that leaves the building. Dropped; nothing else moves. */
+  const srcOf = (n) => state.pdf
+    ? 'Plan page ' + n + (state.numPages ? ' of ' + state.numPages : '')
     : 'Scaled grid sheet — ' + ((state.grid && state.grid.ftPerSquare) || VESGrid.DEFAULT_FT_PER_SQUARE) + ' ft squares';
-  // R-7e: the legend sits AFTER the figure, not inside it — the figure (image + caption) keeps its
-  // own atomic page-break-inside:avoid (M-C), unaffected; a legend long enough to paginate is no
-  // longer trapped inside that same avoid-break box, so it flows and repeats its header instead of
-  // clipping or forcing the whole figure onto a page it can't fit.
-  return '<h2 class="sec">Plan snapshot</h2><figure class="pviz"><img src="' + url + '" alt="Measured plan snapshot">'
-    + '<figcaption>' + src + ' · measured markup as of ' + escA(today) + '</figcaption></figure>'
-    + legend;
+  /* R-7e: the legend sits AFTER the figure, not inside it — the figure (image + caption) keeps its
+     own atomic page-break-inside:avoid (M-C), unaffected; a legend long enough to paginate is no
+     longer trapped inside that same avoid-break box, so it flows and repeats its header instead of
+     clipping or forcing the whole figure onto a page it can't fit. */
+  let out = '<h2 class="sec">Plan snapshot</h2>';
+  for (const f of built.figures) {
+    if (f.fail) { out += pvizFail(f.fail); continue; }
+    out += '<figure class="pviz"><img src="' + f.url + '" alt="Measured plan snapshot">'
+      + '<figcaption>' + srcOf(f.page) + ' · measured markup as of ' + escA(today) + '</figcaption></figure>'
+      + f.legend;
+  }
+  return out;
 }
 async function proposalHTML() {
   const m = proposalModel();
@@ -13390,89 +13510,112 @@ async function printProposal() {
   if (blank) toast('The proposal window came up empty — nothing was written to it. Close it and try again.', 'warn');
 }
 
-/* ── Batch AE · PRINT TAKEOFF — THE PLAN AS MEASURED, AND NOTHING PRICED.
-   The owner's word (2026-09-04): a Print takeoff door, its shape the seat's. The bid door's own note had promised
-   "print the sheet separately" since W2-02 while no path did, and Ctrl+P on the sheet printed whatever the latch
-   held last (D-24.7a) — a bid, a cost sheet, or the placeholder. This is the third paper: the same plan snapshot
-   and legend the proposal composes (proposalVisualHTML — one painter, one legend, one set of quantities), then
-   every condition with the quantity the app displays (dispQtyOf, D-26.1: measured × pitch, with the traced
-   figure and the factor beside it), then every measurement with its sheet, points and calibration as the Audit
-   CSV records them. No money word and no $ figure reach it — probe-ae AE3 asserts that on the rendered text.
-   Same latch discipline as the other doors: a path that prints nothing releases the latch and says so; the toast
-   names the print (T-06). The identity gate is not asked — this is the estimator's own paper, not client paper.
-   RED-first 1/5 on F18.67. ── */
-async function printTakeoffDoc() {
-  if (!state.measurements.length) { toast('Nothing measured to print yet.'); releasePrintDoc(); return; }
-  const pm = state.projectMeta || {}, pb = pm.preparedBy || {};
-  const today = new Date().toISOString().slice(0, 10);
-  const condById = Object.fromEntries(state.conditions.map((c) => [c.id, c]));
-  const roll = VESCore.rollup(state.conditions, state.measurements);
-  const pagesOf = (cid) => [...new Set(state.measurements.filter((m) => m.conditionId === cid && m.page != null).map((m) => m.page))].sort((a, b) => a - b).map(pageLabel).join(', ');
-  const typeWord = { area: 'area', linear: 'linear', count: 'count' };
-  let conds = '<div class="divblock"><h2>Conditions — measured quantities</h2><table><thead><tr>'
-    + ['Condition', 'Type', 'Meas.', 'Traced', 'Pitch', 'Quantity', 'Unit', 'Sheets'].map((h, i) => `<th${i >= 2 && i <= 5 ? ' class="n"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>';
-  for (const r of roll) {
-    const cnd = condById[r.id]; if (!cnd) continue;
-    const f = condPitchFactor(cnd); const pitched = Math.abs(f - 1) > 1e-9;
-    const q = r.count > 0 ? VESCore.fmtQty(dispQtyOf(r, cnd).qty) : '';
-    conds += `<tr><td>${escA(cnd.name)}</td><td>${typeWord[cnd.type] || escA(cnd.type)}</td><td class="n">${r.count || 0}</td>`
-      + `<td class="n">${r.count > 0 ? VESCore.fmtQty(r.raw != null ? r.raw : r.quantity) : '—'}</td><td class="n">${pitched ? fmtPitch(r.rise) + ' (× ' + (+f.toFixed(4)) + ')' : '—'}</td>`
-      + `<td class="n">${q || '<span class="tk-nm">not measured</span>'}</td><td>${escA(displayUnit(r.unit))}</td><td>${escA(pagesOf(r.id) || '—')}</td></tr>`;
+/* ── R-10a / R-10b / R-10c (Batch B4; Patrick, 2026-09-14, complaint #1: "no ability to print a takeoff
+   that uses multiple pdf pages") · ONE PRINT PATH, AND THE ESTIMATOR PICKS THE SHEETS.
+   TWO takeoff printers used to coexist. kind-curie's `printTakeoff` was the door: a landscape page per
+   measured sheet, its markup, a per-sheet legend, a closing quantities page. main's `printTakeoffDoc`
+   was unwired, portrait, one snapshot — but it was the only one that knew what to do with a takeoff
+   that has NO sheet at all. printTakeoffDoc is DELETED; the three behaviours it owned live here:
+     · a typed-only takeoff prints its quantity tables, with no figure and no money;
+     · a takeoff with nothing measured and nothing typed prints nothing, releases the latch, and the
+       toast names what is missing (probe-ae AE5, declared red since B0);
+     · every early return releases the latch (D-24.7a).
+   No identity gate — nothing on this paper is a price (identityGate is for the bid and the proposal).
+   Hidden-on-plan is a screen aid: the takeoff prints everything measured on the sheets it prints.
+   The SHEETS are the estimator's pick (PlanSwift's "print visible items"): the door opens a chooser
+   when there is more than one measured sheet, the paper's first line names what it is showing when any
+   is left out, and the quantity tables STILL total the whole job and say so. ── */
+function measuredSheetPages() {
+  const live = new Set(state.conditions.map((c) => c.id));
+  const per = new Map();
+  for (const m of state.measurements) {
+    if (m.page == null || !Array.isArray(m.points) || !m.points.length || !live.has(m.conditionId)) continue;
+    per.set(m.page, (per.get(m.page) || 0) + 1);
   }
-  conds += '</tbody></table></div>';
-  const rows = VESCore.measurementRows(state.conditions, state.measurements, pageLabel)
-    .sort((a, b) => (a.page == null) - (b.page == null) || a.page - b.page || a.id - b.id);
-  const manualIds = new Set(state.measurements.filter((m) => m.manual).map((m) => m.id));
-  let meas = '<div class="divblock"><h2>Measurements — every stroke on the plan</h2><table><thead><tr>'
-    + ['ID', 'Condition', 'Sheet', 'Type', 'Quantity', 'Unit', 'Points', 'Calibration', 'Notes'].map((h, i) => `<th${i === 4 || i === 6 ? ' class="n"' : ''}>${h}</th>`).join('') + '</tr></thead><tbody>';
-  for (const r of rows) {
-    const manual = manualIds.has(r.id) || (r.pointCount === 0 && r.page == null);
-    const cal = manual ? 'typed' : (() => { const w = calHonest(r.calStatus, [r.page]); const sc = r.page == null ? '' : calScaleOf(r.page); return sc ? w + ' · ' + sc : w; })();
-    meas += `<tr><td>${r.id}</td><td>${escA(r.condition)}</td><td>${r.page == null ? '—' : escA(r.sheetLabel)}</td><td>${manual ? escA(r.type) + ' (typed)' : escA(r.type)}</td>`
-      + `<td class="n">${r.quantity == null ? 'pending' : VESCore.fmtQty(r.quantity)}</td><td>${escA(displayUnit(r.unit))}</td><td class="n">${r.pointCount}</td><td>${escA(cal)}</td><td>${escA(r.notes || '')}</td></tr>`;
-  }
-  meas += '</tbody></table></div>';
-  let visual = '';
-  try { visual = await proposalVisualHTML(pb, today); } catch (e) { visual = ''; }
-  if (!visual) visual = `<div class="basis tk-nosheet">${hasSheet() ? 'No traced geometry to draw — the quantities below were typed or placed without a sheet.' : 'No sheet — quantities were typed.'}</div>`;
-  const basis = '<div class="basis">Quantity is the figure the estimate uses: the traced value × the condition’s pitch factor where one is set (D-26.1). '
-    + 'Measurement rows list traced values as recorded, at the calibration named. This sheet carries no prices; the bid, the proposal and the cost sheet do.</div>';
-  $('printDoc').innerHTML = bidHead('Takeoff') + '<div class="meta tk-mark">TAKEOFF — measured quantities only; nothing priced on this sheet.</div>'
-    + visual + conds + meas + basis;
-  toast('Takeoff sent to print.', 'ok');   // T-06: a print names itself
-  closeCmd();
+  return new Map([...per.entries()].sort((x, y) => x[0] - y[0]));
 }
+function tkSheetKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeSheetChooser(true); } }
+/* D-24.7a again: a cancelled chooser produced no document, so no document may be left latched. */
+function closeSheetChooser(cancelled) {
+  const el = $('tkSheetModal'); if (el) el.classList.remove('open');
+  document.removeEventListener('keydown', tkSheetKey, true);
+  if (cancelled) { releasePrintDoc(); toast('Takeoff cancelled — nothing sent to print.'); }
+}
+function syncSheetChooser() {
+  const list = $('tkSheetList'); if (!list) return;
+  const n = list.querySelectorAll('input[type=checkbox]:checked').length;
+  const b = $('tkSheetPrint');
+  if (b) { b.disabled = n === 0; b.title = n === 0 ? 'Pick at least one sheet.' : ''; }
+}
+function openSheetChooser(per) {
+  const list = $('tkSheetList'); if (!list) return false;
+  const nPages = state.pdf ? (state.numPages || 1) : 1;
+  let html = '';
+  for (let n = 1; n <= nPages; n++) {
+    const cnt = per.get(n) || 0;
+    // an unmeasured sheet is LISTED — so the estimator can see it was not forgotten — greyed, and
+    // not selectable: a figure of a sheet with nothing on it is a blank page with a title block.
+    html += '<label class="' + (cnt ? '' : 'empty') + '"><input type="checkbox" value="' + n + '"'
+      + (cnt ? ' checked' : ' disabled') + '><span>Sheet ' + escA(pageLabel(n)) + '</span>'
+      + '<span class="n">' + (cnt ? cnt + (cnt === 1 ? ' measurement' : ' measurements') : 'nothing measured') + '</span></label>';
+  }
+  list.innerHTML = html;
+  $('tkSheetModal').classList.add('open');
+  document.addEventListener('keydown', tkSheetKey, true);
+  syncSheetChooser();
+  return true;
+}
+/* The door. One measured sheet is not a choice, so it prints; two or more and the estimator picks. */
+async function takeoffDoor() {
+  state.printSheets = null;
+  const per = measuredSheetPages();
+  if (per.size < 2) return printTakeoff();
+  if (!openSheetChooser(per)) return printTakeoff();
+}
+
 /* ── AE-2 (Batch AE; Patrick, 2026-09-03: "there is no way to just print a takeoff") · THE TAKEOFF IS A DOCUMENT.
    Before this the only marked-up plan on paper was the proposal's one cropped snapshot. Now every sheet that
    carries a measurement prints whole and landscape with the markup the screen shows, a legend of the conditions
-   on that sheet (color · name · that sheet's quantity), and a closing page of takeoff quantities — the card
-   numbers (dispQtyOf; D-26.1: the quantity the money was computed on), never money. No identity gate: nothing on
-   it is a price (identityGate is for the bid and the proposal). Every early return releases the latch (D-24.7a);
-   a sheet that fails to compose prints a marked placeholder (MED-4), never silence; the toast names the document
-   (AD-3). Hidden-on-plan is a screen aid — the takeoff prints everything measured. ── */
-async function printTakeoff() {
-  if (!hasSheet()) { toast('Open a plan or start a grid first.'); releasePrintDoc(); return; }
+   on that sheet (color · pattern · name · that sheet's quantity), and a closing page of takeoff quantities — the
+   card numbers (dispQtyOf; D-26.1: the quantity the money was computed on), never money. A sheet that fails to
+   compose prints a marked placeholder (MED-4), never silence; the toast names the document (AD-3) and counts what
+   failed. R-10d: the closing quantities page is LANDSCAPE, like the sheets — one @page for the whole document, so
+   the header never strands itself on a portrait page of its own. ── */
+async function printTakeoff(opts) {
+  const o = opts || {};
   const liveConds = new Set(state.conditions.map((c) => c.id));
   const drawn = state.measurements.filter((m) => m.page != null && Array.isArray(m.points) && m.points.length && liveConds.has(m.conditionId));
-  if (!drawn.length) { toast('Nothing measured yet — trace something on the sheet first.'); releasePrintDoc(); return; }
-  const pages = [...new Set(drawn.map((m) => m.page))].sort((a, b) => a - b);
-  const total = state.pdf ? (state.numPages || pages[pages.length - 1]) : 1;
-  const roll = Object.fromEntries(VESCore.rollup(state.conditions, state.measurements).map((r) => [r.id, r]));
+  const anyQty = state.measurements.some((m) => liveConds.has(m.conditionId));
+  /* R-10a: ONE message for both empty shapes — no sheet at all, and a sheet with nothing on it.
+     What is missing is the WORK, and the two doors back to it are named. (probe-ae AE5 reads the
+     toast for "nothing measured"; probe-p903-doc AE6 reads it for "open a plan / start a grid".) */
+  if (!drawn.length && !anyQty) {
+    toast('Nothing measured yet — open a plan or start a grid, then trace a condition or type a quantity.');
+    releasePrintDoc(); return;
+  }
   const esc = escA;
-  const sw = (c) => `<span class="sw" style="background:${esc(c.color || '#888')}"></span>`;
-  const docHead = bidHead('Takeoff')
-    + `<div class="meta">${pages.length} sheet${pages.length === 1 ? '' : 's'} with measurements${state.pdf && state.pdfName ? ' · ' + esc(state.pdfName) : ''}</div>`;
-  let body = '', failed = 0;
-  for (const n of pages) {
-    const cs = await compositeSheet(n, { crop: false, regions: true });   // B2b (R-5h)
-    const head = `<h2>Sheet ${esc(pageLabel(n))}${state.pdf && total > 1 ? ' of ' + total : ''}${state.sheetDone && state.sheetDone[n] ? ' · swept' : ''}</h2>`;
-    if (cs.fail) {
-      failed++;
-      body += `<section class="tk-sheet">${body ? '' : docHead}${head}<div class="pviz-miss">Sheet ${esc(pageLabel(n))} did not render (${esc(cs.fail)}). The quantities on the last page are unaffected.</div></section>`;
-      continue;
-    }
-    // this sheet's legend: the raw values drawn here × the condition's pitch factor — the cards' convention (D-26.1)
-    const legend = legendTableHTML(cs.conds, (c) => {
+  const roll = Object.fromEntries(VESCore.rollup(state.conditions, state.measurements).map((r) => [r.id, r]));
+  const allPages = [...new Set(drawn.map((m) => m.page))].sort((a, b) => a - b);
+  // R-10c: the pick is session state and ONE SHOT — it is consumed here, never saved (snapshot() is a
+  // whitelist), and never carried into the next print. The command palette and a direct call print all.
+  const pick = Array.isArray(o.sheets) ? o.sheets : (Array.isArray(state.printSheets) ? state.printSheets : null);
+  state.printSheets = null;
+  const pages = pick ? allPages.filter((n) => pick.indexOf(n) >= 0) : allPages;
+  const left = allPages.length - pages.length;
+  const total = state.pdf ? (state.numPages || (allPages.length ? allPages[allPages.length - 1] : 1)) : 1;
+  const sheetLine = !pages.length
+    ? (allPages.length ? 'No sheet figures — every measured sheet was left out' : 'Typed quantities — nothing traced on a sheet')
+    : left ? 'Sheets shown: ' + pages.map((n) => esc(pageLabel(n))).join(', ') + ' of ' + allPages.length
+    : pages.length + ' sheet' + (pages.length === 1 ? '' : 's') + ' with measurements';
+  const docHead = bidHead('Takeoff') + '<div class="meta">' + sheetLine
+    + (state.pdf && state.pdfName ? ' · ' + esc(state.pdfName) : '') + '</div>';
+  // R-10b: the shared builder. The legend quantity is the raw values drawn on THIS sheet × the
+  // condition's pitch factor — the cards' convention (D-26.1), per sheet, so a condition measured on
+  // two sheets reads its own number on each of them.
+  const built = await visualFiguresHTML(pages, {
+    crop: false, regions: true, marks: true, legendCols: 2,
+    boxIn: 7.35, firstHeadIn: 0.78, imgMaxIn: 5.6, total,
+    qtyOf: (c, cs) => {
       const f = dispQtyOf(roll[c.id], c).pitch || 1;
       let sum = 0, pend = 0;
       for (const m of cs.onPage) {
@@ -13481,45 +13624,70 @@ async function printTakeoff() {
       }
       const q = c.type === 'count' ? sum + ' EA' : VESCore.formatValue(c.type, sum * f);
       return esc(q) + (pend ? ' · ' + pend + ' pending' : '');
-    });
-    // the document header rides inside the first sheet's page box, so the first page is never the header alone.
-    // R-7e: head + image are the one atomic thing (.tk-sheetfig keeps the old break-inside:avoid); the legend
-    // is a sibling table outside it, free to fragment onto extra pages when it runs long.
-    body += `<section class="tk-sheet">${body ? '' : docHead}<div class="tk-sheetfig">${head}<img src="${cs.url}" alt="Sheet ${esc(pageLabel(n))} with its measurements"></div>${legend}</section>`;
+    },
+  });
+  let body = '';
+  for (const f of built.figures) {
+    const head = '<h2>' + f.cap + '</h2>';
+    // the document header rides inside the FIRST page box, so page one is never the header alone.
+    if (f.fail) {
+      body += '<section class="tk-sheet">' + (body ? '' : docHead) + head
+        + '<div class="pviz-miss">Sheet ' + esc(pageLabel(f.page)) + ' did not render (' + esc(f.fail) + '). '
+        + 'The quantities on the last page are unaffected.</div></section>';
+      continue;
+    }
+    // R-7e: head + image are the one atomic thing (.tk-sheetfig keeps the old break-inside:avoid); the
+    // legend is a sibling table outside it, free to fragment onto extra pages when it runs long.
+    body += '<section class="tk-sheet">' + (body ? '' : docHead) + '<div class="tk-sheetfig">' + head
+      + '<img src="' + f.url + '" alt="Sheet ' + esc(pageLabel(f.page)) + ' with its measurements"'
+      + (f.imgMaxIn ? ' style="max-height:' + f.imgMaxIn.toFixed(2) + 'in"' : '') + '></div>'
+      + f.legend + '</section>';
   }
   /* The closing page: takeoff quantities, exactly the card numbers — and since B2a (R-5d) grouped
      under "Section: <name>", the owner's EDGE Drawing wording, with a per-section SF / LF / EA
-     subtotal under each. Quantities only: no money word and no $ reaches this document. */
+     subtotal under each. Quantities only: no money word and no $ reaches this document.
+     R-10c: these are the WHOLE takeoff whatever the sheet pick was, and the basis line says so. */
+  const sw = (c) => '<span class="sw" style="background:' + esc(c.color || '#888') + '"></span>';
   const qrow = (c) => {
     const r = roll[c.id]; if (!r || !(r.count > 0)) return '';
     const dq = dispQtyOf(r, c);
     const sheets = [...new Set(state.measurements.filter((m) => m.conditionId === c.id && m.page != null).map((m) => pageLabel(m.page)))].join(', ');
     const q = c.type === 'linear' ? VESCore.formatFtIn(dq.qty) : c.type === 'area' ? dq.qty.toFixed(1) : String(dq.qty);
     const pitch = (c.type !== 'count' && Math.abs((dq.pitch || 1) - 1) > 1e-9) ? fmtPitch(dq.rise) : '—';   // AH-1
-    return `<tr><td>${sw(c)} ${esc(c.name)}</td><td>${esc(c.type)}</td><td>${esc(sheets || '—')}</td><td class="n">${q}${r.pending ? ' <small>(' + r.pending + ' pending)</small>' : ''}</td><td>${esc(displayUnit(r.unit))}</td><td class="n">${pitch}</td></tr>`;
+    return '<tr><td>' + sw(c) + ' ' + esc(c.name) + '</td><td>' + esc(c.type) + '</td><td>' + esc(sheets || '—') + '</td>'
+      + '<td class="n">' + q + (r.pending ? ' <small>(' + r.pending + ' pending)</small>' : '') + '</td>'
+      + '<td>' + esc(displayUnit(r.unit)) + '</td><td class="n">' + pitch + '</td></tr>';
   };
   const TYPE_ORDER = { area: 0, linear: 1, count: 2 };
   let qrows = '';
   for (const sn of jobSections()) {
     const mine = state.conditions.filter((c) => sectionOfCondition(c) === sn && roll[c.id] && roll[c.id].count > 0);
     if (!mine.length) continue;
-    qrows += `<tr class="sech" data-sec="${esc(sn)}"><td colspan="6">Section: ${esc(sn)}</td></tr>`;
+    qrows += '<tr class="sech" data-sec="' + esc(sn) + '"><td colspan="6">Section: ' + esc(sn) + '</td></tr>';
     for (const c of mine) qrows += qrow(c);
     // the section's measured totals, one figure per unit, in the estimator's reading order
     const tot = new Map();
-    for (const c of mine) { const r = roll[c.id]; const u = displayUnit(r.unit) || '';
+    for (const c of mine) {
+      const r = roll[c.id]; const u = displayUnit(r.unit) || '';
       const k = (TYPE_ORDER[c.type] == null ? 3 : TYPE_ORDER[c.type]) + '|' + u;
-      tot.set(k, (tot.get(k) || 0) + dispQtyOf(r, c).qty); }
+      tot.set(k, (tot.get(k) || 0) + dispQtyOf(r, c).qty);
+    }
     const parts = [...tot.entries()].sort((a, b) => a[0].localeCompare(b[0]))
       .map(([k, v]) => VESCore.fmtQty(v) + ' ' + k.split('|')[1]).join(' · ');
-    qrows += `<tr class="secsub" data-sec="${esc(sn)}"><td colspan="6">Section: ${esc(sn)} — ${parts}</td></tr>`;
+    qrows += '<tr class="secsub" data-sec="' + esc(sn) + '"><td colspan="6">Section: ' + esc(sn) + ' — ' + parts + '</td></tr>';
   }
-  body += `<section class="tk-qty"><h2>Takeoff quantities</h2><table><thead><tr><th>Condition</th><th>Type</th><th>Sheets</th><th class="n">Quantity</th><th>Unit</th><th class="n">Pitch</th></tr></thead><tbody>${qrows}</tbody></table>`
-    + `<div class="basis">Takeoff totals across every sheet, pitched where a slope is set — the same numbers the condition cards show, grouped by the section each condition sits on. No prices on this document.</div></section>`;
+  body += '<section class="tk-qty">' + (body ? '' : docHead) + '<h2>Takeoff quantities</h2>'
+    + '<table><thead><tr><th>Condition</th><th>Type</th><th>Sheets</th><th class="n">Quantity</th><th>Unit</th><th class="n">Pitch</th></tr></thead>'
+    + '<tbody>' + qrows + '</tbody></table>'
+    + '<div class="basis">Quantities are for the whole takeoff — every measured sheet, including any left off the figures above — '
+    + 'pitched where a slope is set: the card numbers, by section. No prices on this document.</div></section>';
   $('printDoc').innerHTML = '<div class="takeoff">' + body + '</div>';
   closeCmd();
-  toast(failed ? `Takeoff sent to print — ${failed} sheet${failed === 1 ? '' : 's'} did not render and print a placeholder.` : 'Takeoff sent to print.', failed ? 'warn' : 'ok');   // AD-3 (T-06)
-  setTimeout(() => window.print(), 30);
+  const failed = built.failed;
+  toast(failed
+    ? 'Takeoff sent to print — ' + failed + ' sheet' + (failed === 1 ? '' : 's') + ' did not render and print a placeholder.'
+    : 'Takeoff sent to print.', failed ? 'warn' : 'ok');   // AD-3 (T-06)
+  printNow();   // R-10e: the latch releases on afterprint
 }
 
 /* ── AD-2 (bar M2, internal half; P-TRADE T-04 / P-MARKET M-02) · THE ESTIMATE AS A WORKBOOK THAT STILL COMPUTES.
@@ -14648,7 +14816,18 @@ $('btnCSVBOM').addEventListener('click', exportBOMCSV);
 $('btnCSVSupplier').addEventListener('click', exportSupplierCSV);   // L-10
 $('btnMenuSetup').addEventListener('click', openAssemblies);
 $('btnMenuPrint').addEventListener('click', () => printBidDoc());
-$('btnMenuTakeoff').addEventListener('click', () => printTakeoff());   // AE-2 (Patrick 2026-09-03): the takeoff is a document
+// AE-2 (Patrick 2026-09-03): the takeoff is a document. R-10c (B4): the door asks which sheets when there is more than one.
+$('btnMenuTakeoff').addEventListener('click', () => takeoffDoor());
+$('tkSheetCancel').addEventListener('click', () => closeSheetChooser(true));
+$('tkSheetModal').addEventListener('click', (e) => { if (e.target === $('tkSheetModal')) closeSheetChooser(true); });   // outside-click cancels
+$('tkSheetList').addEventListener('change', () => syncSheetChooser());
+$('tkSheetPrint').addEventListener('click', () => {
+  const picked = [...$('tkSheetList').querySelectorAll('input[type=checkbox]:checked')].map((x) => +x.value);
+  if (!picked.length) return;
+  closeSheetChooser(false);
+  state.printSheets = picked;
+  printTakeoff();
+});
 $('btnMenuCost').addEventListener('click', () => printCostSheet());
 $('btnMenuReviewXlsx').addEventListener('click', () => exportClientReviewXLSX());   // AD-1 (T-05): the review door lives in the menu too
 $('btnMenuEstimateXlsx').addEventListener('click', () => exportEstimateXLSX());     // AD-2 (bar M2, internal half)
@@ -14810,7 +14989,7 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.0.0-rc.5';  // 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
+const VES_BUILD = '2.0.0-rc.6';  // 2.0.0-rc.6: Batch B4 — THE TAKEOFF PRINTS EVERY SHEET. ONE print path: `printTakeoffDoc` is deleted and the three behaviours only it had fold into `printTakeoff` — a typed-only takeoff prints its quantity tables with no figure, a takeoff with nothing measured and nothing typed prints nothing and the toast names the two doors back to the work, and every early return releases the latch (D-24.7a). `visualFiguresHTML` is the ONE per-sheet figure builder: the takeoff's landscape sheets and the proposal's plan snapshots come out of it, and the proposal now carries a figure for EVERY measured sheet instead of the busiest one. The takeoff door opens a sheet chooser when more than one sheet is measured (measured checked, unmeasured listed and greyed, `state.printSheets` session-only and never saved); leaving one out puts “Sheets shown: 1, 3 of 3” on the paper's header, and the quantity tables still total the whole takeoff and say so. Each sheet figure now fits ONE landscape page — the legend packs two entries per row and the image's ceiling is what the caption, the header and that sheet's own legend leave (the three-sheet fixture rendered 5 pages for 3 sheets before; it renders 4 now). The latch releases on `afterprint`, armed only around our own print call. C-B0-1: `identity.fileSize` is read BEFORE pdf.js detaches the ArrayBuffer, so a PDF-backed takeoff saves its real byte length (6,366 on the fixture, 0 before); an existing file's 0 means UNKNOWN and is never compared, so those files still load with no identity review. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
 // 2.0.0-rc.2: Batch B1 — PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION. `c.pitch` is the rise per 12 and the only store (the conditionOverrides pitch key is consumed at the file door and survives only as a non-enumerable read-only VIEW); VESCore.pitchFactor is the only plan→true conversion (area and up-the-slope √(1+(r/12)²), hip/valley √(1+(r/12)²/2), level and counts 1.0); VESCore.rollup applies it to EVERY condition so rollup().quantity is the money quantity on every face and resolveTakeoff is told not to pitch again (measuredPitched); R-4 gives a linear a lenKind (level | slope | hipvalley) beside its pitch, defaulted by name; both doors (✎ card field, depth-panel row) write the one store and are journaled by name; a library row's pitchDefault seeds a condition once at creation; TAKEOFF_VERSION 3→4 converts v3 multipliers to rises unrounded (money-exact), consumes the override store, reconciles R-3a's display-pitched/price-flat library conditions to the DISPLAYED quantity with a per-condition cent delta on one banner, and holds a bare `6` at its legacy ×6 behind a per-condition confirm so no cent moves silently on reload. 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
 // F18.72: Batch AI (persona pass 3 on F18.71 — density 0 refused at the book and gated on the line, never an included $0; the book refuses a formula that cannot parse; a book equal to the seed reads as the seed; the Flags list names an unpriced line and its row is tinted; waste words at four decimals; basis column clean, waste as percent, a linked labor line carries its basis; parser names a stray operator and a case mismatch; lens Escape says nothing when nothing was typed; landing/README say which lines carry a formula)  // F18.71: Batch AH (persona pass 2 on F18.70 — a malformed number literal and a wrong function arity gate the line; an empty unit / zero production rate refused in the Library lens and the unit gate never prints "undefined"; the cue follows the Qty cell and dies with the takeoff; lens selects carry the seed mark; waste words at two decimals and the box says what it did on blur; the phone pin follows the wordless segments; segment names; tr.gated; coarse ＋ Add; lens Escape/Enter grammar)  // F18.70: Batch AG (persona pass 1 on F18.69 — P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic fixtures; triage by the NOTES.md rubric; owner's word 2026-09-04 "run persona pass; if accepted finalize build and push to main") — WHAT THE PERSONAS SAW, ANSWERED. Money-honesty: a line formula that evaluates to 0 now gates (ZERO_QTY — flagged, excluded, said on the row) instead of pricing an included $0 (P-TRADE 5); a formula typed while a Qty is typed is checked and the cue says the typed qty stands and whether the dormant formula evaluates (P-TRADE 7); the parser names the token it choked on instead of "trailing tokens" (P-TRADE 8). Library: the authored-item id comes from the library's own counter, so a fresh takeoff's ＋ Add never replaces yesterday's item (P-MARKET 1); a blank CSI lands under the assembly's code (P-MARKET 7); edited cells read in the accent against the built-in seed, items the seed lacks say "authored here", match code is a column, ＋ Add sits by the description, cells meet the coarse-pointer rule (P-MARKET 6/9, P-GAME 9/10); the toast says every takeoff priced from the book follows — no project override written (P-TRADE 10, P-GAME 10). Grid: the derivation names the item waste that turns needed into ordered and the Waste header says which waste it is (P-MARKET 2); a FIXED formula reads "fixed Q"; a line-level number is "line value", a formula "line formula"; Q's meaning by kind is in the cell title and the sheet foot names the whole scope (P-TRADE 9/11, P-MARKET 5); the lens cue clears after a good commit (P-GAME 5); Escape in a cell stops at the cell (P-GAME 3, control). Entry row: the funnel line sits under the description, the measure select follows the unit in the Tab walk, an empty row explains both paths, a partial names the closest library name, the name match forgives case and dash (P-GAME 6/7/8, P-TRADE 12). Toolbar: the fourth lens segment no longer covers Files & exports (the document-door pin moved with it) and the segments drop their words under 720 px (P-GAME 1/2). Waste door: "abc" gets its own sentence and a refused value never stays in the box (P-GAME 12, P-TRADE 13). Exports: qty needed is a number cell and the ladder labels read "(× Pct)" (P-TRADE 2); BOM headers in Title Case (P-GAME 16). Landing + README name the derivation, the line formula and the Library lens (P-MARKET 10, P-TRADE 16). CI: probe-af fetches the F18.68 bytes by full sha (P-SEAT 2). Recorded, not built (LEDGER §Batch AG): cost per estimated unit, auto-round control, grid CSI column, item creation from the grid, recap-drawer derivation, phone segment height, Library lens first frame 265 ms, the guard hook's text match, stale D-series line citations. Gates: probe-af 29/29 (RED-first 16/29 on F18.69 — 13 of the 14 new rows red, AF19 a control) · probe-v · probe-u · probe-z · probe-ab · probe-ad · probe-ae · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress.  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
 // F18.71: Batch AI (Patrick's rulings P3-R2 + P3-R3, 2026-09-03: "top and side drop down are still weird", "a lot of the language is AI speak and not construction talk") — TWO DROPDOWNS IN TRADE WORDS. Files & exports: Project · Print (Takeoff, Bid, Cost sheet, Proposal) · Spreadsheets (Estimate .xlsx, Client review .xlsx, Estimate CSV, Supplier RFQ) · Settings; the bill-of-materials, condition-totals and audit CSVs live under Setup as 'Working files' (same ids, same functions). The rack drops the Type group (the condition you click decides linear/area/count; Rect and Poly are the two ways to draw an area). Setup headings and the price-source legend in plain words; the Estimate lens's buttons name the same files. Gates: probe-ai (RED-first on F18.70), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.70: Batch AH (Patrick's review of F18.66, 2026-09-03: "still don't like the way pitch is done, should be a fraction 2/12") — PITCH READS AS RISE OVER 12. fmtPitch/parsePitch: the card chip, both pitch fields, the toasts, the rollup CSV (a 'Pitch factor' column keeps the multiplier) and the takeoff quantities page say 6/12; input takes 6/12, 6:12 or a bare 6 (a decimal multiplier still works). Storage stays the multiplier in both stores (D-26.1) — the engine and G0's goldens do not move. Gates: probe-ah (RED-first on F18.69), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.69: Batch AG (Patrick's ruling P3-R1, 2026-09-03: "clicking from conditions isn't smooth, I find myself still on the old condition a lot") — ONE CLICK MEANS ONE THING. A click on a condition card arms it (the card is D-24.5c's explicit gesture; digits still never re-arm); clicking the armed card keeps it armed; ⌖, Esc and the pill stop. The open condition detail follows the arm (a plain condition closes it). L-05's highlight-only state (selectedCondId, .card.selected) is gone; hints and the empty-state step say 'click the condition'. Gates: probe-ag (RED-first on F18.68), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.68: Batch AF (Patrick's review of F18.66, 2026-09-03: "unable to easily click items so I can modify them, i.e. flashings over field conditions") — THE CLICK PICKS WHAT YOU AIMED AT. selectAt ranks what the pointer is ON (stroke, vertex, marker within 8 px; nearest, then line/marker before area, then smaller area) before the area that merely contains the point (smallest first); a repeat click within 4 px steps through the stack; the message names the condition and how many shapes sit under it. VESCore untouched (fenced). Gates: probe-af (RED-first on F18.67), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.67: Batch AE (Patrick's review of F18.66, 2026-09-03: "there is no way to just print a takeoff") — THE TAKEOFF IS A DOCUMENT. Print takeoff… prints every sheet carrying measurements whole and landscape with its markup, a per-sheet legend (that sheet's quantities, pitched per D-26.1) and a closing quantities page (the card numbers, never money); the proposal's plan snapshot and the takeoff share one compositor (compositeSheet — the proposal's bytes are unchanged, probe-ae AE7). No identity gate (nothing on it is a price); every early return releases the latch (D-24.7a); a sheet that fails prints a marked placeholder (MED-4); the toast names the document (AD-3). Gates: probe-ae 7/7 (RED-first 0/7 on F18.66), probe-v 17/17, G0 4/4, verifier 0 new egress. · F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
@@ -14887,7 +15066,7 @@ window.VESApp = {
   editLine, isLineOverridden, setConditionWaste, showLibrary, renderLibraryLens, libraryEditItem, libraryUpsertItem,
   exportGridCSV, exportEstimateXLSX, estimateRows, parseParamsText,
   // Batch B2a (R-5 / R-5c): the section axis and its two doors.
-  exportSupplierCSV, printCostSheet, printTakeoffDoc,
+  exportSupplierCSV, printCostSheet, takeoffDoor, visualFiguresHTML,
   sectionOfCondition, sectionOfLine, systemOfLine, jobSections, namedSections,
   renameSection, setConditionSection,
   // Batch B2b (R-5e…h): the drawn regions and their doors.

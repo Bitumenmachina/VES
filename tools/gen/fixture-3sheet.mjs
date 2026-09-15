@@ -271,7 +271,12 @@ function fnv1a(str) {          // src :2588 — 32-bit FNV-1a, 8 hex chars
 }
 function identityFor(pdf) {
   return {
-    /* fileSize is 0 ON PURPOSE, and it is not a typo. buildIdentity reads `meta.size`, which
+    /* fileSize is 0 ON PURPOSE, and it is not a typo — and it STAYS 0 after Batch B4 fixed the
+       detach (R-10f). This file is the repo's only pre-2.0.0-rc.6 identity, and a saved 0 now means
+       UNKNOWN: it is the artifact that proves every takeoff written by an earlier build still loads
+       with no identity review (probe-b4-print B4-7). Re-running this generator must keep reproducing
+       these bytes, so the number below does not move. Original note follows.
+       buildIdentity reads `meta.size`, which
        openFromBytes sets to `data.byteLength` (:4945) AFTER pdf.js has already handed the same
        Uint8Array to its worker — the transfer DETACHES the buffer, so byteLength is 0 by the time
        it is read. Measured, not assumed: opening this very PDF in F18.72 produces
