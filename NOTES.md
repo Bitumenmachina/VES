@@ -56,7 +56,7 @@ truth first, history compressed.
 - **Q1 LANDED — 2.1.0-rc.1** (2026-09-15). sha256 `18809005adc56c0763b4cb83ace497de2b1e349adc59dfa1a0412d35a0f6261d`. Deductions (R-11a..c; engine input now honours sign). probe-deduct 10/10
   (1/10 on base) · G0 GREEN · all landed gates green.
 - **2.0.0 CI on the runner: probes job FAILED on the first run** (shallow checkout vs probe-b2b's `git show` pin, via b4's sub-gate row);
-  harness fix on `main` (fetch by full sha), rerun pending.
+  harness fix on `main` (fetch by full sha); **rerun 34977452371 GREEN — 2.0.0 proven on the runner.**
 - **Q2 LANDED — 2.1.0-rc.2** (2026-09-15). sha256 `72151ced160d0627153e37f6d573ff7388c507d635ca05b2ce712d03203b54fc`. Hide/solo strip, chip, keys, region eye; screen-only. probe-hide 8/8.
   R-12a: hidden regions must be recoverable → Q3-0. **PICKUP = Q3** (charter `.scratch/charter-q3.md`).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256

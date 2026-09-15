@@ -65,7 +65,8 @@ tracks origin/main. CI on the runner for d7f683e: verify PASS · gate (G0) PASS 
 local depth-1 clone (logs need admin rights): the runner's checkout is shallow, `probe-b2b-regions` pinned its old build with
 `git show 4742d02` (unavailable at depth 1) and `probe-b4-print`'s sub-gate row B4-9 carried that red. Fixed harness-only (fetch the
 pinned commit by full sha first, the probe-af pattern; proven 8/8 in a depth-1 clone), cherry-picked onto `main` and pushed; the
-rerun's result is recorded in NOTES when read. Product bytes and the v2.0.0 tag unchanged.
+rerun's result: **run 34977452371 on 8bc93db — verify · gate · probes ALL GREEN on the runner (2026-09-15).** Product bytes and the
+v2.0.0 tag unchanged.
 **Bars:** `research/PLATFORM_BAR.md` §5 (the four asks, each with its RED-first gate) · local GTM_BAR.md B2 restated + re-proven.
 **Not done here, by rule:** no push (the box's pre-push guard allows `main` only), no merge to `main`, no `--write-*`. **Patrick's
 part:** the 8-step cold test (`research/COLD_TEST_2.0.0.md` = `~/Downloads/VES_2.0.0_NOTES.md`) and one real takeoff on F18.72 vs 2.0.0
