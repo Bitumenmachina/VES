@@ -58,7 +58,12 @@ truth first, history compressed.
 - **2.0.0 CI on the runner: probes job FAILED on the first run** (shallow checkout vs probe-b2b's `git show` pin, via b4's sub-gate row);
   harness fix on `main` (fetch by full sha); **rerun 34977452371 GREEN — 2.0.0 proven on the runner.**
 - **Q2 LANDED — 2.1.0-rc.2** (2026-09-15). sha256 `72151ced160d0627153e37f6d573ff7388c507d635ca05b2ce712d03203b54fc`. Hide/solo strip, chip, keys, region eye; screen-only. probe-hide 8/8.
-  R-12a: hidden regions must be recoverable → Q3-0. **PICKUP = Q3** (charter `.scratch/charter-q3.md`).
+  R-12a: hidden regions must be recoverable → Q3-0.
+- **Q3 LANDED — 2.1.0-rc.3** (2026-09-15, e7aa796). sha256 `c56aea25dc482aabe62b45123a0bb796457b3aa9ed2591371eed41b4d49f4ca8`. Selection chip + doors, selectedIds,
+  Shift+click, marquee (skips hidden), body-drag move, Ctrl+D, Shift+R re-assign, Shift+Space, bulk one-entry, region ghost chips (Q3-0). probe-select 10/10
+  RED-first (2/10 on base); full sweep green except z Z5 (red on the Q2 base too — OPEN C-Q3-1). R-13a..d in LEDGER §Batch Q3; harness 26f40e9 re-addressed
+  deduct Q1-g. The opus agent was cut off by the 11:15 network outage, then the box lost power; recovered from `.scratch/q3` and finished by the orchestrator.
+  **PICKUP = Q4** (charter `.scratch/charter-q4.md`; then Q6 → Q5 per plan §QoL).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

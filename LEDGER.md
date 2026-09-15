@@ -5,6 +5,44 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q3 — VES 2.1 · SELECTION AFFORDANCES (build 2.1.0-rc.3, 2026-09-15)
+
+Rulings Q3-0…Q3-7 (`.scratch/charter-q3.md`). Opus agent wrote the code and `tools/sweep/probe-select.mjs`, then was terminated by the
+11:15 EDT network outage (API EAI_AGAIN) before returning; the box lost power after. Recovered from the scratch clone on disk (code 11:04,
+probe 11:07, no return, no probe output survived the reboot): the orchestrator proved the rows red on the Q2 base (RED 2/10 — only Q3-d
+pan-unchanged and the neutral Q3-i pass), ran the partial (5/10), and finished the batch. Product: sha256
+`c56aea25dc482aabe62b45123a0bb796457b3aa9ed2591371eed41b4d49f4ca8`, 3921025 bytes, md5 `9e077cba861a76f56887838d90796b8f`; commit e7aa796.
+- What landed: a selection chip beside the pointer (trade word · condition · value · sheet · N more under it; Edit · Delete · Move ·
+  Duplicate · Re-assign · Cycle) · `state.selectedIds` beside `selectedId` (grips only at one) · Shift+click adds · marquee on empty paper
+  (skips hidden conditions) · Esc clears · body-drag of a SELECTED shape moves it, grips win inside 8 px, an unselected body still pans ·
+  Ctrl+D duplicate at +12/+12, lands selected · Shift+R re-assign to a same-kind condition, wrong kind refused with the reason spoken ·
+  bulk Delete / Move / Re-assign = one journal entry · Shift+Space steps the stack · hidden regions keep a faint ghost chip with their eye,
+  Show all clears `hiddenRegions` too (Q3-0, R-12a). `pickCandidates` order (AF-1) untouched. No money rule, no file version, no print path.
+- **Ratified decisions (orchestrator, at the landing):** **R-13a** re-assign is `Shift+R`, not `R` — plain `R` has rotated the sheet since
+  F18 (`keydown` :7680); the same shape as `H` / `Shift+H`; listed in the `?` card. **R-13b** a press-and-release on a selected body that never
+  travelled 3 px is a CLICK: `endShapeDrag` lets it through to `selectAt`, so the AF-1 repeat-click cycle survives the move door (the agent's
+  build set `suppressNextClick` on every release and ate it — Q3-b red, Q3-c red by cascade). **R-13c** the chip's parts are separated by
+  real " · " text in the DOM, not only by the flex gap — `textContent` read "lineFlash (Q3)24'-11…" to the probe, to a screen reader, to a
+  paste (Q3-a/Q3-f red on the word-boundary regex). **R-13d** probe-deduct Q1-g re-addressed (harness commit 26f40e9): identity vs 2.0.0
+  MINUS the keys later batches declared (`viz.hiddenRegions`, Q2); the row's detail names the added keys and the first differing bytes.
+  Under the old clause RED 9/10 on the Q2 base and on these bytes alike — the Q2 rerun never passed the old build, so the dead clause went
+  unseen; under this one ALL GREEN 10/10 on both.
+- Probe corrections (orchestrator; the rows' intent kept): Q3-g asserts the recap's section COST moves (Annex 0 → +$, Main Roof −$ by the
+  same amount) — an unmeasured condition's section already sits on the recap at $0, so presence was the wrong proof; Q3-c's non-vacuity
+  guard restated as room-to-pan in the drag's direction (`sw − cw − l > 60`) — the staging centred a point near the left edge, scrollLeft
+  was 0, and the row failed on its own guard while the shape had moved 40 px, no pan, journaled, one undo.
+- Known gap (charter Q3-7): touch long-press → chip is not driven by the probe; recorded, not proven.
+- **Gates on `9e077cba` (orchestrator, one sequential sweep, 18:36–18:47, raw in `.scratch/q3-sweep/`):** ves-verify PASS · vocab-check 0 ·
+  G0 GREEN · b0-fixture 7/7 · b1 12/12 · b2a 7/7 · b2b 8/8 · b3 8/8 · b4 9/9 · b5 6/6 · b6f 17/17 · deduct 10/10 · hide 8/8 · **select 10/10**
+  · v 17/17 · x 5/5 · y 4/4 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · ae 5/5 · af 40/40 · p903-doc 8/8 · p903-aim 7/7 · p903-rail 5/5 ·
+  p903-pitch 6/6 · p903-words 5/5 · **z 5/6** — Z5 (phone: long-press on the card shows the peek) red on the Q2 base and on these bytes
+  alike on this box; green on the 2.0.0 runner (run 34977452371); not touched by Q3. **OPEN C-Q3-1:** box Chrome vs runner Chrome, or a
+  real regression before Q1 — settle on the runner when `ves2` reaches CI.
+- Harness lessons (paid for): an agent cut off by the network leaves its clone as the only record — recover from disk, prove red on the
+  base first, never treat an unreturned patch as evidence. The orchestrator's own diagnostic truncated a JSON list to six entries and
+  nearly mis-filed Q3-g's picker as red — read the raw line before ruling. A probe passed without its old-build argument passes on half
+  the evidence (Q1-g).
+
 ## Batch Q2 — VES 2.1 · HIDE / SOLO (build 2.1.0-rc.2, 2026-09-15)
 
 Rulings Q2-1…Q2-5 (`.scratch/charter-q2.md`). Sonnet agent (457K / 436 tool uses), RED-first: `tools/sweep/probe-hide.mjs` red on the
