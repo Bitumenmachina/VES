@@ -33,7 +33,9 @@ await ev('toggleRail(true); 1'); await sleep(300);
 const r2 = await cardRect('tpo.field');
 await c.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r2.x, y: r2.y }] }); await sleep(700);
 const p3 = await peek();
-check('Z5 phone: a long-press on the card shows the peek inside the viewport', p3.visible && p3.rows >= 3, p3);
+// Q2F: name what the finger actually landed on — a red here must say the mechanism (a banner over the rail), not only "visible:false"
+const hit3 = await ev(`(() => { let h = document.elementFromPoint(${r2.x}, ${r2.y}); const chain = []; while (h && chain.length < 5) { chain.push(h.tagName + (h.id ? '#' + h.id : '') + (typeof h.className === 'string' && h.className ? '.' + h.className.split(' ')[0] : '')); h = h.parentElement; } return chain; })()`);
+check('Z5 phone: a long-press on the card shows the peek inside the viewport (the touch lands on the card itself, not on anything painted over the rail)', p3.visible && p3.rows >= 3 && /\.card\b|DIV\.card/.test(hit3.join(' ')), { ...p3, hit: hit3 });
 await c.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(250);
 const p4 = await peek(); const armed = await ev('VESApp.state.activeCond ? VESApp.state.activeCond.name : null');
 check('Z6 phone: lifting the finger hides the peek and the long-press did not arm or select anything', !p4.visible && armed === null, { p4, armed });
