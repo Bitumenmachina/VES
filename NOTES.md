@@ -39,7 +39,10 @@ truth first, history compressed.
 - **VES 2 · Batch B4 LANDED — build 2.0.0-rc.6** (2026-09-14). sha256 `556db7f6e193c98584b12ad3bcc0a4524257694cb385eed4cffe8a26225193b2`. Every measured sheet prints (own page,
   own legend), sheet chooser, whole-job quantities page with Section subtotals, typed-only/empty edges kept, proposal per-sheet figures,
   identity fileSize recorded; printTakeoffDoc gone; probe-ae 5/5 and FATAL again. probe-b4-print 9/9 (1/9 on base) · G0 GREEN.
-  **PICKUP = B5** (charter `.scratch/charter-b5.md`; R-6) → B6 (`charter-b6-personas.md`) → B7 (`charter-b7.md`).
+- **VES 2 · Batch B5 LANDED — build 2.0.0-rc.7** (2026-09-14). sha256 `9c606215699ff5d938b6d34d8d6adca50e4f47f860b7bdb07e5443e93529dece`. descOf on every surface; EDGE column
+  words on takeoff/grid/recap/cost sheet/bid; vocab-check in CI (0 findings). probe-b5-words 6/6 (1/6 on base) · full sweep green.
+  Candidate C-B5-1 (three identical unit columns) → B6F. ALL FIVE BUILD BATCHES LANDED.
+  **PICKUP = B6 persona pass** (charter `.scratch/charter-b6-personas.md`: P-ESTIMATOR → P-FRESH → P-CODE, serial) → B6F (one fix batch) → B7 (`charter-b7.md`).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

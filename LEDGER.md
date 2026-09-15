@@ -195,6 +195,38 @@ complaint #1 (2026-09-14, "no ability to print a takeoff that uses multiple pdf 
   probe-b0-fixture 7/7 · probe-b3-colors 8/8 · probe-b2b-regions 8/8 · probe-u 8/8 · probe-af 40/40. Agent's run also: b1 12/12 ·
   b2a 7/7 · v · x/y/z/aa/ab/ac/ad · p903 ×5 green. Token note: 325K.
 
+## Batch B5 — VES 2 · ONE DESCRIPTION PER ITEM, EDGE COLUMN WORDS (build 2.0.0-rc.7, 2026-09-14)
+
+Ruling R-6 (+R-6a..d in the charter; Patrick 2026-09-14: one description everywhere + EDGE column names, chrome untouched).
+Sonnet agent, RED-first: `tools/sweep/probe-b5-words.mjs` **1/6 on the base (md5 961cf1f5) → 6/6 on the patch** (B5-6 made
+neutral under `--no-subgates` by the orchestrator — its children each run as their own step); `tools/vocab-check.mjs` **6
+findings on the base → 0 on the patch**, wired into CI. Applied by md5 contract (declared `0df93f7b508caa3c44c5045bbe342a30` = applied). Product: sha256
+`9c606215699ff5d938b6d34d8d6adca50e4f47f860b7bdb07e5443e93529dece`, 3809150 bytes.
+- `descOf(x)` is THE description for a library item, a condition, an engine line or a general line; before it, five surfaces built
+  a linked labor line's name their own way (`itemLabel` + ad-hoc kind ternaries, a recap mini-table reading a library line's
+  often-blank `.desc`). B5-1 reads one condition on 5 condition-native surfaces and its labor line on 8 of 9 engine-line surfaces
+  (the supplier RFQ is materials-only by design). `const VOCAB` carries the document words: takeoff `Legend | Pitch | Description |
+  SF | LF | EA` (a condition fills one of the three; the others print "—"); grid/Estimate CSV/XLSX `Description | Quantity | EU |
+  Ord Qty | Ord Un | Unit Price | Prc Un | Net Cost` + the Formula columns; recap/cost sheet Class → cost-code → Subtotal → named
+  adders → Total with `Description | Net Cost | Markup | Markup $ | Gross Price | Cost Unit | Unit`; bid `Description | Quantity |
+  Unit | Unit Price | Amount`. Save-file and library ids unchanged; no money math touched.
+- **Ratified deviations (agent-declared):** **R-6e** the takeoff quantities page's "Sheets" column (B4) moves to a `data-sheets`
+  attribute — EDGE's Drawing report has no such column and the per-sheet figure legends already carry it. **C-B5-1 (candidate,
+  B6F):** EU / Ord Un / Prc Un are always equal today — this engine resolves ONE unit per line — so three unit columns read the
+  same word on every grid row; collapse to one `Unit` until the engine gains order-unit conversion (the three-unit chain stays
+  the VOCAB target). **Four sibling probes re-addressed, assertions unchanged** (`probe-b1-pitch` + `probe-p903-doc` read the
+  takeoff row by column position — now by the non-dash SF/LF/EA cell and `data-sheets`; `probe-af` + `probe-ad` found the
+  workbook's cost column by /extended|total/ and the grid's Waste `<th>` by nth-child(6) — now /net cost/ and nth-child(7)).
+- **Gates on `0df93f7b508caa3c44c5045bbe342a30` (orchestrator rerun, sequential background sweep):** G0 GREEN 4/4 · ves-verify PASS · vocab-check 0 ·
+  **probe-b5-words: 6/6 passed, 0 failed** · probe-b4-print 9/9 · b2a 7/7 · b1 12/12 · b0-fixture 7/7 · b3 8/8 · b2b 8/8 · probe-ae 5/5 · p903-doc 8/8 ·
+  p903-words 5/5 · ad 5/5 · af 40/40 · u 8/8 · v 17/17.
+- **Incident, on the record (harness, not product):** the first rerun's `probe-b5-words` hung 19 min (its child-gate branch ran
+  every sibling probe inside one process); the orchestrator's `pkill -f` matched its own shell (the roofnerd lesson, re-paid),
+  three parallel probe slices then collided on Chrome's devtools port, and ~80 leftover `/tmp/ves-*` Chrome profiles filled the
+  tmpfs quota so every shell call failed silently. Fixes: sweeps run as ONE sequential background job with a per-probe `timeout`
+  and `rm -rf /tmp/ves-*` after each; kills by PID from `ps` on `comm`; B5-6 neutral under the flag. Token note: sonnet 588K /
+  300 tool uses (B3 sonnet 464K) — the two sonnet batches burned more than any opus batch.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
