@@ -1802,6 +1802,21 @@
     grid-template-columns: 1fr auto; gap: 3px 8px; font-family: var(--mono); font-size: 11px; }
   #moneyPeek .mp-sell { font-weight: 700; color: var(--accent); font-size: 13px; }
   #moneyPeek .mp-note { grid-column: 1 / -1; font-family: var(--sans); color: var(--ink-dim); font-size: 10.5px; }
+  /* Batch Q1 (Q1-4): the perimeter handoff picker — it opens AT THE POINTER, where the estimator's
+     eye already is, and it is the only modal thing about a deduct. Esc is "none". */
+  #deductPick { position: fixed; z-index: 92; min-width: 230px; max-width: min(340px, calc(100vw - 16px));
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4); padding: 7px; font-size: 12px; }
+  #deductPick[hidden] { display: none; }
+  #deductPick .dp-head { font-weight: 600; padding: 2px 5px 6px; color: var(--ink-dim); }
+  #deductPick .dp-opt { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left;
+    background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 7px;
+    padding: 6px 8px; font: inherit; cursor: pointer; }
+  #deductPick .dp-opt:hover, #deductPick .dp-opt:focus { background: var(--panel); border-color: var(--line); outline: none; }
+  #deductPick .dp-sw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+  #deductPick .dp-none { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 7px 7px; color: var(--ink-dim); }
+  .card .qty .dedq { color: var(--ink-dim); font-family: var(--mono); }
+  .dednote { color: var(--ink-dim); font-size: 11px; }
 </style>
 </head>
 <body data-mode="single">
@@ -1918,11 +1933,17 @@
     <div class="rackspring"></div>
     <button class="rackmod armed" id="btnSnap" title="Snap to your own geometry — modifier on the active tool (S)"><span class="ti">⌖</span><span class="tl">Snap</span></button>
     <button class="rackmod" id="btnFills" title="Cycle fill opacity — Fills → Faint → Off (strokes and labels stay)"><span class="ti">◧</span><span class="tl">Fills</span></button>
+    <!-- Q1-2: Deduct is a MODIFIER on the trace you are about to make, not a tool and not a condition
+         type — the cutout lands on the same condition as the area it cuts. It disarms after one trace
+         unless Shift keeps it on, so a hand cannot leave it armed and carve the roof away. -->
+    <button class="rackmod" id="btnDeduct" title="Deduct: next trace subtracts — trace a skylight, chimney or curb and its SF comes off the armed area condition (D · Shift-click stays armed)"><span class="ti">⊖</span><span class="tl">Deduct</span></button>
   </div>
   <div id="stage">
     <div id="banners"></div>
     <div id="audit"></div>
     <div id="inspector"></div>
+    <!-- Q1-4: the perimeter handoff picker. Built and positioned by openDeductHandoff(). -->
+    <div id="deductPick" hidden></div>
     <div id="activeIndicator" hidden></div>
     <button id="railReopen" hidden title="Show the conditions panel">⟨ Conditions</button>
     <div id="empty">
@@ -2666,6 +2687,10 @@ const VESCore = (() => {
     return pitchFactor(condRise(c), condKind(c));
   }
 
+  /* Q1-1: the named clamp, and the ONE sentence every face prints while it is holding. A single
+     string, so the card, the grid row, the audit file and the takeoff paper cannot word it apart. */
+  const NET_FLOOR_ZERO = 'deductions exceed the area \u2014 held at 0';
+
   /* ---------- rollup, project total ---------- */
   // Integrity rule: nothing uncalibrated, pending, or unpriced is ever
   // silently counted as zero — it is excluded from the total AND flagged.
@@ -2681,12 +2706,27 @@ const VESCore = (() => {
          waiting on a scale. Nothing here prices anything differently: `pending` already excluded
          those measurements, and this only lets every surface SAY so. */
       const pages = new Set(), pagesIn = new Set(), pendingPages = new Set();
+      let grossQty = 0, deductQty = 0, deducts = 0;
       for (const m of ms) {
         pages.add(m.page);
         if (m.value == null) { pending++; if (m.page != null) pendingPages.add(m.page); continue; }
         if (m.page != null) pagesIn.add(m.page);
-        qty += m.value;
+        /* ── Q1-1 (Batch Q1) · A DEDUCT IS A DIRECTION, NOT A DIFFERENT NUMBER.
+           `value` stays a positive MAGNITUDE everywhere in this file — `polygonArea` is still
+           absolute and the exact-quantity door still floors at 0. The one thing a cutout changes
+           is which way that magnitude points, and that lives in `m.sign` (+1 default, -1 deduct),
+           set only through `addMeasurement`'s opts. Summing here is the ONLY place the sign
+           becomes a quantity. ── */
+        const sgn = (m.sign === -1) ? -1 : 1;
+        if (sgn === -1) { deducts++; deductQty += m.value; } else grossQty += m.value;
+        qty += m.value * sgn;
       }
+      /* Q1-1 · NET_FLOOR_ZERO. Cutouts that add up past the field they cut hold the condition at
+         zero instead of going negative: a negative area is not a quantity and a negative extended
+         cost is money running backwards. It is NEVER silent — `netHeld` rides the row and every
+         face that prints the quantity prints the sentence beside it. */
+      let netHeld = false;
+      if (qty < 0) { qty = 0; netHeld = true; }
       const uc = c.unitCost;
       // B1 (R-3): ONE store, ONE function. Every condition — library-backed or not — is pitched
       // here, through `pitchFactor`, so `quantity` IS the quantity the money is computed on and
@@ -2708,6 +2748,10 @@ const VESCore = (() => {
         pagesIn: [...pagesIn].sort((a, b) => a - b),            // B6F-C2: the sheets IN the quantity
         pendingPages: [...pendingPages].sort((a, b) => a - b),  // B6F-C2: the sheets waiting on a scale
         quantity: pQty, raw: qty, unit: UNITS[c.type], pitch, rise: condRise(c), lenKind: condKind(c),
+        // Q1-1: the traced gross, what the cutouts took off it, and whether the clamp is holding —
+        // pitched exactly like `quantity`, so a face can print all three without re-deriving one.
+        gross: grossQty * pitch, deductQty: deductQty * pitch, grossRaw: grossQty, deductRaw: deductQty,
+        deducts, netHeld, netFloorNote: netHeld ? NET_FLOOR_ZERO : '',
         unitCost: priced ? uc : null, unitCostRaw: uc ?? null,
         extended: priced ? pQty * uc : null,
         calStatus: !ms.length ? '—' : (pending ? `pending (${pending})` : 'calibrated'),
@@ -2740,15 +2784,21 @@ const VESCore = (() => {
       if (m.value == null && m.type !== 'count') warns.push('pending');
       if (c && (uc == null || uc === '')) warns.push('unpriced');
       else if (c && !priced) warns.push('invalid unit cost');
+      /* Q1-3: the per-measurement record is where a deduct is a ROW, not an adjustment. The
+         quantity it carries is SIGNED, so a consumer summing this column over a condition reads
+         the net; `type` keeps the geometry and `deduct` says what the row IS. */
+      const sgn = (m.sign === -1) ? -1 : 1;
       return {
         id: m.id,
         condition: c ? c.name : '—',
         type: m.type,
+        sign: sgn, deduct: sgn === -1,
+        signedQuantity: m.value == null ? null : m.value * sgn,
         csi: c ? (c.csi || '') : '', wbs: c ? (c.wbs || '') : '', location: c ? (c.location || '') : '',
         page: m.page, sheetLabel: pageLabel(m.page),
         quantity: m.value, unit: UNITS[m.type],
         unitCost: priced ? uc : null,
-        extended: (priced && m.value != null) ? m.value * uc : null,
+        extended: (priced && m.value != null) ? m.value * sgn * uc : null,
         pointCount: m.points.length,
         calStatus: m.type === 'count' ? '—' : (m.value == null ? 'pending' : 'calibrated'),
         warnStatus: warns.length ? warns.join('; ') : 'ok',
@@ -2838,14 +2888,28 @@ const VESCore = (() => {
 
   /* ---------- takeoff snapshot normalization (v3 reads v1/v2) ---------- */
 
-  const TAKEOFF_VERSION = 5;   // B2b: v5 carries `sections` — the drawn section regions (R-5h). v4: pitch as a RISE per 12 on the condition (v3 stored a multiplier, in two places)
+  const TAKEOFF_VERSION = 6;   // Q1: v6 carries a measurement SIGN — a deduct (Q1-5). v5: `sections`, the drawn section regions (R-5h). v4: pitch as a RISE per 12 on the condition (v3 stored a multiplier, in two places)
+  const TAKEOFF_VERSION_BASE = 5;   // Q1-5: what a takeoff with nothing newer than v5 in it still SAYS
+  /* ── Q1-5 · THE FILE SAYS SIX ONLY WHEN IT HAS TO.
+     A takeoff with no deduct in it is a version-5 takeoff and is written byte-for-byte the way
+     2.0.0 wrote it — bumping the number on every save would lock estimators out of their own
+     files over a feature they never used. The number moves with the BYTES, not with the build. */
+  function fileVersionNeeded(measurements) {
+    return (measurements || []).some((m) => m && m.sign !== undefined && m.sign !== 1) ? TAKEOFF_VERSION : TAKEOFF_VERSION_BASE;
+  }
+  /* Q1-5: which build reads which format — so the refusal below names a door instead of telling
+     the estimator to go and find one. */
+  const FORMAT_BUILDS = { 4: 'VES 2.0.0-rc.2', 5: 'VES 2.0.0-rc.4', 6: 'VES 2.1.0' };
 
   function normalizeSnapshot(d) {
     if (!d || d.app !== 'VES' || !Array.isArray(d.conditions) || !Array.isArray(d.measurements)) {
       return { ok: false, error: 'Not a VES takeoff file.' };
     }
     if (typeof d.version === 'number' && d.version > TAKEOFF_VERSION) {
-      return { ok: false, error: `This takeoff is version ${d.version}, newer than this build understands (${TAKEOFF_VERSION}). Refusing to guess at it — open it in the build that wrote it.` };
+      /* Q1-5: the refusal was generic — it gave the estimator a number and nothing they could act
+         on. It names the build that reads the file whenever this build knows one. */
+      const need = FORMAT_BUILDS[d.version];
+      return { ok: false, error: `This takeoff is version ${d.version}, newer than this build understands (${TAKEOFF_VERSION}) — save it with ${need || 'the build that wrote it'} or later. Refusing to guess at it.` };
     }
     /* ── U2 (Batch V) · THE FILE DOOR REFUSES WHAT IT CANNOT PRICE. R3 typed the money-override
        layer at the door and left `conditions` / `measurements` — the quantities themselves — to
@@ -2943,7 +3007,12 @@ const VESCore = (() => {
       if (deadCondIds.has(m.conditionId)) { drop.measurements++; continue; }
       if (m.value != null && !finiteGE0(m.value)) { drop.measurements++; continue; }
       if (m.points != null && !Array.isArray(m.points)) { drop.measurements++; continue; }
-      measurements.push({ notes: '', ...m });
+      /* Q1-5: reading a v5 file defaults every sign to +1 (no cent moves, no key appears). Only a
+         real -1 survives the door — any other value is not a sign and is dropped, the same rule U2
+         applies to every other field here. */
+      const mm = { notes: '', ...m };
+      if (mm.sign !== undefined && mm.sign !== -1) delete mm.sign;
+      measurements.push(mm);
     }
     /* ── B2b (R-5h) · THE DRAWN REGIONS COME THROUGH THE SAME DOOR AS EVERYTHING ELSE.
        A region with no name, no sheet, or fewer than three corners cannot be drawn, cannot be
@@ -3112,6 +3181,7 @@ const VESCore = (() => {
     validCost, fmtMoney, fmtQty, csvSafe, sellLadder,
     rollup, projectTotal, measurementRows, reconcile,
     fnv1a, compareIdentity, identityKey, normalizeSnapshot, TAKEOFF_VERSION,
+    TAKEOFF_VERSION_BASE, fileVersionNeeded, NET_FLOOR_ZERO,   // Q1 (Q1-1 / Q1-5)
     pitchFactor, lenKindFor, normRise, condKind, condRise, condFactor, LEN_KINDS,
     SET_VERSION, makeConditionSet, validateConditionSet, condKey, mergePlan,
   };
@@ -4669,6 +4739,8 @@ const state = {
   railOpen: true,                 // conditions rail visible (item 6: collapsible, sheet-dominant)
   snap: true,                     // snap cursor to own committed geometry + cal points
   rectMode: false,                // area tool: two-corner rectangle instead of polygon
+  deductArmed: false,             // Q1-2: the next area trace SUBTRACTS — session-only, never saved
+  deductStay: false,              // Q1-2: Shift kept it armed for a row of skylights
   snapHit: null,                  // {x,y} pdf point currently snapped to (for the indicator)
   nextId: 1,
 
@@ -5766,7 +5838,8 @@ function drawOverlay(pane) {
     drawShape(ctx, m.type, m.points.map((p) => pdfToCss(pane, p)), c.color, {   // F18.13: the CONDITION's chosen color paints the plan — confidence stays in the label glyph. Field: every unpriced trace rendered the same red.
       selected: m.id === state.selectedId || flash, flash,
       pattern: patternOf(patternIndexFor(c)),   // R-7c
-      label: m.type === 'count' ? null : (confMeasurement(m, c).glyph + ' ' + VESCore.formatValue(m.type, m.value)),
+      deduct: m.sign === -1,                   // Q1-3: the condition's own color, cut with a dashed edge and a cross-hatch
+      label: m.type === 'count' ? null : (confMeasurement(m, c).glyph + ' ' + (m.sign === -1 ? '−' : '') + VESCore.formatValue(m.type, m.value)),
     });
   }
 
@@ -5892,7 +5965,9 @@ function drawShape(ctx, type, pts, color, opt = {}) {
   if (opt.flash) color = '#4f9fe0';                 // §4c flash pass — accent-bright, never a confidence hue
   ctx.strokeStyle = color; ctx.fillStyle = color;
   ctx.lineWidth = opt.flash ? 5 : (opt.selected ? 3.5 : 2);
-  const dashArr = opt.pattern ? opt.pattern.dash : (opt.dashed ? [6, 5] : []);   // R-7c: pattern.dash wins; the plain boolean (calibration draft) still works
+  // Q1-3: a deduct reads as a HOLE — same hue as its condition (it belongs to it), but a dashed
+  // edge and a cross-hatch so it never reads as more roof. The deduct dash wins over the pattern.
+  const dashArr = opt.deduct ? [7, 4] : (opt.pattern ? opt.pattern.dash : (opt.dashed ? [6, 5] : []));   // R-7c: pattern.dash wins; the plain boolean (calibration draft) still works
   ctx.setLineDash(dashArr);
   if (type === 'count') {
     for (const p of pts) {
@@ -5907,10 +5982,10 @@ function drawShape(ctx, type, pts, color, opt = {}) {
   for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
   if (type === 'area' && pts.length > 2 && !opt.draft) ctx.closePath();
   const fm = state.fillMode || 'on';   // F18.14
-  if (type === 'area' && fm !== 'off') { ctx.globalAlpha = (opt.selected ? .3 : .18) * (fm === 'faint' ? .45 : 1); ctx.fill(); ctx.globalAlpha = 1; }
+  if (type === 'area' && fm !== 'off') { ctx.globalAlpha = (opt.selected ? .3 : .18) * (fm === 'faint' ? .45 : 1) * (opt.deduct ? .5 : 1); ctx.fill(); ctx.globalAlpha = 1; }
   ctx.stroke();
   ctx.setLineDash([]);
-  if (type === 'area' && !opt.draft && opt.pattern && fm !== 'off') drawHatch(ctx, pts, opt.pattern.hatch, color);   // R-7c
+  if (type === 'area' && !opt.draft && (opt.pattern || opt.deduct) && fm !== 'off') drawHatch(ctx, pts, opt.deduct ? 'cross' : opt.pattern.hatch, color);   // R-7c · Q1-3
   for (const p of pts) { ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill(); }
   if (opt.label && pts.length > 1) {
     const mid = pts[Math.floor((pts.length - 1) / 2)];
@@ -6267,6 +6342,9 @@ function syncRack() {
   set('btnRect', state.rectMode);
   set('btnSection', state.tool === 'section');   // B2b: the Section tool is a tool, not a condition type
   set('btnSnap', state.snap);
+  set('btnDeduct', state.deductArmed);          // Q1-2: a modifier, like Snap — armed is a state, not a tool
+  { const b = $('btnDeduct');
+    if (b) { const tl = b.querySelector('.tl'); if (tl) tl.textContent = state.deductArmed ? (state.deductStay ? 'Deduct · held' : 'Deduct: next') : 'Deduct'; } }
 }
 
 // Edit/Delete rack actions operate on the current selection (measurement select+delete).
@@ -6306,6 +6384,8 @@ function syncState() {
   gateCtl('btnVerify', hasPDF && !!cal(), hasPDF ? 'Set the scale first.' : 'Open a PDF first.');
   // rack — Pan/Select/Snap need a sheet; trace tools need a scale; Edit/Delete need a selection
   ['btnPan', 'btnSelect', 'btnSnap', 'btnFills'].forEach((id) => gateCtl(id, sheet, 'Start a grid (New) or open a PDF first.'));
+  // Q1-2: a deduct is a measured area, so it needs a scale like any other trace tool
+  gateCtl('btnDeduct', hasScale, sheet ? 'Set the scale first.' : 'Start a grid (New) or open a PDF first.');
   ['btnToolPoly', 'btnRect']
     .forEach((id) => gateCtl(id, hasScale, sheet ? 'Set the scale first.' : 'Start a grid (New) or open a PDF first.'));
   // B2b: a region needs a sheet to sit on, not a scale — it measures nothing.
@@ -6572,7 +6652,7 @@ function wirePaneInput() {
           if (!state.draft) { state.draft = { points: [p], cursor: p, rect: true }; }
           else {
             const a = state.draft.points[0];
-            addMeasurement(state.activeCond, [a, { x: p.x, y: a.y }, p, { x: a.x, y: p.y }]);
+            commitTrace(state.activeCond, [a, { x: p.x, y: a.y }, p, { x: a.x, y: p.y }]);   // Q1-2
             state.draft = null;
           }
           drawOverlay(pane); updateLive();
@@ -7020,7 +7100,7 @@ function finishDraft(fromDblClick = false) {
   }
   const minPts = t === 'area' ? 3 : 2;
   if (pts.length < minPts) { toast(`Need at least ${minPts} points.`); return; }
-  addMeasurement(state.activeCond, pts);
+  commitTrace(state.activeCond, pts);   // Q1-2
   state.draft = null;
   drawOverlays(); updateLive();
 }
@@ -7190,8 +7270,12 @@ function addMeasurement(cond, points, opts) {
   const value = VESCore.measureValue(cond.type, points, cal());
   const m = { id: uid(), conditionId: cond.id, page: AP().pageNum,
     type: cond.type, points, value, notes: '', manual: !!(opts && opts.manual) };
+  /* Q1-1: the sign is set HERE or nowhere. A measurement written without `opts.sign` carries no
+     `sign` key at all, so a takeoff with no deduct in it serialises byte-for-byte as 2.0.0's. */
+  if (opts && opts.sign === -1) m.sign = -1;
   state.measurements.push(m);
-  journalPush({
+  // Q1-4: a deduct and the perimeter it hands off are ONE entry — the caller pushes it (finishDeduct).
+  if (!(opts && opts.noJournal)) journalPush({
     label: 'add ' + (cond.name || 'measurement'),
     undo() {
       const i = state.measurements.indexOf(m);
@@ -7204,7 +7288,141 @@ function addMeasurement(cond, points, opts) {
   pulseCard(cond.id);
   if (typeof openDrawerAuto === 'function') openDrawerAuto();   // surface the live consequence
   markDirty();
-  tagFromRegion(cond, m);   // B2b (R-5f): resolution happens AT TAG TIME ONLY — after the add is on the stack
+  /* B2b (R-5f): resolution happens AT TAG TIME ONLY — after the add is on the stack.
+     Q1-2: a cutout is not the work that files a condition under a section — it is a hole in work
+     that is already filed — so a deduct does not tag. */
+  if (!(opts && opts.sign === -1)) tagFromRegion(cond, m);
+  return m;
+}
+
+/* ══ Batch Q1 (Q1-2 / Q1-4) · DEDUCTIONS ═══════════════════════════════════════
+   An estimator traces a skylight, a chimney or a curb inside a field area and the field's SF drops
+   by it. Everything below is the same trace the rack already makes — same tool, same condition, one
+   flag — because a cutout that needs its own condition is a cutout nobody files. Two overlapping
+   deducts BOTH subtract: that is market parity (Bluebeam and PlanSwift are naive here too) and the
+   estimator is the one who knows whether the two holes are the same hole. ═════════════════════ */
+function toggleDeduct(stay) {
+  if (state.deductArmed) {
+    state.deductArmed = false; state.deductStay = false;
+    toolMsg('Deduct off — the next trace adds.');
+    syncRack(); return false;
+  }
+  const c = state.activeCond;
+  if (!c) {
+    toolMsg('Arm the area condition you want to cut first, then Deduct — a cutout lands on the same condition as the area it cuts.');
+    toast('Deduct needs an armed area condition — click the card for the field you are cutting, then press D.', 'warn');
+    syncRack(); return false;
+  }
+  if (c.type !== 'area') {
+    /* Q1-2: refused with the reason SPOKEN, and nothing created. A deduct subtracts square feet;
+       there is no such thing as taking square feet off a run of drip edge or off a vent count. */
+    const kind = c.type === 'linear' ? 'linear' : 'count';
+    toolMsg('"' + (c.name || 'that condition') + '" is a ' + kind + ' condition — a deduct subtracts area (SF), so there is nothing here for it to cut. Nothing was created. Arm an area condition and press D.');
+    toast('Deduct refused — "' + (c.name || 'that condition') + '" is a ' + kind + ' condition and a deduct subtracts area.', 'warn');
+    state.deductArmed = false; state.deductStay = false;
+    syncRack(); return false;
+  }
+  state.deductArmed = true; state.deductStay = !!stay;
+  toolMsg('Deduct: next trace subtracts' + (stay ? ' — held on until you press D again' : '')
+    + '. Trace the skylight, chimney or curb and its SF comes off "' + (c.name || 'this condition') + '".');
+  syncRack(); return true;
+}
+
+function centroidOf(pts) {
+  let x = 0, y = 0;
+  for (const q of pts) { x += q.x; y += q.y; }
+  return { x: x / pts.length, y: y / pts.length };
+}
+
+/* Q1-2: ONE funnel for a finished AREA trace, so "was Deduct armed?" is asked in exactly one place
+   and the rect door and the polygon door cannot answer it differently. */
+function commitTrace(cond, pts) {
+  if (!state.deductArmed || cond.type !== 'area') return addMeasurement(cond, pts);
+  if (!state.deductStay) state.deductArmed = false;
+  syncRack();
+  const m = addMeasurement(cond, pts, { sign: -1, noJournal: true });
+  /* Q1-2: a deduct is NOT required to lie inside anything — the soft note says so and the trace
+     stands. A hole traced a foot outside the field it belongs to is still the estimator's hole. */
+  let inside = false;
+  try {
+    const cen = centroidOf(pts);
+    inside = state.measurements.some((x) => x !== m && x.conditionId === cond.id && x.sign !== -1
+      && x.type === 'area' && x.points && x.points.length > 2 && x.page === m.page
+      && VESCore.pointInPolygon(cen, x.points));
+  } catch (_) { inside = true; }
+  openDeductHandoff(cond, m, pts, inside);
+  return m;
+}
+
+/* Q1-4: the cutout's own perimeter is a flashing quantity and the estimator knows it the moment the
+   shape closes — so the offer is made THERE, at the pointer, listing the job's linear conditions. */
+function openDeductHandoff(cond, m, pts, inside) {
+  const el = $('deductPick');
+  const lins = state.conditions.filter((c) => c.type === 'linear');
+  if (!el || !lins.length) { finishDeduct(cond, m, pts, null, inside); return; }
+  let onKey = null;
+  const close = () => { el.hidden = true; el.innerHTML = ''; if (onKey) document.removeEventListener('keydown', onKey, true); onKey = null; };
+  const done = (lin) => { close(); finishDeduct(cond, m, pts, lin, inside); };
+  el.innerHTML = '<div class="dp-head">Cutout perimeter — hand it to a flashing condition?</div>'
+    + lins.map((c) => '<button type="button" class="dp-opt" data-cid="' + escA(String(c.id)) + '">'
+      + '<span class="dp-sw" style="background:' + escA(c.color || '#888') + '"></span>' + escA(descOf(c)) + '</button>').join('')
+    + '<button type="button" class="dp-opt dp-none" data-cid="">None — just the deduct</button>';
+  el.hidden = false;
+  // at the pointer: the last corner the estimator clicked, nudged clear of the cursor and kept on screen
+  try {
+    const pane = AP(), last = pts[pts.length - 1];
+    const [vx, vy] = pane.viewport.convertToViewportPoint(last.x, last.y);
+    const r = pane.els.overlay.getBoundingClientRect();
+    const b = el.getBoundingClientRect();
+    let L = r.left + vx * (r.width / pane.viewport.width) + 14;
+    let T = r.top + vy * (r.height / pane.viewport.height) + 14;
+    L = Math.max(8, Math.min(L, window.innerWidth - b.width - 8));
+    T = Math.max(8, Math.min(T, window.innerHeight - b.height - 8));
+    el.style.left = L + 'px'; el.style.top = T + 'px';
+  } catch (_) { el.style.left = '50%'; el.style.top = '40%'; }
+  el.querySelectorAll('button').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const cid = b.dataset.cid;
+    done(cid === '' ? null : (state.conditions.find((c) => String(c.id) === cid) || null));
+  }));
+  onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(null); } };
+  document.addEventListener('keydown', onKey, true);
+  const first = el.querySelector('button'); if (first) first.focus();
+}
+
+/* Q1-4: ONE journal entry for the pair. A hand that regrets the skylight regrets its flashing too,
+   and an undo that leaves one of them standing is the kind of half-state D-25.2a rules against. */
+function finishDeduct(cond, m, pts, lin, inside) {
+  let sib = null;
+  if (lin) {
+    // the PERIMETER of the cutout: the closed ring, not the open path the area was traced as
+    const ring = pts.map((q) => ({ x: q.x, y: q.y }));
+    ring.push({ x: pts[0].x, y: pts[0].y });
+    sib = addMeasurement(lin, ring, { noJournal: true });
+  }
+  const label = sib ? ('deduct + perimeter to ' + descOf(lin)) : ('deduct on ' + descOf(cond));
+  journalPush({
+    label,
+    undo() {
+      for (const x of [sib, m]) {
+        if (!x) continue;
+        const i = state.measurements.indexOf(x);
+        if (i >= 0) state.measurements.splice(i, 1);
+        if (state.selectedId === x.id) { state.selectedId = null; state.grip = null; }
+      }
+      drawOverlays(); renderCards(); updateLive(); updateUncalBanner();
+    },
+    redo() {
+      state.measurements.push(m); if (sib) state.measurements.push(sib);
+      drawOverlays(); renderCards(); updateLive(); updateUncalBanner();
+    },
+  });
+  const sf = m.value == null ? 'pending' : VESCore.formatValue('area', m.value);
+  const lf = (sib && sib.value != null) ? VESCore.formatValue('linear', sib.value) : 'pending';
+  toast('Deduct −' + sf + ' off "' + descOf(cond) + '"' + (sib ? (' · ' + lf + ' of perimeter to "' + descOf(lin) + '"') : '')
+    + ' — Ctrl+Z takes ' + (sib ? 'both' : 'it') + ' back.', 'ok');
+  if (!inside) toolMsg('Deduct recorded — it is not inside any area on this condition. It still subtracts ' + sf + '.');
+  drawOverlays(); renderCards(); updateLive(); updateUncalBanner(); markDirty();
 }
 
 /* ---------- numeric / keyed entry (P1.4 — draw rough, set exact) ---------- */
@@ -7400,6 +7618,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'v' || e.key === 'V') setTool('select');
   else if (e.key === 's' || e.key === 'S') toggleSnap();
   else if (e.key === 'b' || e.key === 'B') toggleRect();
+  else if (e.key === 'd' || e.key === 'D') toggleDeduct(e.shiftKey);   // Q1-2: Shift keeps it armed for a row of skylights
   else if (e.key === 'c' || e.key === 'C') { if (state.pdf) setTool('calibrate'); }
   else if (e.key === 'r' || e.key === 'R') rotateCurrent();
   else if (e.key === 'f' || e.key === 'F') { if (AP().page) fitToView(AP()); }
@@ -8567,6 +8786,9 @@ function renderCardsNow() {
       });
       meta.appendChild(pc);
     }
+    // Q1-1 / Q1-3: the badge, and — while the clamp is holding — the clamp's own sentence, never a bare 0
+    if (r.netHeld) meta.appendChild(chip(VESCore.NET_FLOOR_ZERO));
+    else if (r.deducts) meta.appendChild(chip(r.deducts + ' deduct' + (r.deducts === 1 ? '' : 's'), true));
     if (state.activeCond && state.activeCond.id === c.id) {
       const t = document.createElement('span'); t.className = 'arm-tag'; t.textContent = '● ACTIVE';
       meta.appendChild(t);
@@ -8586,6 +8808,18 @@ function renderCardsNow() {
         : c.type === 'area' ? dq.toFixed(1)
         : String(dq));
       const sm = document.createElement('small'); sm.textContent = r.unit; qty.appendChild(sm);
+      /* Q1-3: the card is the estimator's primary quantity face, so the net stands where the
+         number has always stood and what came off it reads beside it — "1,150.0 SF (−100.0)". */
+      if (r.deducts) {
+        const dsm = document.createElement('small'); dsm.className = 'dedq';
+        const dtxt = c.type === 'linear' ? VESCore.formatFtIn(r.deductQty)
+          : c.type === 'area' ? r.deductQty.toFixed(1) : String(r.deductQty);
+        dsm.textContent = ' (−' + dtxt + ')';
+        dsm.title = r.deducts + ' deduct' + (r.deducts === 1 ? '' : 's') + ' off a gross of '
+          + (c.type === 'area' ? r.gross.toFixed(1) : c.type === 'linear' ? VESCore.formatFtIn(r.gross) : String(r.gross)) + ' ' + r.unit
+          + (r.netHeld ? ' — ' + VESCore.NET_FLOOR_ZERO : '');
+        qty.appendChild(dsm);
+      }
       // F18.11: engine look WINS on assembly conditions. Old-era saves can carry a
       // stale per-condition unitCost on libRef conditions — that value is dead data
       // (recapData's libRef gate keeps it out of every total) and painting it made
@@ -9305,10 +9539,12 @@ function renderLedger() {
       tr.appendChild(d);
       return d;
     };
-    td(r.id); td(r.condition); td(r.type);
+    // Q1-3: the ledger is the per-measurement record — a deduct is a ROW here, typed and signed,
+    // so the column adds up to the net the cards and the money faces show.
+    td(r.id); td(r.condition); td(r.deduct ? 'Deduct' : r.type);
     td(r.csi); td(r.wbs); td(r.location);
     td(r.page, 'num'); td(r.sheetLabel);
-    td(r.quantity == null ? 'pending' : VESCore.formatValue(r.type, r.quantity), 'num');
+    td(r.quantity == null ? 'pending' : (r.deduct ? '−' : '') + VESCore.formatValue(r.type, r.quantity), 'num');
     td(r.unit);
     td(r.unitCost == null ? '—' : VESCore.fmtMoney(r.unitCost), 'money');
     td(r.extended == null ? '—' : VESCore.fmtMoney(r.extended), 'money');
@@ -9427,14 +9663,31 @@ function loadAssembly(asmId) {
 function assemblyMeasured() {
   const byRef = {};
   const condById = Object.fromEntries(state.conditions.map((c) => [c.id, c]));
+  /* ── Q1-1 · THE ENGINE IS HANDED THE NET, NOT THE GROSS.
+     This is the money input for every library-backed condition, and a deduct that reached the
+     cards but not this would have shown the estimator 1,150 SF while the assembly bought 1,250.
+     A condition that was CUT is summed with its signs FIRST and clamped at zero, then pitched —
+     the same two steps `VESCore.rollup` takes, so this number and every displayed face agree,
+     NET_FLOOR_ZERO included. Clamping per libRef instead would disagree with the cards whenever
+     two conditions share one library row.
+     A condition with no deduct on it keeps the exact expression, in the exact float order, it
+     always had: nothing here may move a cent on a takeoff with no cutouts in it. ── */
+  const cut = new Set();
+  for (const m of state.measurements) if (m.sign === -1) cut.add(m.conditionId);
+  const byCut = {};
   for (const m of state.measurements) {
     const c = condById[m.conditionId];
     if (!c || !c.libRef) continue;
     if (m.value == null) continue;           // pending — excluded, like VESCore.rollup
+    if (cut.has(c.id)) { byCut[c.id] = (byCut[c.id] || 0) + m.value * (m.sign === -1 ? -1 : 1); continue; }
     // R-3: the engine is handed the TRUE quantity — measured × the condition's one pitch factor,
     // the same number VESCore.rollup puts on every face. resolveTakeoff's own pitch layer is
     // forced to 1 (measuredPitched), so it is applied exactly once, here.
     byRef[c.libRef] = (byRef[c.libRef] || 0) + m.value * VESCore.condFactor(c);
+  }
+  for (const id in byCut) {
+    const c = condById[id]; if (!c) continue;
+    byRef[c.libRef] = (byRef[c.libRef] || 0) + Math.max(0, byCut[id]) * VESCore.condFactor(c);
   }
   /* F18.21: linked quantities — an adhoc condition with qtyLink follows its source
      condition's rollup quantity (pending-aware) instead of its frozen snapshot
@@ -10884,6 +11137,27 @@ function pendingOf(l, rollById) {
   for (const r of drivers) { pending += r.pending || 0; for (const p of (r.pendingPages || [])) pp.add(p); }
   return { pending, pendingPages: [...pp].sort((a, b) => a - b) };
 }
+/* ══ Q1-3 · ONE RULE FOR "WHAT DID THIS LINE GET CUT BY", built on pendingOf's precedent.
+   A money line is driven by a condition (plain) or by library refs (engine); either way the
+   deductions that shaped its quantity live on the rollup row, and every surface reads them the
+   same way instead of counting measurements itself. ═════════════════════════════════ */
+function deductsOf(l, rollById) {
+  const byId = rollById || Object.fromEntries(VESCore.rollup(state.conditions, state.measurements).map((r) => [r.id, r]));
+  const drivers = (l && (l.plain || l.condId != null))
+    ? [byId[l.condId]].filter(Boolean)
+    : state.conditions.filter((c) => c.libRef && (((l && l.drivingRefs) || []).indexOf(c.libRef) >= 0)).map((c) => byId[c.id]).filter(Boolean);
+  let deducts = 0, deductQty = 0, netHeld = false;
+  for (const r of drivers) { deducts += r.deducts || 0; deductQty += r.deductQty || 0; if (r.netHeld) netHeld = true; }
+  return { deducts, deductQty, netHeld };
+}
+/* The badge, in the one place its words live: the count while the net is real, the clamp's own
+   sentence while it is holding. Blank when the line was never cut. */
+function deductWord(x) {
+  if (!x || !x.deducts) return '';
+  if (x.netHeld) return VESCore.NET_FLOOR_ZERO;
+  return x.deducts + ' deduct' + (x.deducts === 1 ? '' : 's');
+}
+
 /* The one sentence every money surface prints for a pending measurement (B6F-C2 / B6F-1). It names
    the state and the sheet the scale is missing on — never a bare count, never a silent 0. */
 function pendingWord(pages, n) {
@@ -11285,10 +11559,12 @@ function renderRecapEstimate() {
   // descOf(l) is the fix. R-6b: VOCAB.recap — Description | Net Cost | Markup | Markup $ |
   // Gross Price | Cost Unit | Unit, the same words the cost sheet uses for a priced line.
   const { lines, sellOf } = bidCollect();
+  const rollForDed = Object.fromEntries(VESCore.rollup(state.conditions, state.measurements).map((r) => [r.id, r]));   // Q1-3: hoisted — one rollup for the table, not one per line
   const body = lines.map((l) => {
     const sp = sellOf(l.cost); const mkDollar = sp.sell - l.cost, mkPct = l.cost > 0 ? (mkDollar / l.cost) * 100 : 0;
     const pw = linePendingWord(l);   // B6F-C2
-    return `<tr><td class="l">${escA(descOf(l))}${pw ? ` <span class="pendnote">(${escA(pw)})</span>` : ''}</td>`
+    const dw = deductWord(deductsOf(l, rollForDed));   // Q1-3
+    return `<tr><td class="l">${escA(descOf(l))}${pw ? ` <span class="pendnote">(${escA(pw)})</span>` : ''}${dw ? ` <span class="dednote">(${escA(dw)})</span>` : ''}</td>`
       + `<td class="n">${money(l.cost)}</td>`
       + `<td class="n">${mkPct.toFixed(1)}%</td>`
       + `<td class="n">${money(mkDollar)}</td>`
@@ -11353,6 +11629,7 @@ function estimateRows() {
       okey: l.item, omitted: lineOmitted(l.item),
       srcCid: (l.drivingRefs && l.drivingRefs.length === 1 ? (condByRef[l.drivingRefs[0]] || {}).id : null),
       ...pendingOf(l, rollForPending),   // B6F-C2
+      ...deductsOf(l, rollForPending),   // Q1-3
       linkedTo: (l.drivingRefs && l.drivingRefs.length === 1 && condByRef[l.drivingRefs[0]] && condByRef[l.drivingRefs[0]].qtyLink
         ? (condByIdRows[condByRef[l.drivingRefs[0]].qtyLink] || {}).name : null) });   // F10 identity · F18.16 on/off · F18.21 link
   }
@@ -11361,6 +11638,7 @@ function estimateRows() {
     waste: null, total: p.extended, conf: p.needsPrice ? 'var(--unknown)' : 'var(--firm)', np: p.extended == null,
     div: String(p.csi || '').trim().split(/\s+/)[0] || '—', edit: 'plain', condId: p.condId, kind: 'material',
     ...pendingOf({ condId: p.condId, plain: true }, rollForPending),   // B6F-C2
+    ...deductsOf({ condId: p.condId, plain: true }, rollForPending),   // Q1-3
     okey: 'cond.' + p.condId, omitted: lineOmitted('cond.' + p.condId), srcCid: p.condId });   // F18.22b: plain rows ARE material (recapData already prices them so) — the kind cell says it and ＋L reaches them; no waste-driven round-up on the plain path, so qtyEst == qty
   for (let gi = 0; gi < gen.length; gi++) { const g = gen[gi];
     const gq = +g.qty || 0;
@@ -11647,7 +11925,10 @@ function renderEstimateGrid() {
       const qtyEstCell = it.qtyEst == null ? '—' : num(it.qtyEst);
       const unitCell = escA(it.unit || '');
       const pendMark = it.pending ? ` <span class="pendnote" title="A measurement on a sheet with no scale — it is not in this row's quantity or its cost. Set that sheet's scale and it prices itself.">(${escA(linePendingWord(it))})</span>` : '';   // B6F-C2
-      html += `<tr${trCls ? ` class="${trCls}"` : ''}><td${lockT}>${omitBox}<span class="cdot" title="${escA(confWord(it.conf))}" style="background:${escA(it.conf)}"></span>${escA(it.label)}${pendMark}</td><td class="klab"${lockT}>${escA(it.kind || '')}${kact}</td>`
+      // Q1-3: the grid quantity is already NET — the badge says what it is net OF, so nobody
+      // reconciles this row against the plan and finds 160 SF missing with nothing to explain it.
+      const dedMark = it.deducts ? ` <span class="dednote" title="${escA('Gross less ' + it.deducts + ' deduct' + (it.deducts === 1 ? '' : 's') + ' traced on the plan. The quantity here is the net.')}">(${escA(deductWord(it))})</span>` : '';   // Q1-3
+      html += `<tr${trCls ? ` class="${trCls}"` : ''}><td${lockT}>${omitBox}<span class="cdot" title="${escA(confWord(it.conf))}" style="background:${escA(it.conf)}"></span>${escA(it.label)}${pendMark}${dedMark}</td><td class="klab"${lockT}>${escA(it.kind || '')}${kact}</td>`
         + `<td class="num">${qtyEstCell}</td><td${lockT}>${unitCell}</td>`
         + `<td class="num">${linkMark}${qtyCell}</td><td${lockT}>${unitCell}</td>`
         + `<td class="num">${wasteCell}</td>`
@@ -12144,7 +12425,9 @@ function libraryIdentity() {
 }
 function snapshot() {
   return {
-    app: 'VES', kind: 'takeoff', version: VESCore.TAKEOFF_VERSION,
+    // Q1-5: the number the FILE needs, not the number the build understands — a takeoff with no
+    // deduct in it still says 5 and is byte-for-byte what 2.0.0 wrote for the same state.
+    app: 'VES', kind: 'takeoff', version: VESCore.fileVersionNeeded(state.measurements),
     savedAt: new Date().toISOString(),
     library: libraryIdentity(),          // AB-2: which price book these numbers were last computed with
     pdfName: state.pdfName,
@@ -12915,13 +13198,31 @@ function exportRollupCSV() {
     } else if (legacy && r.unitCostRaw != null && !VESCore.validCost(r.unitCostRaw)) {
       warnBits.push('invalid unit cost');
     }
+    /* ── Q1-3 · THE ROLLUP FILE ADDS UP TO THE NET IN THE READER'S OWN SPREADSHEET.
+       A condition that was cut prints its GROSS here and one signed `Deduct` row per cutout under
+       it, so summing the Quantity column over that condition lands on the net — the same number
+       the card, the grid, the recap and the takeoff paper show. A condition with no deduct on it
+       is untouched: same row, same cells, same bytes as before. Extended Cost stays on the
+       condition row and is the NET money; the Cost Basis cell says which figure it was computed
+       on, so nobody back-computes $/unit off the gross. ── */
+    const dedMs = r.deducts ? state.measurements.filter((m) => m.conditionId === r.id && m.sign === -1) : [];
+    const qtyCell = r.deducts ? r.gross : dispQty;
+    const dedBasis = !r.deducts ? '' : ' \u00b7 gross shown \u2014 the ' + r.deducts + ' Deduct row(s) below bring it to '
+      + dispQty.toFixed(4) + ' ' + r.unit + (r.netHeld ? ' (' + VESCore.NET_FLOOR_ZERO + ')' : '') + ', which is what the cost is on';
+    if (r.netHeld) warnBits.push(VESCore.NET_FLOOR_ZERO);
     out.push([r.name, r.type, r.csi, r.wbs, r.location, r.pages.join(' '), r.notes,
-      r.count, r.pending, dispQty.toFixed(4), r.unit,
+      r.count, r.pending, qtyCell.toFixed(4), r.unit,
       legacy && r.unitCost != null ? r.unitCost.toFixed(4) : '',
       ext == null ? '' : ext.toFixed(2),
-      basis, calCell,
+      basis + dedBasis, calCell,
       warnBits.length ? warnBits.join('; ') : 'ok',
       dispPitch === 1 ? '' : fmtPitch(dispRise), dispPitch === 1 ? '' : dispPitch.toFixed(4)]);   // AH-1: "6/12" and the factor it stands for
+    for (const m of dedMs) {
+      out.push([r.name, 'Deduct', r.csi, r.wbs, r.location, m.page == null ? '' : String(m.page), m.notes || '',
+        1, m.value == null ? 1 : 0, m.value == null ? '' : (-(m.value * dispPitch)).toFixed(4), r.unit,
+        '', '', 'deduction traced on the plan \u2014 subtracted from the gross above', calCell, 'ok',
+        dispPitch === 1 ? '' : fmtPitch(dispRise), dispPitch === 1 ? '' : dispPitch.toFixed(4)]);
+    }
   }
   if (J.projLevelN) {
     out.push([]);
@@ -12938,6 +13239,8 @@ function exportRollupCSV() {
     if (gated.length) warns.push(`${gated.length} condition(s) gated at the assembly layer (needs pricing \u2014 flagged, never $0): ${gated.map((r) => r.name).join('; ')}`);
     const unused = J.roll.filter((r) => r.count === 0);
     if (unused.length) warns.push(`${unused.length} condition(s) loaded but unused (no measurements).`);
+    const heldQ1 = J.roll.filter((r) => r.netHeld);   // Q1-1: the clamp, named, never a bare 0
+    if (heldQ1.length) warns.push(heldQ1.map((r) => r.name).join('; ') + ': ' + VESCore.NET_FLOOR_ZERO + '.');
   }
   if (warns.length) { out.push([]); for (const w of warns) out.push(['WARNING', w]); }
   saveBlob(projectSlug() + '-condition-rollup.csv',
@@ -13006,9 +13309,12 @@ function exportAuditCSV() {
        nowhere on the sheet. The two trailing columns carry it: the fraction the estimator keyed
        and the factor it stands for, so Σ(strokes) × factor is the number every other door shows. */
     const pf = VESCore.condFactor(c);
-    out.push([r.id, r.condition, manual ? r.type + ' (manual)' : r.type, r.csi, r.wbs, r.location,
+    /* Q1-3: ONE signed row per deduct — typed `Deduct`, quantity NEGATIVE, extended negative — so a
+       consumer summing this column over a condition reads the net the cards and the papers show,
+       and never has to be told about deductions out of band. */
+    out.push([r.id, r.condition, r.deduct ? 'Deduct' : (manual ? r.type + ' (manual)' : r.type), r.csi, r.wbs, r.location,
       r.page == null ? '\u2014' : r.page, r.page == null ? '\u2014' : r.sheetLabel,
-      r.quantity == null ? '' : r.quantity.toFixed(4), r.unit,
+      r.signedQuantity == null ? '' : r.signedQuantity.toFixed(4), r.unit,
       legacyOK && r.unitCost != null ? r.unitCost.toFixed(4) : '',
       legacyOK && r.extended != null ? r.extended.toFixed(2) : '',
       r.pointCount,
@@ -13023,6 +13329,10 @@ function exportAuditCSV() {
     if (pend) warns.push(`${pend} measurement(s) pending \u2014 sheet(s) ${[...pp].sort((a, b) => a - b).join(', ')} not calibrated. Quantities exclude them.`);
     const orphans = rows.filter((r) => r.condition === '\u2014').length;
     if (orphans) warns.push(`${orphans} orphan measurement(s) \u2014 condition deleted.`);
+    /* Q1-1: the clamp is never silent. If a condition's cutouts add up past what was traced on it,
+       the audit file says so by name — a 0 with no sentence beside it is the defect this closes. */
+    const heldQ1 = VESCore.rollup(state.conditions, state.measurements).filter((r) => r.netHeld);
+    if (heldQ1.length) warns.push(heldQ1.map((r) => r.name).join('; ') + ': ' + VESCore.NET_FLOOR_ZERO + '.');
   }
   if (warns.length) { out.push([]); for (const w of warns) out.push(['WARNING', w]); }
   /* B2b (R-5e): the ONE export a drawn region appears in — the audit is the measurement RECORD,
@@ -14128,10 +14438,13 @@ async function printTakeoff(opts) {
       let sum = 0, pend = 0;
       for (const m of cs.onPage) {
         if (m.conditionId !== c.id) continue;
-        if (m.type === 'count') sum += m.points.length; else if (m.value == null) pend++; else sum += m.value;
+        // Q1-3: this sheet's own figure is this sheet's own NET — a cutout drawn here comes off here
+        if (m.type === 'count') sum += m.points.length; else if (m.value == null) pend++; else sum += m.value * (m.sign === -1 ? -1 : 1);
       }
+      const held = sum < 0;   // Q1-1: the clamp, on the paper, in the same words as everywhere else
+      if (held) sum = 0;
       const q = c.type === 'count' ? sum + ' EA' : VESCore.formatValue(c.type, sum * f);
-      return esc(q) + (pend ? ' · ' + pend + ' pending' : '');
+      return esc(q) + (held ? ' · ' + esc(VESCore.NET_FLOOR_ZERO) : '') + (pend ? ' · ' + pend + ' pending' : '');
     },
   });
   let body = '';
@@ -14167,7 +14480,13 @@ async function printTakeoff(opts) {
     const dq = dispQtyOf(r, c);
     const q = c.type === 'linear' ? VESCore.formatFtIn(dq.qty) : c.type === 'area' ? dq.qty.toFixed(1) : String(dq.qty);
     const pend = r.pending ? ' <small>(' + r.pending + ' pending)</small>' : '';
-    const qCell = q + pend;
+    /* Q1-3: on the quantities page a cut condition shows its work — gross, what came off it, and
+       the net an estimator bids. The net is the figure; the other two are why it is that figure. */
+    const fmtQ = (v) => c.type === 'linear' ? VESCore.formatFtIn(v) : c.type === 'area' ? v.toFixed(1) : String(v);
+    const ded = !r.deducts ? ''
+      : ' <small>(gross ' + esc(fmtQ(r.gross)) + ' · Deductions −' + esc(fmtQ(r.deductQty))
+        + (r.netHeld ? ' — ' + esc(VESCore.NET_FLOOR_ZERO) : ' · net ' + esc(q)) + ')</small>';
+    const qCell = q + ded + pend;
     const sf = c.type === 'area' ? qCell : '—', lf = c.type === 'linear' ? qCell : '—', ea = c.type === 'count' ? qCell : '—';
     const pitch = (c.type !== 'count' && Math.abs((dq.pitch || 1) - 1) > 1e-9) ? fmtPitch(dq.rise) : '—';   // AH-1; a flat line shows "—"
     // R-6b keeps the row to the six VOCAB words on the printed page — which sheet a condition sits
@@ -14707,6 +15026,8 @@ $('btnVerify').addEventListener('click', () => state.pdf && setTool('verify'));
 $('btnScale').addEventListener('click', () => state.pdf && openCalModal('scale'));
 $('btnSnap').addEventListener('click', toggleSnap);
 $('btnFills').addEventListener('click', cycleFills);   // F18.14
+// Q1-2: Shift-click keeps Deduct armed for a row of skylights; a plain click is one cutout.
+$('btnDeduct').addEventListener('click', (e) => toggleDeduct(e.shiftKey));
 $('btnRect').addEventListener('click', () => armType('area', true));
 $('btnUndo').addEventListener('click', undo);
 $('btnRedo').addEventListener('click', redo);
@@ -15537,7 +15858,7 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.0.0';  // 2.0.0 (2026-09-15): RELEASE — the VES 2 line: one lineage (B0) · pitch one store rise/12 (B1) · sections typed + drawn (B2a/B2b) · 24 colors + custom + print patterns (B3) · every sheet prints (B4) · one description, EDGE column words (B5) · persona fix batch (B6F). Changelog: RELEASE_NOTES.md. MIT License © 2026 Patrick Moriarty / Bitumen Machina LLC.
+const VES_BUILD = '2.1.0-rc.1';  // 2.1.0-rc.1 (2026-09-15): Batch Q1 — DEDUCTIONS. A cutout traced inside a field area subtracts its SF from that area, on the same condition, with one click to hand its perimeter to a flashing condition. `m.sign` (+1 default, -1 deduct) is set only through addMeasurement's opts and `value` stays a positive magnitude everywhere — `VESCore.rollup` is the one place the sign becomes a quantity (`qty += m.value * sgn`), with a named NET_FLOOR_ZERO clamp when the cutouts add up past the field: never a silent 0, the same sentence on the card, the grid row, the recap line, the audit file, the rollup file and the takeoff paper. Deduct is a rack MODIFIER beside Fills (key D, Shift keeps it armed) that disarms after one trace and refuses to arm on a linear or count condition with the reason spoken and nothing created; the cutout lands on the armed condition, is not required to lie inside anything (a soft note says when it does not), and two overlapping deducts both subtract. On the plan it is the condition's own hue with a dashed edge and a cross-hatch, labelled with the minus. When it closes, a picker opens at the pointer listing the job's linear conditions and "None": choosing one writes a sibling LINEAR measurement from the closed ring (the cutout's perimeter) and the pair is ONE journal entry — "deduct + perimeter to <condition>" — that one Ctrl+Z takes back whole. The audit CSV and the condition-rollup CSV each carry one signed `Deduct` row per cutout so a reader summing the quantity column gets the net; the rollup row prints the gross above them and names the net in its Cost Basis. TAKEOFF_VERSION is 6 but `fileVersionNeeded()` WRITES 6 only when a measurement carries a sign — a takeoff with no deduct still says 5 and is byte-for-byte what 2.0.0 wrote; the version refusal now names the build that reads the file. The exact-quantity door still takes a positive magnitude and the sign rides through it. 2.0.0 (2026-09-15): RELEASE — the VES 2 line: one lineage (B0) · pitch one store rise/12 (B1) · sections typed + drawn (B2a/B2b) · 24 colors + custom + print patterns (B3) · every sheet prints (B4) · one description, EDGE column words (B5) · persona fix batch (B6F). Changelog: RELEASE_NOTES.md. MIT License © 2026 Patrick Moriarty / Bitumen Machina LLC.
 // 2.0.0-rc.8:  // 2.0.0-rc.8: Batch B6F — THE ONE FIX BATCH after the B6 persona pass. Money first. A measurement traced on a sheet with no scale is a PENDING measurement everywhere it changed a figure, not only on the takeoff paper: `rollup` carries `pagesIn` and `pendingPages` beside `pending`, `pendingOf(line)` is the one rule that reads them, and the named state (“pending scale on sheet 2”) reaches the recap (per line and as a job note), the Estimate grid, the client bid, the cost sheet, the Estimate CSV and the workbook (trailing `pending` column) — never a silent 0; the bid's per-line Sheet cell now lists only the sheets whose quantity is IN the number (it claimed “Sheet 1, 2” for a figure that was sheet 1's alone), the takeoff quantities page names the shortfall on the section TOTAL with the sheets to scale, and the uncalibrated notice is JOB-scoped (walking back to a calibrated sheet used to leave zero banners while the bid was short). `parsePitch` takes a rise per 12 and nothing else — a bare 0–24, n/12, n:12, n"/12, plus a legacy decimal FACTOR bounded to pitchFactor(24) — so 25 / 999 / 1e9 / -6 / abc / 6/13 / 6/1 are refused with the value unchanged and nothing journaled (a typed 1e9 priced one line at $2.96 trillion before this). The General lane rides the undo stack like the money it is: `addGeneralItem` / `removeGeneralItem` are journaled by name, field edits re-resolve their row BY ID, and a command whose target is gone is DROPPED with a toast that says so instead of replaying over nothing (three presses chasing a deleted $5,000 line used to reach past it and take $15,291.49 off the job); `journalWord()` formats every value a label carries, so “[object Object]” never prints. Undoing the R-3a reconcile is named “set flat: …” (`cmd.undoLabel`) and the standing banner rewrites itself, so it can never read “now priced at” over a sell that has fallen back; both migration banners carry TWO doors in plain words — Keep / Set these flat instead, Read it as 6/12 / Keep ×6.000 as saved — and the flat door is the same code path Ctrl+Z takes. ONE `sectionKeyOf()`: the takeoff quantities page and `proposalModel` compare through it (four measured conditions printed under no band at all, and the proposal showed four sections against the bid's three), and renaming into a name that keys equal to an existing section MERGES them, journaled. `releaseLatch()` runs as soon as `window.print()` returns on all four print doors, with `afterprint` kept as a second net — headless Chrome never delivers it and a late delivery lands after the latch is disarmed, so a takeoff stayed latched and the next Ctrl+P re-emitted it. Section regions that arrive with no id are GIVEN ids at the file door (two id-less regions both loaded as 0, and every door aimed at the second hit the first). Chrome: every unscaled sheet arms the calibrate tool on arrival, the way `openDocument` already did for sheet 1; “+ Add condition” defaults to the next unused palette hue and the form stays open with a cleared, focused name field (✕ or Esc closes); a new condition's card scrolls itself into view; the bid's refusal NAMES the lines that still need a price, on paper and in the toast, and the rail's need-price pill goes to the first one; the recap strip reads “Recap · by section, then system, then CSI”. No money moved: G0 GREEN 4/4, COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.7: Batch B5 — UNIFIED DESCRIPTIONS, EDGE COLUMN WORDS. `descOf(x)` is the one function every document/export that prints a name now calls — a condition's own `.name`, a general line's own `.label`, or itemLabel(x) suffixed "<name> — labor"/"<name> — equipment" for a linked line (the F6/S2 rule, idempotent via suffixKind so an already-suffixed name is never doubled); it replaces scattered ternaries on itemLabel+suffixKind and a recap mini-table that read a library line's raw (often blank) `.desc`. `const VOCAB` (beside PALETTE) is the one place the document column words live, read by five templates through a `VOCAB:<doc>` sentinel comment `tools/vocab-check.mjs` checks against: the takeoff quantities page is Legend | Pitch | Description | SF | LF | EA (a condition fills exactly one of the three quantity columns, the "Sheets" column folds into data-sheets — the per-sheet figure legends above already name it); the Estimate grid + CSV + XLSX carry the EDGE Consolidated chain Description | Quantity | EU | Ord Qty | Ord Un | Unit Price | Prc Un | Net Cost (Quantity is the engine's own qty_needed before purchase round-up, read-only, beside the existing editable Ord Qty — both visible and different on a wasted/rounded line; EU/Ord Un/Prc Un read the same unit today, stated rather than hidden, since this engine resolves one unit per line); the recap's per-line table and the cost sheet fold Overhead+Markup+Profit into one Markup/Markup $ pair per line (Description | Net Cost | Markup | Markup $ | Gross Price | Cost Unit | Unit), while the cost sheet's closing ladder keeps Overhead/Markup/Profit as separate named rows under Subtotal → Total (never folded there); the client bid renames Qty/Unit price to Quantity/Unit Price (CSI and Sheet stay — established columns outside the vocabulary list). `tools/vocab-check.mjs` is a new, zero-dep CI step: banned AI-speak words, "page" for a PDF sheet, VOCAB words reaching their templates, and a name built straight from an id outside itemLabel/descOf. No money moved. 2.0.0-rc.6: Batch B4 — THE TAKEOFF PRINTS EVERY SHEET. ONE print path: `printTakeoffDoc` is deleted and the three behaviours only it had fold into `printTakeoff` — a typed-only takeoff prints its quantity tables with no figure, a takeoff with nothing measured and nothing typed prints nothing and the toast names the two doors back to the work, and every early return releases the latch (D-24.7a). `visualFiguresHTML` is the ONE per-sheet figure builder: the takeoff's landscape sheets and the proposal's plan snapshots come out of it, and the proposal now carries a figure for EVERY measured sheet instead of the busiest one. The takeoff door opens a sheet chooser when more than one sheet is measured (measured checked, unmeasured listed and greyed, `state.printSheets` session-only and never saved); leaving one out puts “Sheets shown: 1, 3 of 3” on the paper's header, and the quantity tables still total the whole takeoff and say so. Each sheet figure now fits ONE landscape page — the legend packs two entries per row and the image's ceiling is what the caption, the header and that sheet's own legend leave (the three-sheet fixture rendered 5 pages for 3 sheets before; it renders 4 now). The latch releases on `afterprint`, armed only around our own print call. C-B0-1: `identity.fileSize` is read BEFORE pdf.js detaches the ArrayBuffer, so a PDF-backed takeoff saves its real byte length (6,366 on the fixture, 0 before); an existing file's 0 means UNKNOWN and is never compared, so those files still load with no identity review. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
 // 2.0.0-rc.2: Batch B1 — PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION. `c.pitch` is the rise per 12 and the only store (the conditionOverrides pitch key is consumed at the file door and survives only as a non-enumerable read-only VIEW); VESCore.pitchFactor is the only plan→true conversion (area and up-the-slope √(1+(r/12)²), hip/valley √(1+(r/12)²/2), level and counts 1.0); VESCore.rollup applies it to EVERY condition so rollup().quantity is the money quantity on every face and resolveTakeoff is told not to pitch again (measuredPitched); R-4 gives a linear a lenKind (level | slope | hipvalley) beside its pitch, defaulted by name; both doors (✎ card field, depth-panel row) write the one store and are journaled by name; a library row's pitchDefault seeds a condition once at creation; TAKEOFF_VERSION 3→4 converts v3 multipliers to rises unrounded (money-exact), consumes the override store, reconciles R-3a's display-pitched/price-flat library conditions to the DISPLAYED quantity with a per-condition cent delta on one banner, and holds a bare `6` at its legacy ×6 behind a per-condition confirm so no cent moves silently on reload. 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
 // F18.72: Batch AI (persona pass 3 on F18.71 — density 0 refused at the book and gated on the line, never an included $0; the book refuses a formula that cannot parse; a book equal to the seed reads as the seed; the Flags list names an unpriced line and its row is tinted; waste words at four decimals; basis column clean, waste as percent, a linked labor line carries its basis; parser names a stray operator and a case mismatch; lens Escape says nothing when nothing was typed; landing/README say which lines carry a formula)  // F18.71: Batch AH (persona pass 2 on F18.70 — a malformed number literal and a wrong function arity gate the line; an empty unit / zero production rate refused in the Library lens and the unit gate never prints "undefined"; the cue follows the Qty cell and dies with the takeoff; lens selects carry the seed mark; waste words at two decimals and the box says what it did on blur; the phone pin follows the wordless segments; segment names; tr.gated; coarse ＋ Add; lens Escape/Enter grammar)  // F18.70: Batch AG (persona pass 1 on F18.69 — P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic fixtures; triage by the NOTES.md rubric; owner's word 2026-09-04 "run persona pass; if accepted finalize build and push to main") — WHAT THE PERSONAS SAW, ANSWERED. Money-honesty: a line formula that evaluates to 0 now gates (ZERO_QTY — flagged, excluded, said on the row) instead of pricing an included $0 (P-TRADE 5); a formula typed while a Qty is typed is checked and the cue says the typed qty stands and whether the dormant formula evaluates (P-TRADE 7); the parser names the token it choked on instead of "trailing tokens" (P-TRADE 8). Library: the authored-item id comes from the library's own counter, so a fresh takeoff's ＋ Add never replaces yesterday's item (P-MARKET 1); a blank CSI lands under the assembly's code (P-MARKET 7); edited cells read in the accent against the built-in seed, items the seed lacks say "authored here", match code is a column, ＋ Add sits by the description, cells meet the coarse-pointer rule (P-MARKET 6/9, P-GAME 9/10); the toast says every takeoff priced from the book follows — no project override written (P-TRADE 10, P-GAME 10). Grid: the derivation names the item waste that turns needed into ordered and the Waste header says which waste it is (P-MARKET 2); a FIXED formula reads "fixed Q"; a line-level number is "line value", a formula "line formula"; Q's meaning by kind is in the cell title and the sheet foot names the whole scope (P-TRADE 9/11, P-MARKET 5); the lens cue clears after a good commit (P-GAME 5); Escape in a cell stops at the cell (P-GAME 3, control). Entry row: the funnel line sits under the description, the measure select follows the unit in the Tab walk, an empty row explains both paths, a partial names the closest library name, the name match forgives case and dash (P-GAME 6/7/8, P-TRADE 12). Toolbar: the fourth lens segment no longer covers Files & exports (the document-door pin moved with it) and the segments drop their words under 720 px (P-GAME 1/2). Waste door: "abc" gets its own sentence and a refused value never stays in the box (P-GAME 12, P-TRADE 13). Exports: qty needed is a number cell and the ladder labels read "(× Pct)" (P-TRADE 2); BOM headers in Title Case (P-GAME 16). Landing + README name the derivation, the line formula and the Library lens (P-MARKET 10, P-TRADE 16). CI: probe-af fetches the F18.68 bytes by full sha (P-SEAT 2). Recorded, not built (LEDGER §Batch AG): cost per estimated unit, auto-round control, grid CSI column, item creation from the grid, recap-drawer derivation, phone segment height, Library lens first frame 265 ms, the guard hook's text match, stale D-series line citations. Gates: probe-af 29/29 (RED-first 16/29 on F18.69 — 13 of the 14 new rows red, AF19 a control) · probe-v · probe-u · probe-z · probe-ab · probe-ad · probe-ae · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress.  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
@@ -15587,6 +15908,8 @@ window.VESApp = {
   PALETTE, readableInk, relLuminance, patternOf, patternIndexFor, nextFreePatternIdx,
   startBlankCanvas, setGridFtPerSquare, newTakeoff,
   setMeasurementExact, placeKeyedRect, extendKeyedSegment, handleKeyEntry,
+  // Batch Q1 (Q1-1..Q1-4): the deduct doors — the sign at the add, the toggle, the one read rule.
+  addMeasurement, commitTrace, toggleDeduct, deductsOf, deductWord,
   openDocument, openPDF, openFromBytes, showPane, setZoom, rotateCurrent, fitToView,
   setTool, activateCondition, setActivePane, setMode,
   toggleSnap, toggleRect, maybeSnap,

@@ -476,12 +476,18 @@ if (OLD && v5json) {
     c2.close();
   } catch (e) { oldSide = { harnessError: String(e.message || e).slice(0, 200) }; }
 }
-const r6ok = !r6.error && r6.version === 5 && r6.coreVersion === 5 && r6.poked === 0
+/* DECLARED ROW CHANGE, Batch Q1 (ruling Q1-5), the same shape B1 gave probe-af's AF6 and B4 gave
+   probe-b0-fixture's F2: this row pinned the build's format CEILING at 5, and Q1-5 raises it to 6
+   for a takeoff that carries a deduct. What the row is ABOUT is unchanged and is checked harder —
+   a takeoff with no deduct in it must still SAY 5 (`r6.version === 5`), which is what makes the
+   file this row saves readable by every 2.0.0 seat. The ceiling is now read as "at least 5, and
+   never below what the file says". */
+const r6ok = !r6.error && r6.version === 5 && r6.coreVersion >= 5 && r6.coreVersion >= r6.version && r6.poked === 0
   && (r6.before || []).length > 0 && r6.roundTrip === true && r6.absentOK === true
   && !oldSide.harnessError && oldSide.ok === false && /version 5/.test(oldSide.error || '')
   && /newer than this build/.test(oldSide.error || '') && /version 5/.test(oldSide.toast || '')
   && oldSide.conditionsApplied === 0;
-check('B2b-6 TAKEOFF_VERSION is 5, regions persist and come back verbatim through save → poke-empty → load (a file without `sections` loads as none), and the rc.3 bytes refuse the v5 file out loud and apply nothing', r6ok,
+check('B2b-6 a takeoff with no deduct in it still SAYS version 5 (the build understands 5 or newer), regions persist and come back verbatim through save → poke-empty → load (a file without `sections` loads as none), and the rc.3 bytes refuse the v5 file out loud and apply nothing', r6ok,
   { version: r6.version, core: r6.coreVersion, regionsSaved: (r6.before || []).length, pokedToEmpty: r6.poked,
     roundTrip: r6.roundTrip, absentReadsEmpty: r6.absentOK, oldBuild: oldSide, error: r6.error });
 

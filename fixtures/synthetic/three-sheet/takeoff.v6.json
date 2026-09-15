@@ -1,0 +1,1552 @@
+{
+  "app": "VES",
+  "kind": "takeoff",
+  "version": 6,
+  "savedAt": "2026-09-14T00:00:00.000Z",
+  "library": {
+    "name": "Roofing & Envelope — Coastal SE Georgia",
+    "fingerprint": "7e4e6a2a"
+  },
+  "pdfName": "plan.pdf",
+  "projectMeta": {
+    "name": "Synthetic Three-Sheet Fixture",
+    "client": "",
+    "address": "",
+    "phone": "",
+    "email": "",
+    "notes": "Invented takeoff. Three sheets, 26 conditions, all four pitch shapes. No job, no client, no quoted price."
+  },
+  "schedule": {
+    "rows": {}
+  },
+  "view": {
+    "tool": "select",
+    "armedId": null
+  },
+  "viz": {
+    "hidden": [],
+    "fillMode": "on"
+  },
+  "sheetDone": {},
+  "identity": {
+    "pdfName": "plan.pdf",
+    "fileSize": 0,
+    "numPages": 3,
+    "docFingerprint": "b0f53ee7c41d9a2680fe0ee0c0de0f11",
+    "pageSignatures": [
+      "691ce58c",
+      "bb5cb25d",
+      "4e7069ba"
+    ]
+  },
+  "grid": null,
+  "mode": "single",
+  "activePane": 0,
+  "panes": [
+    {
+      "pageNum": 1,
+      "zoom": 1,
+      "scroll": {
+        "l": 0,
+        "t": 0
+      }
+    },
+    {
+      "pageNum": 0,
+      "zoom": 1,
+      "scroll": {
+        "l": 0,
+        "t": 0
+      }
+    }
+  ],
+  "rotations": {},
+  "calibrations": {
+    "1": {
+      "pdfDist": 800,
+      "realFt": 100,
+      "ftPerUnit": 0.125,
+      "points": [
+        {
+          "x": 300,
+          "y": 1560
+        },
+        {
+          "x": 1100,
+          "y": 1560
+        }
+      ],
+      "typed": "100 ft over the printed scale bar",
+      "page": 1,
+      "when": "2026-09-14T00:00:00.000Z",
+      "verifications": []
+    },
+    "2": {
+      "pdfDist": 800,
+      "realFt": 100,
+      "ftPerUnit": 0.125,
+      "points": [
+        {
+          "x": 300,
+          "y": 1560
+        },
+        {
+          "x": 1100,
+          "y": 1560
+        }
+      ],
+      "typed": "100 ft over the printed scale bar",
+      "page": 2,
+      "when": "2026-09-14T00:00:00.000Z",
+      "verifications": []
+    },
+    "3": {
+      "pdfDist": 800,
+      "realFt": 100,
+      "ftPerUnit": 0.125,
+      "points": [
+        {
+          "x": 300,
+          "y": 1560
+        },
+        {
+          "x": 1100,
+          "y": 1560
+        }
+      ],
+      "typed": "100 ft over the printed scale bar",
+      "page": 3,
+      "when": "2026-09-14T00:00:00.000Z",
+      "verifications": []
+    }
+  },
+  "conditions": [
+    {
+      "id": 1,
+      "name": "SSMR — field area",
+      "color": "#ff5d3a",
+      "type": "area",
+      "csi": "07 61 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 1,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "ssmr.field",
+      "assembly": "ssmr",
+      "pitch": 5.999087930677465
+    },
+    {
+      "id": 2,
+      "name": "SSMR — eave",
+      "color": "#3d9be9",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 2,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "ssmr.eave",
+      "assembly": "ssmr"
+    },
+    {
+      "id": 3,
+      "name": "SSMR — ridge",
+      "color": "#6fd08c",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 3,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "ssmr.ridge",
+      "assembly": "ssmr"
+    },
+    {
+      "id": 4,
+      "name": "SSMR — hip",
+      "color": "#ffd166",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 4,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 4.000282570019274,
+      "libRef": "ssmr.hip",
+      "assembly": "ssmr",
+      "lenKind": "slope"
+    },
+    {
+      "id": 5,
+      "name": "SSMR — valley",
+      "color": "#b07cd8",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 5,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "ssmr.valley",
+      "assembly": "ssmr"
+    },
+    {
+      "id": 6,
+      "name": "SSMR — pipe penetration",
+      "color": "#f25f8e",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 6,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "ssmr.pipe",
+      "assembly": "ssmr"
+    },
+    {
+      "id": 7,
+      "name": "TPO — membrane field",
+      "color": "#4ecdc4",
+      "type": "area",
+      "csi": "07 54 23",
+      "wbs": "",
+      "location": "Annex",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 7,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "tpo.field",
+      "assembly": "tpo"
+    },
+    {
+      "id": 8,
+      "name": "TPO — parapet flashing",
+      "color": "#c8a24b",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "Annex",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 8,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "tpo.parapet",
+      "assembly": "tpo"
+    },
+    {
+      "id": 9,
+      "name": "TPO — drain",
+      "color": "#ff5d3a",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "Annex",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 9,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "tpo.drain",
+      "assembly": "tpo"
+    },
+    {
+      "id": 10,
+      "name": "Slate — field area",
+      "color": "#3d9be9",
+      "type": "area",
+      "csi": "07 31 26",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "slate"
+      ],
+      "sortOrder": 10,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 9,
+      "libRef": "slate.field",
+      "assembly": "slate"
+    },
+    {
+      "id": 11,
+      "name": "Slate — valley",
+      "color": "#6fd08c",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "slate"
+      ],
+      "sortOrder": 11,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 5.999087930677465,
+      "libRef": "slate.valley",
+      "assembly": "slate",
+      "lenKind": "slope"
+    },
+    {
+      "id": 12,
+      "name": "Slate — chimney cap",
+      "color": "#ffd166",
+      "type": "count",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "slate"
+      ],
+      "sortOrder": 12,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "libRef": "slate.chimney",
+      "assembly": "slate"
+    },
+    {
+      "id": 13,
+      "name": "Field membrane",
+      "color": "#b07cd8",
+      "type": "area",
+      "csi": "07 52 00",
+      "wbs": "",
+      "location": "Annex",
+      "unitCost": 5.4,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 13,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 14,
+      "name": "Hip/valley metal",
+      "color": "#f25f8e",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": 18.75,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 14,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 5.999087930677465,
+      "lenKind": "slope"
+    },
+    {
+      "id": 15,
+      "name": "Eave drip",
+      "color": "#4ecdc4",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": 6.2,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 15,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 5.999087930677465,
+      "lenKind": "slope"
+    },
+    {
+      "id": 16,
+      "name": "Curb flashing",
+      "color": "#c8a24b",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "Canopy",
+      "unitCost": 24,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 16,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 17,
+      "name": "Ridge vent",
+      "color": "#ff5d3a",
+      "type": "linear",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": 21.5,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 17,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 4.000282570019274,
+      "lenKind": "slope"
+    },
+    {
+      "id": 18,
+      "name": "Skylight curb",
+      "color": "#3d9be9",
+      "type": "count",
+      "csi": "08 62 00",
+      "wbs": "",
+      "location": "Canopy",
+      "unitCost": 385,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 18,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 19,
+      "name": "Roof access ladder",
+      "color": "#6fd08c",
+      "type": "count",
+      "csi": "05 51 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": 940,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 19,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 20,
+      "name": "Underlayment — high temp",
+      "color": "#ffd166",
+      "type": "area",
+      "csi": "07 25 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": 1.85,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 20,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 9
+    },
+    {
+      "id": 21,
+      "name": "Sheathing repair — allowance",
+      "color": "#b07cd8",
+      "type": "area",
+      "csi": "06 16 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": 4.75,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 21,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 22,
+      "name": "Snow guard",
+      "color": "#f25f8e",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "",
+      "unitCost": 32,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 22,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 23,
+      "name": "Counterflashing — reglet",
+      "color": "#4ecdc4",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "Canopy",
+      "unitCost": 14.25,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 23,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": 24,
+      "name": "Cricket framing",
+      "color": "#c8a24b",
+      "type": "area",
+      "csi": "06 11 00",
+      "wbs": "",
+      "location": "Canopy",
+      "unitCost": 9.6,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 24,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 6,
+      "pitchLegacyFactor": 6
+    },
+    {
+      "id": 25,
+      "name": "Gutter — box",
+      "color": "#ff5d3a",
+      "type": "linear",
+      "csi": "07 71 23",
+      "wbs": "",
+      "location": "Annex",
+      "unitCost": 27.4,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 25,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z",
+      "pitch": 4.000282570019274,
+      "lenKind": "slope"
+    },
+    {
+      "id": 26,
+      "name": "Downspout boot",
+      "color": "#3d9be9",
+      "type": "count",
+      "csi": "07 71 23",
+      "wbs": "",
+      "location": "",
+      "unitCost": 46,
+      "notes": "",
+      "tags": [],
+      "sortOrder": 26,
+      "createdAt": "2026-09-14T00:00:00.000Z",
+      "updatedAt": "2026-09-14T00:00:00.000Z"
+    }
+  ],
+  "measurements": [
+    {
+      "id": 1001,
+      "conditionId": 1,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 479,
+          "y": 401
+        },
+        {
+          "x": 939,
+          "y": 401
+        },
+        {
+          "x": 939,
+          "y": 631
+        },
+        {
+          "x": 829,
+          "y": 631
+        },
+        {
+          "x": 829,
+          "y": 701
+        },
+        {
+          "x": 479,
+          "y": 701
+        }
+      ],
+      "value": 2035.9375,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1002,
+      "conditionId": 1,
+      "page": 2,
+      "type": "area",
+      "points": [
+        {
+          "x": 561,
+          "y": 625
+        },
+        {
+          "x": 931,
+          "y": 625
+        },
+        {
+          "x": 931,
+          "y": 895
+        },
+        {
+          "x": 561,
+          "y": 895
+        }
+      ],
+      "value": 1560.9375,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1003,
+      "conditionId": 2,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 436,
+          "y": 376
+        },
+        {
+          "x": 946,
+          "y": 376
+        },
+        {
+          "x": 946,
+          "y": 846
+        },
+        {
+          "x": 1386,
+          "y": 846
+        },
+        {
+          "x": 1386,
+          "y": 1096
+        }
+      ],
+      "value": 208.75,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1004,
+      "conditionId": 3,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 422,
+          "y": 510
+        },
+        {
+          "x": 802,
+          "y": 510
+        },
+        {
+          "x": 802,
+          "y": 980
+        },
+        {
+          "x": 1162,
+          "y": 980
+        }
+      ],
+      "value": 151.25,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1005,
+      "conditionId": 4,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 293,
+          "y": 512
+        },
+        {
+          "x": 543,
+          "y": 512
+        },
+        {
+          "x": 543,
+          "y": 1042
+        },
+        {
+          "x": 813,
+          "y": 1042
+        }
+      ],
+      "value": 131.25,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1006,
+      "conditionId": 4,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 329,
+          "y": 352
+        },
+        {
+          "x": 909,
+          "y": 352
+        },
+        {
+          "x": 909,
+          "y": 662
+        },
+        {
+          "x": 1349,
+          "y": 662
+        },
+        {
+          "x": 1349,
+          "y": 1052
+        }
+      ],
+      "value": 215,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1007,
+      "conditionId": 5,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 299,
+          "y": 348
+        },
+        {
+          "x": 709,
+          "y": 348
+        },
+        {
+          "x": 709,
+          "y": 758
+        }
+      ],
+      "value": 102.5,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1008,
+      "conditionId": 6,
+      "page": 1,
+      "type": "count",
+      "points": [
+        {
+          "x": 654,
+          "y": 870
+        },
+        {
+          "x": 300,
+          "y": 565
+        },
+        {
+          "x": 923,
+          "y": 683
+        },
+        {
+          "x": 704,
+          "y": 512
+        }
+      ],
+      "value": 4,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1009,
+      "conditionId": 7,
+      "page": 2,
+      "type": "area",
+      "points": [
+        {
+          "x": 419,
+          "y": 522
+        },
+        {
+          "x": 849,
+          "y": 522
+        },
+        {
+          "x": 849,
+          "y": 722
+        },
+        {
+          "x": 739,
+          "y": 722
+        },
+        {
+          "x": 739,
+          "y": 842
+        },
+        {
+          "x": 419,
+          "y": 842
+        }
+      ],
+      "value": 1943.75,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1010,
+      "conditionId": 8,
+      "page": 2,
+      "type": "linear",
+      "points": [
+        {
+          "x": 411,
+          "y": 521
+        },
+        {
+          "x": 801,
+          "y": 521
+        },
+        {
+          "x": 801,
+          "y": 801
+        },
+        {
+          "x": 1091,
+          "y": 801
+        }
+      ],
+      "value": 120,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1011,
+      "conditionId": 9,
+      "page": 2,
+      "type": "count",
+      "points": [
+        {
+          "x": 635,
+          "y": 1076
+        },
+        {
+          "x": 1163,
+          "y": 1070
+        },
+        {
+          "x": 1166,
+          "y": 867
+        },
+        {
+          "x": 355,
+          "y": 953
+        },
+        {
+          "x": 1129,
+          "y": 824
+        },
+        {
+          "x": 1341,
+          "y": 1030
+        },
+        {
+          "x": 1121,
+          "y": 404
+        }
+      ],
+      "value": 7,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1012,
+      "conditionId": 10,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 416,
+          "y": 357
+        },
+        {
+          "x": 876,
+          "y": 357
+        },
+        {
+          "x": 876,
+          "y": 657
+        },
+        {
+          "x": 416,
+          "y": 657
+        }
+      ],
+      "value": 2156.25,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1013,
+      "conditionId": 11,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 332,
+          "y": 350
+        },
+        {
+          "x": 912,
+          "y": 350
+        },
+        {
+          "x": 912,
+          "y": 920
+        },
+        {
+          "x": 1432,
+          "y": 920
+        },
+        {
+          "x": 1432,
+          "y": 1230
+        }
+      ],
+      "value": 247.5,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1014,
+      "conditionId": 12,
+      "page": 1,
+      "type": "count",
+      "points": [
+        {
+          "x": 826,
+          "y": 427
+        },
+        {
+          "x": 772,
+          "y": 607
+        },
+        {
+          "x": 953,
+          "y": 1316
+        }
+      ],
+      "value": 3,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1015,
+      "conditionId": 13,
+      "page": 2,
+      "type": "area",
+      "points": [
+        {
+          "x": 869,
+          "y": 555
+        },
+        {
+          "x": 1299,
+          "y": 555
+        },
+        {
+          "x": 1299,
+          "y": 825
+        },
+        {
+          "x": 869,
+          "y": 825
+        }
+      ],
+      "value": 1814.0625,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1016,
+      "conditionId": 14,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 402,
+          "y": 344
+        },
+        {
+          "x": 872,
+          "y": 344
+        },
+        {
+          "x": 872,
+          "y": 844
+        },
+        {
+          "x": 1332,
+          "y": 844
+        },
+        {
+          "x": 1332,
+          "y": 1320
+        }
+      ],
+      "value": 238.25,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1017,
+      "conditionId": 14,
+      "page": 3,
+      "type": "linear",
+      "points": [
+        {
+          "x": 520,
+          "y": 661
+        },
+        {
+          "x": 1020,
+          "y": 661
+        },
+        {
+          "x": 1020,
+          "y": 940
+        }
+      ],
+      "value": 97.375,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1018,
+      "conditionId": 15,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 412,
+          "y": 484
+        },
+        {
+          "x": 862,
+          "y": 484
+        },
+        {
+          "x": 862,
+          "y": 974
+        },
+        {
+          "x": 1322,
+          "y": 974
+        }
+      ],
+      "value": 175,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1019,
+      "conditionId": 16,
+      "page": 3,
+      "type": "linear",
+      "points": [
+        {
+          "x": 582,
+          "y": 610
+        },
+        {
+          "x": 1182,
+          "y": 610
+        },
+        {
+          "x": 1182,
+          "y": 940
+        },
+        {
+          "x": 1300,
+          "y": 940
+        },
+        {
+          "x": 1300,
+          "y": 940
+        }
+      ],
+      "value": 131,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1020,
+      "conditionId": 17,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 479,
+          "y": 465
+        },
+        {
+          "x": 999,
+          "y": 465
+        },
+        {
+          "x": 999,
+          "y": 945
+        }
+      ],
+      "value": 125,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1021,
+      "conditionId": 18,
+      "page": 3,
+      "type": "count",
+      "points": [
+        {
+          "x": 1041,
+          "y": 634
+        },
+        {
+          "x": 910,
+          "y": 797
+        },
+        {
+          "x": 661,
+          "y": 709
+        },
+        {
+          "x": 583,
+          "y": 753
+        }
+      ],
+      "value": 4,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1022,
+      "conditionId": 19,
+      "page": 2,
+      "type": "count",
+      "points": [
+        {
+          "x": 1035,
+          "y": 1032
+        },
+        {
+          "x": 738,
+          "y": 638
+        },
+        {
+          "x": 1254,
+          "y": 511
+        },
+        {
+          "x": 613,
+          "y": 472
+        },
+        {
+          "x": 363,
+          "y": 433
+        },
+        {
+          "x": 1224,
+          "y": 947
+        },
+        {
+          "x": 562,
+          "y": 1093
+        },
+        {
+          "x": 924,
+          "y": 954
+        },
+        {
+          "x": 1282,
+          "y": 963
+        }
+      ],
+      "value": 9,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1023,
+      "conditionId": 20,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 918,
+          "y": 373
+        },
+        {
+          "x": 1198,
+          "y": 373
+        },
+        {
+          "x": 1198,
+          "y": 613
+        },
+        {
+          "x": 1128,
+          "y": 613
+        },
+        {
+          "x": 1128,
+          "y": 713
+        },
+        {
+          "x": 918,
+          "y": 713
+        }
+      ],
+      "value": 1378.125,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1024,
+      "conditionId": 21,
+      "page": 2,
+      "type": "area",
+      "points": [
+        {
+          "x": 683,
+          "y": 573
+        },
+        {
+          "x": 1113,
+          "y": 573
+        },
+        {
+          "x": 1113,
+          "y": 693
+        },
+        {
+          "x": 1043,
+          "y": 693
+        },
+        {
+          "x": 1043,
+          "y": 793
+        },
+        {
+          "x": 683,
+          "y": 793
+        }
+      ],
+      "value": 1368.75,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1025,
+      "conditionId": 22,
+      "page": 1,
+      "type": "count",
+      "points": [
+        {
+          "x": 511,
+          "y": 1147
+        },
+        {
+          "x": 1015,
+          "y": 695
+        },
+        {
+          "x": 739,
+          "y": 1123
+        },
+        {
+          "x": 657,
+          "y": 821
+        },
+        {
+          "x": 778,
+          "y": 1259
+        }
+      ],
+      "value": 5,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1026,
+      "conditionId": 23,
+      "page": 3,
+      "type": "linear",
+      "points": [
+        {
+          "x": 593,
+          "y": 587
+        },
+        {
+          "x": 1073,
+          "y": 587
+        },
+        {
+          "x": 1073,
+          "y": 847
+        }
+      ],
+      "value": 92.5,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1027,
+      "conditionId": 24,
+      "page": 3,
+      "type": "area",
+      "points": [
+        {
+          "x": 686,
+          "y": 596
+        },
+        {
+          "x": 1006,
+          "y": 596
+        },
+        {
+          "x": 1006,
+          "y": 816
+        },
+        {
+          "x": 916,
+          "y": 816
+        },
+        {
+          "x": 916,
+          "y": 936
+        },
+        {
+          "x": 686,
+          "y": 936
+        }
+      ],
+      "value": 1531.25,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1028,
+      "conditionId": 25,
+      "page": 2,
+      "type": "linear",
+      "points": [
+        {
+          "x": 519,
+          "y": 437
+        },
+        {
+          "x": 869,
+          "y": 437
+        },
+        {
+          "x": 869,
+          "y": 967
+        },
+        {
+          "x": 1380,
+          "y": 967
+        }
+      ],
+      "value": 173.875,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1029,
+      "conditionId": 26,
+      "page": 2,
+      "type": "count",
+      "points": [
+        {
+          "x": 728,
+          "y": 604
+        },
+        {
+          "x": 1293,
+          "y": 1066
+        },
+        {
+          "x": 467,
+          "y": 711
+        },
+        {
+          "x": 974,
+          "y": 1038
+        },
+        {
+          "x": 399,
+          "y": 769
+        },
+        {
+          "x": 673,
+          "y": 808
+        },
+        {
+          "x": 428,
+          "y": 907
+        }
+      ],
+      "value": 7,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1030,
+      "conditionId": 1,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 536.5,
+          "y": 438.5
+        },
+        {
+          "x": 651.5,
+          "y": 438.5
+        },
+        {
+          "x": 651.5,
+          "y": 513.5
+        },
+        {
+          "x": 536.5,
+          "y": 513.5
+        }
+      ],
+      "value": 134.765625,
+      "notes": "",
+      "manual": false,
+      "sign": -1
+    },
+    {
+      "id": 1031,
+      "conditionId": 15,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 536.5,
+          "y": 438.5
+        },
+        {
+          "x": 651.5,
+          "y": 438.5
+        },
+        {
+          "x": 651.5,
+          "y": 513.5
+        },
+        {
+          "x": 536.5,
+          "y": 513.5
+        },
+        {
+          "x": 536.5,
+          "y": 438.5
+        }
+      ],
+      "value": 47.5,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 1032,
+      "conditionId": 1,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 709,
+          "y": 551
+        },
+        {
+          "x": 766.5,
+          "y": 551
+        },
+        {
+          "x": 766.5,
+          "y": 626
+        },
+        {
+          "x": 709,
+          "y": 626
+        }
+      ],
+      "value": 67.3828125,
+      "notes": "",
+      "manual": false,
+      "sign": -1
+    }
+  ],
+  "assemblyProject": {
+    "lineOverrides": {},
+    "conditionOverrides": {},
+    "settings": {
+      "overheadPct": 10,
+      "markupPct": 8,
+      "profitPct": 5
+    },
+    "general": []
+  },
+  "nextId": 1033,
+  "sections": []
+}

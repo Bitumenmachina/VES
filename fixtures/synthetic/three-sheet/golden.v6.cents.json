@@ -1,0 +1,49 @@
+{
+  "fixture": "three-sheet",
+  "takeoff": "takeoff.v6.json",
+  "note": "Money is integer cents; quantities are integer thousandths of the displayed unit. Recorded by tools/sweep/probe-deduct.mjs --write-golden.",
+  "html": {
+    "sha256": "18809005adc56c0763b4cb83ace497de2b1e349adc59dfa1a0412d35a0f6261d",
+    "bytes": 3871718,
+    "build": "2.1.0-rc.1"
+  },
+  "library": {
+    "name": "Roofing & Envelope — Coastal SE Georgia",
+    "fingerprint": "7e4e6a2a",
+    "seed": true
+  },
+  "deducts": 2,
+  "heldAtZero": 0,
+  "recap": {
+    "costCents": 40850862,
+    "sellCents": 50957366
+  },
+  "quantities": {
+    "1": 3795304,
+    "2": 208750,
+    "3": 151250,
+    "4": 364982,
+    "5": 102500,
+    "6": 4000,
+    "7": 1943750,
+    "8": 120000,
+    "9": 7000,
+    "10": 2695313,
+    "11": 276705,
+    "12": 3000,
+    "13": 1814063,
+    "14": 375229,
+    "15": 248755,
+    "16": 131000,
+    "17": 131763,
+    "18": 4000,
+    "19": 9000,
+    "20": 1722656,
+    "21": 1368750,
+    "22": 5000,
+    "23": 92500,
+    "24": 9187500,
+    "25": 183282,
+    "26": 7000
+  }
+}

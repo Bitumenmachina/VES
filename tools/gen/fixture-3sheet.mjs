@@ -7,7 +7,15 @@
  * (vector paths, no embedded font, no client data) extended to three pages plus the base-14
  * Helvetica name every sheet needs for its title block.
  *
- *   node tools/gen/fixture-3sheet.mjs [outDir]      # default: <repo>/fixtures/synthetic/three-sheet
+ *   node tools/gen/fixture-3sheet.mjs [outDir]            # default: <repo>/fixtures/synthetic/three-sheet
+ *   node tools/gen/fixture-3sheet.mjs [outDir] --v6       # also writes takeoff.v6.json (Batch Q1)
+ *
+ * --v6 (Batch Q1) writes a SECOND takeoff beside the v3 one: the same job as the app itself would
+ * have re-saved it after the v3 -> v4 pitch migration (factor -> rise, one store, the bare 6 kept
+ * as a legacy factor), plus TWO deductions on the SSMR field area and ONE perimeter handoff onto
+ * Eave drip. It is the only file in this repo that exercises `m.sign`, and it is what
+ * golden.v6.cents.json is recorded from. The v3 file and the PDF are untouched by the flag — they
+ * still reproduce byte for byte, which is the only reason golden.cents.json means anything.
  *
  * NOTHING HERE IS A JOB. Every name, dimension and price is invented to exercise a code path.
  *
@@ -292,6 +300,65 @@ function identityFor(pdf) {
   };
 }
 
+/* ── Batch Q1 · the v6 shape: migrated pitch + deductions ─────────────────────────────
+   The pitch half replays `normalizeSnapshot`'s v3 -> v4 migration exactly as the app performs it
+   (src :2900): a stored FACTOR becomes a rise per 12, store B is consumed into the one store, a
+   factor no rise can reproduce (the bare 6) keeps `pitchLegacyFactor` and prices as saved. A v6
+   file runs NO migration on load, so what is written here is what the app prices — which is the
+   point of recording a golden against it.
+   The deduct half is the Batch Q1 format: `sign: -1` on two cutouts inside the SSMR field area's
+   own traced rectangle, and one sibling LINEAR measurement on Eave drip whose points are the
+   closed ring of the first cutout — the perimeter handoff, as `finishDeduct` writes it. ────── */
+function toV6(t) {
+  const v = JSON.parse(JSON.stringify(t));
+  const ovs = (v.assemblyProject && v.assemblyProject.conditionOverrides) || {};
+  for (const c of v.conditions) {
+    let f = (typeof c.pitch === 'number' && isFinite(c.pitch) && c.pitch > 0) ? c.pitch : 0;
+    const ov = c.libRef ? ovs[c.libRef] : null;
+    if (ov && typeof ov === 'object') {
+      if (!f && typeof ov.pitch === 'number' && ov.pitch > 0) f = ov.pitch;
+      delete ov.pitch;
+      if (!Object.keys(ov).length) delete ovs[c.libRef];
+    }
+    if (c.type === 'linear' && f) c.lenKind = 'slope';
+    if (!f || c.type === 'count') { delete c.pitch; delete c.pitchLegacyFactor; continue; }
+    const rise = 12 * Math.sqrt(Math.max(f * f - 1, 0));
+    const eighth = Math.round(rise * 8) / 8;
+    const back = Math.sqrt(1 + (eighth / 12) * (eighth / 12));
+    if (Math.abs(back - f) > 1e-4) { c.pitch = f; c.pitchLegacyFactor = f; }
+    else { c.pitch = rise; delete c.pitchLegacyFactor; }
+  }
+  v.sections = [];
+
+  const field = v.conditions.find((c) => c.name === 'SSMR — field area');
+  const eave = v.conditions.find((c) => c.name === 'Eave drip');
+  const host = v.measurements.find((m) => m.conditionId === field.id && m.page === 1);
+  const xs = host.points.map((q) => q.x), ys = host.points.map((q) => q.y);
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+  const W = x1 - x0, H = y1 - y0;
+  // both cutouts sit well inside the traced rectangle, on integer-eighth fractions of it so the
+  // arithmetic stays exact in binary floating point (the same rule the rest of this fixture keeps)
+  const box = (fx, fy, fw, fh) => {
+    const ax = x0 + W * fx, ay = y0 + H * fy, bx = ax + W * fw, by = ay + H * fh;
+    return [[ax, ay], [bx, ay], [bx, by], [ax, by]];
+  };
+  const cut1 = box(0.125, 0.125, 0.25, 0.25);
+  const cut2 = box(0.5, 0.5, 0.125, 0.25);
+  const ring = cut1.concat([cut1[0]]);   // the cutout's PERIMETER: the closed ring
+  let mid = v.nextId - 1;
+  const meas = (cid, page, type, pts, extra) => Object.assign({
+    id: ++mid, conditionId: cid, page, type,
+    points: pts.map(([x, y]) => ({ x, y })), value: measureValue(type, pts), notes: '', manual: false,
+  }, extra || {});
+  v.measurements.push(meas(field.id, 1, 'area', cut1, { sign: -1 }));
+  v.measurements.push(meas(eave.id, 1, 'linear', ring));
+  v.measurements.push(meas(field.id, 1, 'area', cut2, { sign: -1 }));
+  v.version = 6;
+  v.nextId = mid + 1;
+  return v;
+}
+
 /* ── write ─────────────────────────────────────────────────────────────────────────────── */
 mkdirSync(OUT, { recursive: true });
 const pdf = buildPdf();
@@ -303,3 +370,10 @@ for (const m of takeoff.measurements) pages[m.page] = (pages[m.page] || 0) + 1;
 console.log(`wrote ${join(OUT, 'plan.pdf')} ${pdf.bytes.length} bytes, ${SHEETS.length} sheets, fingerprint ${pdf.id}`);
 console.log(`wrote ${join(OUT, 'takeoff.v3.json')} — ${takeoff.conditions.length} conditions, `
   + `${takeoff.measurements.length} measurements, per sheet ${JSON.stringify(pages)}`);
+if (process.argv.includes('--v6')) {
+  const v6 = toV6(takeoff);
+  writeFileSync(join(OUT, 'takeoff.v6.json'), JSON.stringify(v6, null, 2) + '\n');
+  const ded = v6.measurements.filter((m) => m.sign === -1);
+  console.log(`wrote ${join(OUT, 'takeoff.v6.json')} — version 6, ${v6.measurements.length} measurements, `
+    + `${ded.length} deduction(s) totalling ${ded.reduce((a, m) => a + m.value, 0).toFixed(2)} SF, 1 perimeter handoff`);
+}

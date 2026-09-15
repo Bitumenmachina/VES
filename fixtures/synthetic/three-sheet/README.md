@@ -15,12 +15,28 @@ code path. No client, no address, no quoted price, no real drawing.
 | --- | --- |
 | `plan.pdf` | 3 vector sheets, 36 × 24 in (2592 × 1728 units), `A-1 Main Roof` / `A-2 Annex` / `A-3 Canopy`. Each carries a drawn roof outline, a title block, and a scale bar 800 units long labelled 100 FT. No embedded font (base-14 Helvetica by name only), no raster, no JavaScript, no external reference. 6,366 bytes. |
 | `takeoff.v3.json` | the takeoff, in the v3 shape `snapshot()` writes — 26 conditions, 29 measurements, calibrations on all three sheets at 0.125 ft/unit. |
+| `takeoff.v6.json` | **Batch Q1.** The same job, in the v6 shape: pitch already migrated to a rise per 12 (one store; the bare 6 kept as a legacy factor), `sections: []`, plus **two deductions** on `SSMR — field area` and **one perimeter handoff** onto `Eave drip`. The only file in this repo that carries `m.sign`. Written by `node tools/gen/fixture-3sheet.mjs --v6`; the v3 file and the PDF are untouched by the flag. |
+| `golden.v6.cents.json` | what **2.1.0-rc.1** computes from `takeoff.v6.json` + `plan.pdf` — cost/sell in integer cents and every condition's quantity in integer thousandths. Recorded by `node tools/sweep/probe-deduct.mjs … --write-golden` (a hand-run gesture) and pinned by probe row Q1-i. |
 | `golden.cents.json` | what F18.72 computes from the two files above. Money in integer cents, quantities in integer thousandths of the displayed unit, plus the sha256 of the HTML it was computed on. |
 | (generator) | `tools/gen/fixture-3sheet.mjs` — zero dependencies, one seeded PRNG. Re-running it reproduces both files byte for byte; that is the only reason the golden means anything. |
+
+## Deductions — what the v6 file holds (Batch Q1)
+
+Two cutouts inside the SSMR field area's own traced rectangle on sheet 1, at eighth-fractions of
+that rectangle so the arithmetic stays exact in binary floating point, and one linear measurement
+on `Eave drip` whose points are the **closed ring** of the first cutout — the perimeter handoff, as
+`finishDeduct` writes it. Neither cutout is big enough to push its condition past zero: the
+`NET_FLOOR_ZERO` clamp is proven by probe row Q1-c on traced geometry, not by this file.
+
+A v6 file runs **no** migration on load, so what the generator writes is what the app prices —
+which is the only reason a golden recorded against it means anything. Reading it in 2.0.0 is
+refused at the door by version number; a takeoff with no deduct in it is still written as version
+5 and still opens there.
 
 ## Rebuild and re-gate
 
     node tools/gen/fixture-3sheet.mjs
+    node tools/gen/fixture-3sheet.mjs "$PWD/fixtures/synthetic/three-sheet" --v6
     VES_CHROME=/usr/bin/google-chrome node tools/sweep/probe-b0-fixture.mjs \
       "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet/takeoff.v3.json" \
       "$PWD/fixtures/synthetic/three-sheet/plan.pdf" "$PWD"

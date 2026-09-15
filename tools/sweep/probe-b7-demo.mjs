@@ -103,6 +103,8 @@ const loaded = await ev(`(async () => {
     measurements: VESApp.state.measurements.length,
     version: VESApp.core.TAKEOFF_VERSION,
     fileVersion: window.__take.version,
+    // Q1-5: what THIS build would write for THIS state — the number that has to match the file
+    wouldSaveAs: VESApp.snapshot().version,
     normOk: VESApp.core.normalizeSnapshot(window.__take).ok,
     dropped: VESApp.core.normalizeSnapshot(window.__take).dropped,
     idCompare: VESApp.core.compareIdentity(window.__take.identity, openId),
@@ -112,9 +114,16 @@ const loaded = await ev(`(async () => {
   };
 })()`);
 check('D2 the demo loads through the load door on the current version: nothing dropped, no migration banner, identity matches the open plan (0-diff, not the fileSize-0 tolerance the older fixture needs)',
-  loaded.normOk && loaded.fileVersion === loaded.version && loaded.dropped === 0 && loaded.banners.length === 0
+  /* DECLARED ROW CHANGE, Batch Q1 (ruling Q1-5), the shape B1 gave probe-af's AF6: the file's
+     number is no longer the build's ceiling, it is the number this build would WRITE for this
+     state — a takeoff with no deduct in it still says 5 while the build understands 6. Checked
+     against `snapshot().version` rather than a constant, so a demo saved at the wrong number
+     still fails this row. */
+  loaded.normOk && loaded.fileVersion === loaded.wouldSaveAs && loaded.fileVersion <= loaded.version
+  && loaded.dropped === 0 && loaded.banners.length === 0
   && !loaded.idModalOpen && loaded.idCompare.level === 'match' && loaded.conditions === 7 && loaded.measurements === 7,
-  { conditions: loaded.conditions, measurements: loaded.measurements, version: loaded.version, dropped: loaded.dropped,
+  { conditions: loaded.conditions, measurements: loaded.measurements, version: loaded.version,
+    fileVersion: loaded.fileVersion, wouldSaveAs: loaded.wouldSaveAs, dropped: loaded.dropped,
     identity: loaded.idCompare.level, idModalOpen: loaded.idModalOpen, banners: loaded.banners });
 
 const sheets = Object.keys(loaded.pages).map(Number).sort((a, b) => a - b);

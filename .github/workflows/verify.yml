@@ -153,6 +153,15 @@ jobs:
           # the pitch bounds, the general-line journal, the section key, the print latch, the region ids.
           node tools/sweep/probe-b6f.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" 2>&1 | tee -a probes.txt
           code19=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code19
+          # Batch Q1 (VES 2.1): deductions — a cutout inside a field area subtracts its SF, the clamp says so
+          # out loud, and the perimeter handoff is one journal entry. The 2.0.0 release bytes are fetched by
+          # their FULL sha (probe-af's precedent) so the row that proves a version-6 file is refused by the
+          # last release can run; without them that half states it was not supplied instead of passing.
+          Q1_OLD_SHA=d7f683ee5666f9627e847ff4ec0f4c26dc5612dd
+          git fetch --no-tags --depth=1 origin "$Q1_OLD_SHA" 2>&1 | tee -a probes.txt
+          git show "$Q1_OLD_SHA:src/VES_PM.html" > "$RUNNER_TEMP/VES_2.0.0.html" || true
+          node tools/sweep/probe-deduct.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" "$RUNNER_TEMP/VES_2.0.0.html" 2>&1 | tee -a probes.txt
+          code20=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code20
           {
             echo '## sweep probes'
             echo
