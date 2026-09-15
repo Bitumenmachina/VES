@@ -139,7 +139,12 @@ for (let i = 0; i < 400; i++) { try { if (await ev('document.readyState==="compl
 await sleep(400);
 if (!booted) { console.error('HARNESS FAIL: the app never booted'); chrome.kill('SIGKILL'); process.exit(2); }
 
-await ev(`localStorage.clear(); window.print = () => { window.__printed = (window.__printed || 0) + 1; };
+await ev(`localStorage.clear(); window.print = () => { window.__printed = (window.__printed || 0) + 1;
+    /* B6F-C6 re-address: the app releases #printDoc as soon as window.print() returns, so the composed
+       document is captured where a real browser composes it and restored on the next tick for the read
+       sites below. Assertions unchanged. */
+    const d = document.getElementById('printDoc'); const h = d ? d.innerHTML : '';
+    setTimeout(() => { const e = document.getElementById('printDoc'); if (e) e.innerHTML = h; }, 0); };
   loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
   window.__blobs = [];
   window.saveBlob = (name, bytes, mime) => { window.__blobs.push({ name, mime,

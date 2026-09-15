@@ -99,7 +99,16 @@ const check = (name, ok, detail) => {
 const ARM = `window.__printed = 0; window.__fire = false; window.__snap = null;
   window.print = () => { window.__printed++;
     window.__snap = document.getElementById('printDoc').cloneNode(true);
-    if (window.__fire) { window.dispatchEvent(new Event('beforeprint')); window.dispatchEvent(new Event('afterprint')); } };
+    if (window.__fire) { window.dispatchEvent(new Event('beforeprint')); window.dispatchEvent(new Event('afterprint')); }
+    /* B6F-C6 re-address: the app now releases #printDoc unconditionally as soon as window.print()
+       returns (it no longer waits for an afterprint that headless Chrome never delivers). The rows
+       that READ the composed document — and Page.printToPDF, which renders the live page — need it
+       still standing, so when __fire is off the harness puts back exactly what went to paper for
+       half a second. __fire ON is the release row itself and is never restored. Assertions unchanged. */
+    else { const h = document.getElementById('printDoc').innerHTML; let k = 0;
+      const t = setInterval(() => { const e = document.getElementById('printDoc');
+        if (e && /print-ph/.test(e.innerHTML)) e.innerHTML = h;
+        if (++k > 20) clearInterval(t); }, 25); } };
   loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
   window.__latch = () => { const d = document.getElementById('printDoc');
     const t = d.innerHTML.replace(/<img[^>]*>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\\s+/g, ' ').trim();

@@ -87,7 +87,7 @@ for (let i = 0; i < 400; i++) { try { if (await ev('document.readyState==="compl
 await sleep(400);
 if (!booted) { console.error('HARNESS FAIL: the app never booted'); chrome.kill('SIGKILL'); process.exit(2); }
 
-await ev(`localStorage.clear(); window.print = () => { window.__printed = (window.__printed || 0) + 1; };
+await ev(`localStorage.clear(); window.print = () => { window.__printed = (window.__printed || 0) + 1; const __d = document.getElementById('printDoc'); const __h = __d ? __d.innerHTML : ''; setTimeout(() => { const __e = document.getElementById('printDoc'); if (__e) __e.innerHTML = __h; }, 0); /* B6F-C6 re-address: the app releases #printDoc as soon as window.print() returns (a real browser has    already composed the page by then). Capture at compose time, restore next tick, read sites unchanged. */ };
   loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
   window.__scan = (data, w, h, R, G, B, T) => { let n = 0, longest = 0, x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
     for (let y = 0; y < h; y++) { let run = 0;

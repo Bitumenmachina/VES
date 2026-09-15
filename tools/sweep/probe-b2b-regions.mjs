@@ -164,7 +164,7 @@ await sleep(400);
 if (!booted) { console.error('HARNESS FAIL: the app never booted'); chrome.kill('SIGKILL'); process.exit(2); }
 
 const INK = [107, 79, 187];   // the region ink this build paints outlines and chips in
-await ev(`localStorage.clear(); window.print = () => { window.__printed = (window.__printed || 0) + 1; };
+await ev(`localStorage.clear(); window.print = () => { window.__printed = (window.__printed || 0) + 1; const __d = document.getElementById('printDoc'); const __h = __d ? __d.innerHTML : ''; setTimeout(() => { const __e = document.getElementById('printDoc'); if (__e) __e.innerHTML = __h; }, 0); /* B6F-C6 re-address: the app releases #printDoc as soon as window.print() returns (a real browser has    already composed the page by then). Capture at compose time, restore next tick, read sites unchanged. */ };
   loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
   window.__blobs = [];
   window.saveBlob = (name, bytes, mime) => { window.__blobs.push({ name, mime, text: (typeof bytes === 'string') ? bytes : '' }); };

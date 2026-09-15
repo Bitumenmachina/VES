@@ -152,7 +152,7 @@ const check = (name, ok, detail) => {
   console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail !== undefined ? '  ' + JSON.stringify(detail) : ''));
 };
 
-const ARM = `window.print = () => { window.__printed = (window.__printed || 0) + 1; };
+const ARM = `window.print = () => { window.__printed = (window.__printed || 0) + 1; const __d = document.getElementById('printDoc'); const __h = __d ? __d.innerHTML : ''; setTimeout(() => { const __e = document.getElementById('printDoc'); if (__e) __e.innerHTML = __h; }, 0); /* B6F-C6 re-address: the app releases #printDoc as soon as window.print() returns (a real browser has    already composed the page by then). Capture at compose time, restore next tick, read sites unchanged. */ };
   loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
   window.__blobs = [];
   window.saveBlob = (name, bytes, mime) => { window.__blobs.push({ name, mime,

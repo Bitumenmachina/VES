@@ -149,6 +149,10 @@ jobs:
           # Batch B5 (VES 2): one description per item, EDGE column words — child gates skipped here (each is its own step above)
           node tools/sweep/probe-b5-words.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet/takeoff.v3.json" "$PWD/fixtures/synthetic/three-sheet/plan.pdf" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
           code18=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code18
+          # Batch B6F (VES 2): the one fix batch after the B6 persona pass — the pending money surfaces,
+          # the pitch bounds, the general-line journal, the section key, the print latch, the region ids.
+          node tools/sweep/probe-b6f.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" 2>&1 | tee -a probes.txt
+          code19=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code19
           {
             echo '## sweep probes'
             echo

@@ -87,7 +87,11 @@ await c.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, d
 await c.send('Page.navigate', { url: 'file://' + VES });
 for (let i = 0; i < 400; i++) { try { if (await ev('document.readyState==="complete" && !!window.VESApp')) break; } catch (_) {} await sleep(50); }
 await ev(`localStorage.clear();
-  window.print = () => {};
+  window.print = () => { const d = document.getElementById('printDoc'); const h = d ? d.innerHTML : '';
+    /* B6F-C6 re-address: the app lets #printDoc go the moment window.print() returns, so the
+       composed document is captured HERE — where a real browser composes it — and put back on
+       the next tick for the read sites below. Assertions unchanged. */
+    setTimeout(() => { const e = document.getElementById('printDoc'); if (e) e.innerHTML = h; }, 0); };
   window.__demo = ${demo};
   loadFromData.confirmed = true;
   window.confirmDocumentSwap = () => Promise.resolve(true);
@@ -240,7 +244,11 @@ if (existsSync(takeoffPath) && existsSync(planPath) && existsSync(goldenPath)) {
   const planB64 = readFileSync(planPath).toString('base64');
   await c.send('Page.navigate', { url: 'file://' + VES });
   for (let i = 0; i < 400; i++) { try { if (await ev('document.readyState==="complete" && !!window.VESApp')) break; } catch (_) {} await sleep(50); }
-  await ev(`localStorage.clear(); window.print = () => {}; loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
+  await ev(`localStorage.clear(); window.print = () => { const d = document.getElementById('printDoc'); const h = d ? d.innerHTML : '';
+    /* B6F-C6 re-address: the app lets #printDoc go the moment window.print() returns, so the
+       composed document is captured HERE — where a real browser composes it — and put back on
+       the next tick for the read sites below. Assertions unchanged. */
+    setTimeout(() => { const e = document.getElementById('printDoc'); if (e) e.innerHTML = h; }, 0); }; loadFromData.confirmed = true; window.confirmDocumentSwap = () => Promise.resolve(true);
     window.__blobs = [];
     window.saveBlob = (name, bytes, mime) => { window.__blobs.push({ name, mime,
       text: (bytes instanceof Uint8Array) ? null : String(bytes),
