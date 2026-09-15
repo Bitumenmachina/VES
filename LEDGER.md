@@ -168,6 +168,33 @@ ec6688af) → 8/8 on the patch**; applied by md5 contract (declared `62a2031c1c1
 - Token note: sonnet 464K / 230 tool uses — more than any opus batch (B1 287K, B2a 331K, B2b 339K). Remaining code batches run
   on opus (Patrick 2026-09-14: "use opus if sonnet trips again"; cost per token is higher but the burn was not lower).
 
+## Batch B4 — VES 2 · THE TAKEOFF PRINTS EVERY SHEET (build 2.0.0-rc.6, 2026-09-14)
+
+Rulings R-10a..g (charter). Opus agent, RED-first: `tools/sweep/probe-b4-print.mjs` **1/9 on the base (md5 62a2031c) → 9/9 on
+the patch**; applied by md5 contract (declared `961cf1f5499cd98da5e0f9bb64986d67` = applied). Product: sha256 `556db7f6e193c98584b12ad3bcc0a4524257694cb385eed4cffe8a26225193b2`, 3797877 bytes. **Patrick's
+complaint #1 (2026-09-14, "no ability to print a takeoff that uses multiple pdf pages") is closed on rendered pages.**
+- One print path: `printTakeoffDoc` (main's AE) folded into `printTakeoff` (kind-curie AE-2) and DELETED (grep: comments only).
+  `visualFiguresHTML(pages)` is the one per-sheet figure builder: raster + markup + region outlines/chips + per-sheet legend
+  (pattern glyphs, only that sheet's conditions, that sheet's own quantity — a spanning condition reads its own number on each
+  sheet) + "Sheet N of M"; one landscape `@page` for the whole document; a computed image ceiling keeps every sheet on ONE page
+  (the base stranded sheet 1 onto a 4th page). Quantities page: Section bands with SF · LF · EA subtotals, a "Sheets" column, one
+  basis line saying the quantities are for the whole takeoff, no money. Sheet chooser (2+ measured sheets only; unmeasured listed
+  greyed, not selectable; `state.printSheets` one-shot, never saved; Cancel/Esc releases the latch); "Sheets shown: 1, 3 of 3" on
+  the paper when a sheet is left out (the fixture PDF carries no page labels). Typed-only takeoff prints its tables with no figure;
+  nothing measured → latch released, toast names it (the AE5 semantics — the takeoff door is no longer `gateCtl`-disabled so it can
+  say so). Proposal: one figure per measured sheet in the estimator's colors with pattern swatches, legends keep ROLLUP totals
+  (D-26.1: never page-partial); the bid carries no figure, as before. Latch release is armed only around the app's own
+  `window.print()` — `Page.printToPDF` fires `afterprint` too (measured), so an unconditional release would have blanked every
+  rendered-bytes gate. **C-B0-1 closed:** `identity.fileSize` is read before pdf.js detaches the buffer (6,366 for the fixture
+  PDF); a file saved with 0 still loads with no modal.
+- Sibling gate change, declared: `probe-b0-fixture` F2 asserted identity "match" by a direct core call, which the size fix makes
+  false for the fixture's own pre-rc.6 file (saved with fileSize 0); F2 now tolerates exactly that one diff and nothing else.
+  R-10d's figure-scoped `page-break-inside` was already true on the base — nothing changed. CI: probe-ae step FATAL again (B0's
+  declared-red block removed); `probe-b4-print` step added.
+- **Gates on `961cf1f5499cd98da5e0f9bb64986d67` (orchestrator rerun):** G0 GREEN 4/4 · ves-verify PASS · **probe-b4-print: 9/9 passed, 0 failed** · **probe-ae: 5/5 passed, 0 failed** · probe-p903-doc 8/8 ·
+  probe-b0-fixture 7/7 · probe-b3-colors 8/8 · probe-b2b-regions 8/8 · probe-u 8/8 · probe-af 40/40. Agent's run also: b1 12/12 ·
+  b2a 7/7 · v · x/y/z/aa/ab/ac/ad · p903 ×5 green. Token note: 325K.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |

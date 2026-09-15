@@ -36,7 +36,10 @@ truth first, history compressed.
 - **VES 2 · Batch B3 LANDED — build 2.0.0-rc.5** (2026-09-14). sha256 `bafd32ae64095c932a242769d5705f3e3fbdf5b1f5d57ce8f36a56ca9257cb59`. 24 hues (first 8 unchanged) + custom hex +
   dash×hatch print patterns + readableInk + paginating legends; sheet-box legend clip found and fixed. probe-b3-colors 8/8 (1/8 on
   base) · G0 GREEN · all standing gates green; probe-b2b's old-build default pinned (harness fix).
-  **PICKUP = B4** (charter `.scratch/charter-b4.md`; R-10; opus) → B5 (`charter-b5.md`) → B6 (`charter-b6-personas.md`) → B7 (`charter-b7.md`).
+- **VES 2 · Batch B4 LANDED — build 2.0.0-rc.6** (2026-09-14). sha256 `556db7f6e193c98584b12ad3bcc0a4524257694cb385eed4cffe8a26225193b2`. Every measured sheet prints (own page,
+  own legend), sheet chooser, whole-job quantities page with Section subtotals, typed-only/empty edges kept, proposal per-sheet figures,
+  identity fileSize recorded; printTakeoffDoc gone; probe-ae 5/5 and FATAL again. probe-b4-print 9/9 (1/9 on base) · G0 GREEN.
+  **PICKUP = B5** (charter `.scratch/charter-b5.md`; R-6) → B6 (`charter-b6-personas.md`) → B7 (`charter-b7.md`).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
