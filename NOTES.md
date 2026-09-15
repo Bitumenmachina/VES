@@ -42,7 +42,9 @@ truth first, history compressed.
 - **VES 2 · Batch B5 LANDED — build 2.0.0-rc.7** (2026-09-14). sha256 `9c606215699ff5d938b6d34d8d6adca50e4f47f860b7bdb07e5443e93529dece`. descOf on every surface; EDGE column
   words on takeoff/grid/recap/cost sheet/bid; vocab-check in CI (0 findings). probe-b5-words 6/6 (1/6 on base) · full sweep green.
   Candidate C-B5-1 (three identical unit columns) → B6F. ALL FIVE BUILD BATCHES LANDED.
-  **PICKUP = B6 persona pass** (charter `.scratch/charter-b6-personas.md`: P-ESTIMATOR → P-FRESH → P-CODE, serial) → B6F (one fix batch) → B7 (`charter-b7.md`).
+- **VES 2 · B6 persona pass DONE on rc.7** (2026-09-14): P-ESTIMATOR 1/2/4/4, P-FRESH 2/1/3/1, P-CODE 3/5/3/0 (P0/HIGH/MED/LOW);
+  reports in `research/persona-2.0.0/`; triage → 16 rulings in `research/persona-2.0.0/CHARTER-B6F.md` (LEDGER §Batch B6).
+  **PICKUP = B6F running (opus, clone `.scratch/b6f`)** → verify → B7 (`.scratch/charter-b7.md`).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

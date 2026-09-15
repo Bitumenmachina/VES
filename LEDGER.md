@@ -227,6 +227,29 @@ findings on the base → 0 on the patch**, wired into CI. Applied by md5 contrac
   and `rm -rf /tmp/ves-*` after each; kills by PID from `ps` on `comm`; B5-6 neutral under the flag. Token note: sonnet 588K /
   300 tool uses (B3 sonnet 464K) — the two sonnet batches burned more than any opus batch.
 
+## Batch B6 — VES 2 · PERSONA PASS on 2.0.0-rc.7 (2026-09-14) → triage → B6F
+
+Three personas, serial, fresh context, observations only (`research/persona-2.0.0/`): **P-ESTIMATOR** (sonnet, 320K; a full takeoff
+from blank across 3 sheets: P0 1 · HIGH 2 · MED 4 · LOW 4, three LOWs being clean confirmations — pitch typing, migration banners,
+sheet chooser) · **P-FRESH** (sonnet, 266K; clean profile, no docs: the four asks all achievable from the screen; P0 2 · HIGH 1 · MED 3
+· LOW 1) · **P-CODE** (opus, 226K; adversarial reader of d2bcf6a..HEAD with proofs: **P0 3 · HIGH 5 · MED 3**, plus a
+could-not-break list: v5 round-trip, version refusal, descOf consistency, case-insensitive money grouping, empty-print returns,
+setGeneralField/editLine/setConditionWaste journaling).
+**Money rows (fix):** B6C-1 `removeGeneralItem` un-journaled — Ctrl+Z gives two phantom undos then reverses the load reconcile
+(−$15,291.49); B6C-2 a traced area on a sheet with no scale contributes 0 to recap/grid/bid/cost sheet/CSV and the word "pending"
+reaches only the takeoff paper, while the bid prints "Sheet 1, 2" for a quantity measured on sheet 1 alone (E-F2's "(3 pending)" is
+the same defect from the paper side); B6C-3 the pitch door's multiplier fallback accepts any finite ≥ 1 — `1e9` prices a job at
+$3.69 trillion; B6C-5/6 Ctrl+Z of the reconcile deletes `c.pitch` (save → reload: pitches gone, banner stale); B6C-4 `addGeneralItem`
+un-journaled; B6C-7 rename into a case-variant name drops 4 of 26 conditions from the takeoff page; B6C-9 `#printDoc` left
+populated (706 KB) after `printTakeoff` — headless Chrome fires no `afterprint`. **Bar-backed rows (fix):** E-F1 the 2-pt scale tool
+would not arm on sheets 2–3 (a banner offered two other doors); E-F5 22 quick-added conditions all `#ff5d3a`; F-F4 a new card renders
+off-screen, its doors unreachable; E-F3/E-F7 the resume card names the PDF but does not open it, and Open takeoff asks for a PDF
+already open; E-F6 the bid's refusal names no unpriced line; F-F1/F-F2 the migration banners move money as ruled (R-3a) but offer
+only a dismiss — two doors each; F-F3 banner wording. **Taste (candidates):** F-F7 recap collapsed by default; E-F4 undo after
+reload; C-B2a-1; F-F5 form collapses per add (cheap → built). Rulings B6F-1…9 and B6F-C1…C7 in `.scratch/charter-b6f.md`
+(copied into this section's commit as `research/persona-2.0.0/CHARTER-B6F.md`). One fix batch; if a P0/HIGH remains after it, the
+run halts per the plan.
+
 ## Rulings cited in the bytes (D-series)
 
 | ruling | first cited at | gist as the bytes state it |
