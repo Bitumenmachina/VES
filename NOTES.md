@@ -54,7 +54,9 @@ truth first, history compressed.
 - **VES 2.1 · QoL pass RUNNING on `ves2`** (plan §QoL): Q1 deductions (opus, clone `.scratch/q1`) → Q2 hide/solo → Q3 selection →
   Q4 frictions + exports light touch → Q6 money trio (M-1..M-3, his 9/15 word) → Q5 persona + release 2.1.0.
 - **Q1 LANDED — 2.1.0-rc.1** (2026-09-15). sha256 `18809005adc56c0763b4cb83ace497de2b1e349adc59dfa1a0412d35a0f6261d`. Deductions (R-11a..c; engine input now honours sign). probe-deduct 10/10
-  (1/10 on base) · G0 GREEN · all landed gates green. **PICKUP = Q2** (charter `.scratch/charter-q2.md`).
+  (1/10 on base) · G0 GREEN · all landed gates green.
+- **2.0.0 CI on the runner: probes job FAILED on the first run** (shallow checkout vs probe-b2b's `git show` pin, via b4's sub-gate row);
+  harness fix on `main` (fetch by full sha), rerun pending. **PICKUP = Q2** (charter `.scratch/charter-q2.md`).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

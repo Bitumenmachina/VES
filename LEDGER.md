@@ -42,7 +42,11 @@ console errors (`probe-b7-demo` 7/7).
 the 9/01 root — the guard's list was stale) and `fixtures/synthetic/` (generator-written, zero client data); **amended on his word**
 (one pattern: LEDGER removed from the forbidden names, `^fixtures/synthetic/` allowed; everything else under `fixtures/` still
 forbidden; hook is local-only). Local `main` (a stale divergent checkout, 68c8e23) renamed `main-stale-20260901`, new local `main`
-tracks origin/main. CI run id recorded below when read.
+tracks origin/main. CI on the runner for d7f683e: verify PASS · gate (G0) PASS · **probes FAILED** (runs 34969224442 / 34969225702) — cause found by a
+local depth-1 clone (logs need admin rights): the runner's checkout is shallow, `probe-b2b-regions` pinned its old build with
+`git show 4742d02` (unavailable at depth 1) and `probe-b4-print`'s sub-gate row B4-9 carried that red. Fixed harness-only (fetch the
+pinned commit by full sha first, the probe-af pattern; proven 8/8 in a depth-1 clone), cherry-picked onto `main` and pushed; the
+rerun's result is recorded in NOTES when read. Product bytes and the v2.0.0 tag unchanged.
 **Bars:** `research/PLATFORM_BAR.md` §5 (the four asks, each with its RED-first gate) · local GTM_BAR.md B2 restated + re-proven.
 **Not done here, by rule:** no push (the box's pre-push guard allows `main` only), no merge to `main`, no `--write-*`. **Patrick's
 part:** the 8-step cold test (`research/COLD_TEST_2.0.0.md` = `~/Downloads/VES_2.0.0_NOTES.md`) and one real takeoff on F18.72 vs 2.0.0
