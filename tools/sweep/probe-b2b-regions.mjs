@@ -40,7 +40,14 @@ const TMP = mkdtempSync(join(tmpdir(), 'ves-b2b-'));
    build that really cannot read v5 (never a mock of one). */
 let OLD = OLDARG || '';
 if (!OLD) {
-  const g = spawnSync('git', ['-C', ROOT, 'show', '4742d02:src/VES_PM.html'], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 });
+  // The runner checks out at depth 1, so the pinned commit is not in the object store — fetch it by FULL sha first (the
+  // probe-af pattern; GitHub serves reachable objects by sha) and only then `git show`. Found by 2.0.0's first CI run (2026-09-15).
+  const OLD_FULL = '4742d02f0131fd7198be462a52deb8947243dd7c';
+  let g = spawnSync('git', ['-C', ROOT, 'show', OLD_FULL + ':src/VES_PM.html'], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 });
+  if (!(g.status === 0 && g.stdout && g.stdout.length > 1000)) {
+    spawnSync('git', ['-C', ROOT, 'fetch', '--no-tags', '--depth=1', 'origin', OLD_FULL], { encoding: 'utf8', timeout: 120000 });
+    g = spawnSync('git', ['-C', ROOT, 'show', OLD_FULL + ':src/VES_PM.html'], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 });
+  }
   if (g.status === 0 && g.stdout && g.stdout.length > 1000) { OLD = join(TMP, 'old-build.html'); writeFileSync(OLD, g.stdout); }
 }
 
