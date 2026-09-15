@@ -5,6 +5,25 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q2 — VES 2.1 · HIDE / SOLO (build 2.1.0-rc.2, 2026-09-15)
+
+Rulings Q2-1…Q2-5 (`.scratch/charter-q2.md`). Sonnet agent (457K / 436 tool uses), RED-first: `tools/sweep/probe-hide.mjs` red on the
+base (Q2-a/b fail, the harness then crashes on a function that did not exist — red evidence) → **8/8 on the patch**; applied by md5
+contract (declared `e1d6e623e46a21993ce02ededd776ea2` = applied). Product: sha256 `72151ced160d0627153e37f6d573ff7388c507d635ca05b2ce712d03203b54fc`, 3882873 bytes.
+- One lean strip above the cards: Solo · Hide others · Hide measured · Show all + an "N hidden" chip (itself Show all), invisible with no
+  conditions; Alt+click a card's eye = Solo, plain click keeps the single toggle; every gesture reuses the eye's own journal pair
+  (`toggleCondHidden`) so undo never diverges; `H` / `Shift+H` were free keys; the eye is mirrored into the ✎ editor. Regions: an eye
+  glyph drawn on the region's chip in the live overlay only (the print path calls `drawRegionChip` without it — printed bytes untouched);
+  `state.hiddenRegions` persisted beside `hiddenConds`. Screen-only: takeoff print with hidden conditions is byte-identical, money and
+  quantities unchanged (rows Q2-c/d).
+- **Agent's declared judgment, RULED AGAINST for the next batch (R-12a):** a hidden region's outline AND chip vanish entirely and the only
+  way back is Ctrl+Z — session-only, so after a reload a hidden region has no door at all. Q3-0 (added to the Q3 charter): Show all and
+  the chip also clear `hiddenRegions`; the chip counts "N hidden · M regions"; a hidden region keeps a faint ghost chip with its eye.
+- Harness: the probe's Q2-h sub-gate chain runs every sibling probe in one process (>5 min); the orchestrator made the row NEUTRAL under
+  `--no-subgates` (the B5-6 precedent) — CI runs the full chain as the agent wrote it.
+- **Gates on `e1d6e623e46a21993ce02ededd776ea2` (orchestrator rerun):** ves-verify PASS · G0 GREEN 4/4 · vocab-check 0 · ALL GREEN — 8 pass, 0 fail, 8 rows · deduct 10/10 · b2b-regions 8/8 ·
+  b6f 17/17 · b0-fixture 7/7 · u 8/8 (agent's run also: b1 · b2a · b3 · b4 · b5 · ae · p903 ×5 · v · af green).
+
 ## Batch Q1 — VES 2.1 · DEDUCTIONS (build 2.1.0-rc.1, 2026-09-15)
 
 Rulings Q1-1…Q1-6 (`.scratch/charter-q1.md`, copied to `research/qol-2.1.0/CHARTER-Q1.md` at release). Opus agent (356K), RED-first:
