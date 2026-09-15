@@ -19,6 +19,7 @@ refs/
 # Batch scratch clones and their patches — working copies, never the record
 .scratch/
 
-# Release artifacts stay out except the synthetic demo
+# Release artifacts stay out except the synthetic demo and its own README
 release/*
 !release/demo/
+!release/README.md

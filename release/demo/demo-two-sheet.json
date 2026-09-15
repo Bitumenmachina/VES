@@ -1,0 +1,414 @@
+{
+  "app": "VES",
+  "kind": "takeoff",
+  "version": 5,
+  "savedAt": "2026-09-15T00:00:00.000Z",
+  "pdfName": "demo-two-sheet.pdf",
+  "projectMeta": {
+    "name": "Demo — Two-Sheet Sample",
+    "client": "",
+    "address": "",
+    "phone": "",
+    "email": "",
+    "notes": "Synthetic demo takeoff. Two sheets, two sections, a pitched roof and a flat one. No job, no client, no quoted price."
+  },
+  "schedule": {
+    "rows": {}
+  },
+  "view": {
+    "tool": "select",
+    "armedId": null
+  },
+  "viz": {
+    "hidden": [],
+    "fillMode": "on"
+  },
+  "sheetDone": {},
+  "identity": {
+    "pdfName": "demo-two-sheet.pdf",
+    "fileSize": 4356,
+    "numPages": 2,
+    "docFingerprint": "d2f053ee7c41d9a2680fe0ee0c0de0f2",
+    "pageSignatures": [
+      "691ce58c",
+      "bb5cb25d"
+    ]
+  },
+  "grid": null,
+  "mode": "single",
+  "activePane": 0,
+  "panes": [
+    {
+      "pageNum": 1,
+      "zoom": 1,
+      "scroll": {
+        "l": 0,
+        "t": 0
+      }
+    },
+    {
+      "pageNum": 0,
+      "zoom": 1,
+      "scroll": {
+        "l": 0,
+        "t": 0
+      }
+    }
+  ],
+  "rotations": {},
+  "calibrations": {
+    "1": {
+      "ftPerUnit": 0.125,
+      "fromGrid": false,
+      "points": [
+        {
+          "x": 300,
+          "y": 1560
+        },
+        {
+          "x": 1100,
+          "y": 1560
+        }
+      ],
+      "typed": "100 ft over the printed scale bar",
+      "page": 1,
+      "when": "2026-09-15T00:00:00.000Z",
+      "verifications": []
+    },
+    "2": {
+      "ftPerUnit": 0.125,
+      "fromGrid": false,
+      "points": [
+        {
+          "x": 300,
+          "y": 1560
+        },
+        {
+          "x": 1100,
+          "y": 1560
+        }
+      ],
+      "typed": "100 ft over the printed scale bar",
+      "page": 2,
+      "when": "2026-09-15T00:00:00.000Z",
+      "verifications": []
+    }
+  },
+  "sections": [],
+  "conditions": [
+    {
+      "id": 1,
+      "name": "SSMR — field area",
+      "color": "#ff5d3a",
+      "type": "area",
+      "csi": "07 61 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 1,
+      "libRef": "ssmr.field",
+      "assembly": "ssmr",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z",
+      "pitch": 6
+    },
+    {
+      "id": 2,
+      "name": "SSMR — ridge",
+      "color": "#3d9be9",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 2,
+      "libRef": "ssmr.ridge",
+      "assembly": "ssmr",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z",
+      "pitch": 6
+    },
+    {
+      "id": 3,
+      "name": "SSMR — eave",
+      "color": "#6fd08c",
+      "type": "linear",
+      "csi": "07 71 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 3,
+      "libRef": "ssmr.eave",
+      "assembly": "ssmr",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z",
+      "pitch": 6
+    },
+    {
+      "id": 4,
+      "name": "SSMR — pipe penetration",
+      "color": "#ffd166",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "Main Roof",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "ssmr"
+      ],
+      "sortOrder": 4,
+      "libRef": "ssmr.pipe",
+      "assembly": "ssmr",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "name": "TPO — membrane field",
+      "color": "#b07cd8",
+      "type": "area",
+      "csi": "07 54 23",
+      "wbs": "",
+      "location": "Garage",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 5,
+      "libRef": "tpo.field",
+      "assembly": "tpo",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "name": "TPO — parapet flashing",
+      "color": "#f25f8e",
+      "type": "linear",
+      "csi": "07 62 00",
+      "wbs": "",
+      "location": "Garage",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 6,
+      "libRef": "tpo.parapet",
+      "assembly": "tpo",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "name": "TPO — drain",
+      "color": "#4ecdc4",
+      "type": "count",
+      "csi": "07 72 00",
+      "wbs": "",
+      "location": "Garage",
+      "unitCost": null,
+      "notes": "",
+      "tags": [
+        "tpo"
+      ],
+      "sortOrder": 7,
+      "libRef": "tpo.drain",
+      "assembly": "tpo",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "updatedAt": "2026-09-15T00:00:00.000Z"
+    }
+  ],
+  "measurements": [
+    {
+      "id": 101,
+      "conditionId": 1,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 610,
+          "y": 445
+        },
+        {
+          "x": 980,
+          "y": 445
+        },
+        {
+          "x": 980,
+          "y": 755
+        },
+        {
+          "x": 610,
+          "y": 755
+        }
+      ],
+      "value": 1792.1875,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 102,
+      "conditionId": 2,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 424,
+          "y": 528
+        },
+        {
+          "x": 844,
+          "y": 528
+        },
+        {
+          "x": 844,
+          "y": 928
+        }
+      ],
+      "value": 102.5,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 103,
+      "conditionId": 3,
+      "page": 1,
+      "type": "linear",
+      "points": [
+        {
+          "x": 441,
+          "y": 447
+        },
+        {
+          "x": 931,
+          "y": 447
+        },
+        {
+          "x": 931,
+          "y": 960
+        },
+        {
+          "x": 1411,
+          "y": 960
+        }
+      ],
+      "value": 185.375,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 104,
+      "conditionId": 4,
+      "page": 1,
+      "type": "count",
+      "points": [
+        {
+          "x": 821,
+          "y": 876
+        },
+        {
+          "x": 1443,
+          "y": 594
+        }
+      ],
+      "value": 2,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 105,
+      "conditionId": 5,
+      "page": 2,
+      "type": "area",
+      "points": [
+        {
+          "x": 629,
+          "y": 413
+        },
+        {
+          "x": 929,
+          "y": 413
+        },
+        {
+          "x": 929,
+          "y": 703
+        },
+        {
+          "x": 629,
+          "y": 703
+        }
+      ],
+      "value": 1359.375,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 106,
+      "conditionId": 6,
+      "page": 2,
+      "type": "linear",
+      "points": [
+        {
+          "x": 439,
+          "y": 593
+        },
+        {
+          "x": 699,
+          "y": 593
+        },
+        {
+          "x": 699,
+          "y": 840
+        }
+      ],
+      "value": 63.375,
+      "notes": "",
+      "manual": false
+    },
+    {
+      "id": 107,
+      "conditionId": 7,
+      "page": 2,
+      "type": "count",
+      "points": [
+        {
+          "x": 917,
+          "y": 475
+        },
+        {
+          "x": 764,
+          "y": 753
+        }
+      ],
+      "value": 2,
+      "notes": "",
+      "manual": false
+    }
+  ],
+  "assemblyProject": {
+    "lineOverrides": {},
+    "conditionOverrides": {},
+    "settings": {
+      "overheadPct": 10,
+      "markupPct": 8,
+      "profitPct": 5
+    },
+    "general": []
+  },
+  "nextId": 108
+}
