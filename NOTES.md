@@ -63,7 +63,12 @@ truth first, history compressed.
   Shift+click, marquee (skips hidden), body-drag move, Ctrl+D, Shift+R re-assign, Shift+Space, bulk one-entry, region ghost chips (Q3-0). probe-select 10/10
   RED-first (2/10 on base); full sweep green except z Z5 (red on the Q2 base too — OPEN C-Q3-1). R-13a..d in LEDGER §Batch Q3; harness 26f40e9 re-addressed
   deduct Q1-g. The opus agent was cut off by the 11:15 network outage, then the box lost power; recovered from `.scratch/q3` and finished by the orchestrator.
-  **PICKUP = Q4** (charter `.scratch/charter-q4.md`; then Q6 → Q5 per plan §QoL).
+- **2026-09-15 evening: rc.3 MERGED to origin/main `ebbea2c` (his word) — CI RED on probe-z Z5** (phone long-press money peek): a Q2 regression,
+  bisected on the box (2.0.0 + Q1 green, Q2 + Q3 red). **Q2F LANDED — 2.1.0-rc.4.** One CSS rule: the dock stacks above the stage's banners at
+  phone width (R-14b; LEDGER §Batch Q2F has the mechanism and two dead ends). probe-z 6/6; sweep green except b4-print 8/9 whose child probes
+  were killed by the concurrent Q4 agent's `/tmp/ves-*` cleanup (harness lesson; re-run alone before push). C-Q2F-1 open: banners have no phone
+  home. **Needs Patrick's merge word to push the fix; main CI stays red until then.**
+  **PICKUP = Q4** (agent running in `.scratch/q4` off ebbea2c; lands as rc.5; charter `.scratch/charter-q4.md`; then Q6 → Q5 per plan §QoL).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

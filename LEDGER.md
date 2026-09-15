@@ -5,6 +5,36 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q2F — VES 2.1 · the one fix batch after Q2's regression (build 2.1.0-rc.4, 2026-09-15)
+
+**Caught by the gate on the runner, not on the box.** CI on the merged `ebbea2c` (run 35034309659, Patrick's merge word): `verify` and
+`gate` green, `probes` red in the "sweep probes (v … af)" step. Job logs need admin auth and were not pulled. Bisected on the box with
+`probe-z` on the bytes of each landing: 2.0.0 `d7f683e` 6/6 · Q1 `b2e5a1f` 6/6 · **Q2 `1b493df` 5/6** · Q3 `e7aa796` 5/6 — row Z5
+(phone: a long-press on the card shows the money peek). C-Q3-1 is settled: a real regression from Q2, not a box-vs-runner difference.
+- **Mechanism (`elementFromPoint`, 390×844, rail open):** the stage is 68 px wide, so `#banners` (absolute, z-index 20, width 92 % of the
+  stage = 63 px) holds a file:// notice whose content is 331 px and overflows across the rail's cards; the rail sits inside `#dock`, whose
+  base rule is `position:relative; z-index:15` — a stacking context BELOW the banners — so the banner took the touch. Q2's rail strip
+  (57 px) moved the first card from y 97 to 154, into the banner's band (124–270). On 2.0.0 the row passed because the card sat above it.
+- **Fix (R-14b, the principle, not the surface):** the rail's cards are the estimator's controls — nothing from the stage may paint over them.
+  `@media (max-width: 720px) { #dock { z-index: 21; } }` placed AFTER the dock's base rule (`src/VES_PM.html` ~:1574). Two dead ends
+  recorded so nobody repeats them: a `z-index` on `#rail` is local to the dock's own context (computed 21, still under the banner); the same
+  rule written in the 720 block higher up the file was out-cascaded by source order at equal specificity (computed 15). One CSS rule; no
+  money, no file version, no print path. Stamp `2.1.0-rc.4`; md5 `e733c0b4`; Q4 will land as rc.5.
+- **Probe:** Z5 now also asserts the touch lands on a `.card` and names what it hit (`hit` chain in the detail) — a red here says the
+  mechanism, not only `visible:false`. RED-first: Z5 red on the Q3 bytes with the new row (hit = `SPAN.msg › DIV#fileProtoNotice.banner`),
+  green on the fix; `probe-z` 6/6.
+- **Open C-Q2F-1:** at phone width the file:// notice (and any banner) has no readable home — a 63 px box in a 68 px stage, now painted
+  behind the dock. A phone banner lane is a design item, not this batch.
+- **Gates on `e733c0b4` (one sequential sweep, 19:35–19:45, raw in `.scratch/q2f-sweep/`):** ves-verify PASS · vocab-check 0 · G0 GREEN ·
+  b0-fixture 7/7 · b1 12/12 · b2a 7/7 · b2b 8/8 · b3 8/8 · b5 6/6 · b6f 17/17 · deduct 10/10 · hide 8/8 · select 10/10 · v 17/17 · x 5/5 ·
+  y 4/4 · **z 6/6** · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · ae 5/5 · af 40/40 · p903-doc 8/8 · p903-aim 7/7 · p903-rail 5/5 ·
+  p903-pitch 6/6 · p903-words 5/5 · **b4-print 8/9** — B4-8's product assertion passed (`printTakeoffDoc` gone); its two CHILD probes
+  (probe-ae, probe-p903-doc) died in ~200 ms with a Node error, tail "Node.js v24.14.1", on the same bytes that ran them green standalone in
+  this sweep and by hand from both roots. Cause: the Q4 agent was building concurrently and its charter has it `rm -rf /tmp/ves-*` after
+  every probe; b4 keeps its child PDFs under `/tmp/ves-b4-*` for its 171 s run and never checks mkpdf's exit. Harness lesson: the `/tmp/ves-*`
+  cleanup is per-seat, not per-box — an orchestrator sweep must not overlap an agent's probe runs (the 18:36 Q3 sweep ran before the agent
+  was spawned and b4 was 9/9). b4-print is RE-RUN alone after the agent returns, before any push; recorded below when it has run.
+
 ## Batch Q3 — VES 2.1 · SELECTION AFFORDANCES (build 2.1.0-rc.3, 2026-09-15)
 
 Rulings Q3-0…Q3-7 (`.scratch/charter-q3.md`). Opus agent wrote the code and `tools/sweep/probe-select.mjs`, then was terminated by the
