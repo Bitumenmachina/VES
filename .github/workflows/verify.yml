@@ -167,6 +167,11 @@ jobs:
           # the current bytes only.
           node tools/sweep/probe-hide.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" 2>&1 | tee -a probes.txt
           code21=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code21
+          # Batch Q3 (VES 2.1): selection affordances — the chip, move, duplicate, marquee, re-assign, Shift+Space,
+          # the region ghost chip. Real pointer throughout; its money children (G0 + every landed probe) already ran
+          # as their own steps above, so --no-subgates here.
+          node tools/sweep/probe-select.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
+          code22=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code22
           {
             echo '## sweep probes'
             echo

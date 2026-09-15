@@ -1819,6 +1819,36 @@
   #deductPick .dp-opt:hover, #deductPick .dp-opt:focus { background: var(--panel); border-color: var(--line); outline: none; }
   #deductPick .dp-sw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
   #deductPick .dp-none { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 7px 7px; color: var(--ink-dim); }
+  /* Batch Q3 (Q3-2): the SELECTION CHIP. It sits just below-right of the hand that made the pick —
+     the estimator's eye is already there — and it is the only thing on screen that names what is
+     selected and what can be done to it. `pointer-events: none` on the plate so a chip left over
+     from the last pick can never swallow the next click on the sheet; only its own doors take one. */
+  #selChip { position: fixed; z-index: 93; max-width: min(420px, calc(100vw - 16px)); pointer-events: none;
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 9px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.38); padding: 5px 7px; font-size: 12px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #selChip[hidden] { display: none; }
+  #selChip .sc-word { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 10.5px; color: var(--ink-dim); }
+  #selChip .sc-cond { font-weight: 600; }
+  #selChip .sc-val { font-family: var(--mono); }
+  #selChip .sc-sheet, #selChip .sc-under { color: var(--ink-dim); font-size: 11px; }
+  #selChip .sc-sep { color: var(--ink-dim); opacity: .7; }
+  #selChip .sc-doors { display: flex; gap: 3px; flex-wrap: wrap; border-left: 1px solid var(--line); margin-left: 2px; padding-left: 6px; }
+  #selChip .sc-door { pointer-events: auto; background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 6px; padding: 2px 7px; font: inherit; font-size: 11px; cursor: pointer; }
+  #selChip .sc-door:hover, #selChip .sc-door:focus { background: var(--panel); outline: none; }
+  /* Q3-5: the re-assign picker — the perimeter picker's plate, listing only conditions of the SAME type. */
+  #reassignPick { position: fixed; z-index: 92; min-width: 230px; max-width: min(340px, calc(100vw - 16px));
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4); padding: 7px; font-size: 12px; }
+  #reassignPick[hidden] { display: none; }
+  #reassignPick .dp-head { font-weight: 600; padding: 2px 5px 6px; color: var(--ink-dim); }
+  #reassignPick .dp-opt { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left;
+    background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 7px;
+    padding: 6px 8px; font: inherit; cursor: pointer; }
+  #reassignPick .dp-opt:hover, #reassignPick .dp-opt:focus { background: var(--panel); border-color: var(--line); outline: none; }
+  #reassignPick .dp-sw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+  #reassignPick .dp-none { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 7px 7px; color: var(--ink-dim); }
   .card .qty .dedq { color: var(--ink-dim); font-family: var(--mono); }
   .dednote { color: var(--ink-dim); font-size: 11px; }
 </style>
@@ -1948,6 +1978,10 @@
     <div id="inspector"></div>
     <!-- Q1-4: the perimeter handoff picker. Built and positioned by openDeductHandoff(). -->
     <div id="deductPick" hidden></div>
+    <!-- Q3-2: the selection chip. Built and positioned by renderSelChip(). -->
+    <div id="selChip" hidden></div>
+    <!-- Q3-5: the re-assign picker. Built and positioned by openReassignPicker(). -->
+    <div id="reassignPick" hidden></div>
     <div id="activeIndicator" hidden></div>
     <button id="railReopen" hidden title="Show the conditions panel">⟨ Conditions</button>
     <div id="empty">
@@ -4742,6 +4776,7 @@ const state = {
   draft: null,                    // {points:[], cursor} in pdf space, on the ACTIVE pane's page
   calDraft: null,
   selectedId: null,
+  selectedIds: null,             // Q3-1: Set<measurementId> — the whole selection; selectedId is its HEAD (grips render only when the set has one member). Session-only, never serialized.
   flashIds: null,                 // transient set of measurement ids flashed from a BOM line (§4c)
   editingCondId: null,
   expandedCondId: null,           // condition whose formula-item depth is open on its card (Step 4)
@@ -5821,7 +5856,7 @@ function pdfToCss(pane, p) {
 }
 
 /* ---------- overlay drawing ---------- */
-function drawOverlays() { for (const p of state.panes) drawOverlay(p); }
+function drawOverlays() { for (const p of state.panes) drawOverlay(p); renderSelChip(); }
 
 function drawOverlay(pane) {
   const o = pane.els.overlay; if (!pane.viewport || !o.width) return;
@@ -5834,23 +5869,35 @@ function drawOverlay(pane) {
   /* B2b (R-5e): the drawn regions paint FIRST and therefore sit UNDER every measurement —
      a region is the sheet's filing cabinet, not a thing on the sheet. Their chips are cached
      on the pane in css space; the select tool hit-tests that cache and nothing else. */
-  pane.__secChips = [];
+  pane.__secChips = []; pane.__secGhosts = [];
   for (const sec of regionsOnPage(pane.pageNum)) {
-    if (state.hiddenRegions && state.hiddenRegions.has(sec.id)) continue;   // Q2-3: eye toggle — hidden paints nothing (outline + chip), tagging/subtotals untouched
     const rpts = secPoly(sec).map((q) => pdfToCss(pane, q));
+    /* Q3-0 (R-12a, ruled against Q2's judgment): a hidden region paints NO outline — but it keeps a
+       faint GHOST chip carrying its own eye, so the way back is on the sheet where it was taken away
+       rather than only in the undo stack. The ghost is cached apart from __secChips: the live chip
+       list is what select/rename hit-test, so a ghost can only be clicked back on, never selected or
+       renamed, and Q2-e's "the chip is gone" reading of __secChips stays true. */
+    if (state.hiddenRegions && state.hiddenRegions.has(sec.id)) {
+      ctx.save(); ctx.globalAlpha = .3;
+      const ghost = drawRegionChip(ctx, rpts, sec.name, { eye: true, ghost: true });
+      ctx.restore();
+      if (ghost) pane.__secGhosts.push({ id: sec.id, ...ghost });
+      continue;
+    }
     drawRegionShape(ctx, rpts, { selected: sec.id === state.selectedSectionId });
     const chip = drawRegionChip(ctx, rpts, sec.name, { eye: true });
     if (chip) pane.__secChips.push({ id: sec.id, ...chip });
   }
 
   const condById = Object.fromEntries(state.conditions.map((c) => [c.id, c]));
+  const selSet = selIds();   // Q3-1: every member of the set draws as selected; the head is only where the grips go
   for (const m of state.measurements) {
     if (m.page !== pane.pageNum) continue;
     const c = condById[m.conditionId]; if (!c) continue;
     if (state.hiddenConds && state.hiddenConds.has(m.conditionId)) continue;   // F18.14: eye toggle \u2014 hidden paints nothing, counts everything
     const flash = !!(state.flashIds && state.flashIds.has(m.id));
     drawShape(ctx, m.type, m.points.map((p) => pdfToCss(pane, p)), c.color, {   // F18.13: the CONDITION's chosen color paints the plan — confidence stays in the label glyph. Field: every unpriced trace rendered the same red.
-      selected: m.id === state.selectedId || flash, flash,
+      selected: selSet.has(m.id) || flash, flash,
       pattern: patternOf(patternIndexFor(c)),   // R-7c
       deduct: m.sign === -1,                   // Q1-3: the condition's own color, cut with a dashed edge and a cross-hatch
       label: m.type === 'count' ? null : (confMeasurement(m, c).glyph + ' ' + (m.sign === -1 ? '−' : '') + VESCore.formatValue(m.type, m.value)),
@@ -5860,7 +5907,7 @@ function drawOverlay(pane) {
   // D3: vertex grips on the selected measurement — 7 css px squares, condition
   // color fill, 1 px contrast stroke. The armed grip inverts (white, color ring).
   // Counts get one grip. Select tool only; drawn on any pane showing the sheet.
-  if (state.tool === 'select' && state.selectedId != null) {
+  if (state.tool === 'select' && state.selectedId != null && selSet.size === 1) {
     const selM = state.measurements.find((x) => x.id === state.selectedId && x.page === pane.pageNum);
     if (selM) {
       const gc = condById[selM.conditionId];
@@ -5877,6 +5924,16 @@ function drawOverlay(pane) {
         ctx.strokeRect(s.x - half, s.y - half, half * 2, half * 2);
       }
     }
+  }
+  /* Q3-1: the marquee, while the hand is holding it open. Neutral ink — it is not a measurement,
+     not a region, and it leaves nothing behind when the hand lets go. */
+  if (marquee && marquee.pane === pane && marquee.moved) {
+    const a = pdfToCss(pane, marquee.a), b = pdfToCss(pane, marquee.b);
+    ctx.save();
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1; ctx.strokeStyle = '#8fb8dd'; ctx.fillStyle = '#8fb8dd';
+    ctx.globalAlpha = .12; ctx.fillRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+    ctx.globalAlpha = 1; ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+    ctx.restore();
   }
   if (pane !== AP()) return; // drafts live on the active pane only
   if (state.secDraft && state.secDraft.page === pane.pageNum && state.secDraft.points.length) {
@@ -5956,9 +6013,12 @@ function drawRegionChip(ctx, pts, name, opt = {}) {
   ctx.fillStyle = SEC_INK; ctx.fillRect(x, y, w, h);
   ctx.fillStyle = '#ffffff';
   let tx = x + 7;
-  if (opt.eye) { ctx.fillText('◉', x + 3, y + 12.5); tx = x + eyeW + 3; }
+  if (opt.eye) { ctx.fillText(opt.ghost ? '◌' : '◉', x + 3, y + 12.5); tx = x + eyeW + 3; }
   ctx.fillText(label, tx, y + 12.5);
   ctx.restore();
+  /* Q3-0: on a GHOST the whole plate is the eye — it is the one thing left to aim at, and a 15 px
+     glyph is a cruel target for the only door back. */
+  if (opt.ghost) return { x, y, w, h, ghost: true, eye: { x, y, w, h } };
   return opt.eye ? { x, y, w, h, eye: { x, y, w: eyeW + 4, h } } : { x, y, w, h };
 }
 
@@ -6439,6 +6499,7 @@ function syncState() {
 
 function selectedMeasurementOn(pane) {
   if (state.tool !== 'select' || state.selectedId == null) return null;
+  if (selIds().size > 1) return null;   // Q3-1: no vertex doors on a multi-selection — the set moves, deletes and re-assigns whole
   const m = state.measurements.find((x) => x.id === state.selectedId);
   return (m && m.page === pane.pageNum) ? m : null;
 }
@@ -6585,6 +6646,18 @@ function wirePaneInput() {
           if (gi >= 0) { beginGripDrag(pane, gm, gi, e); e.preventDefault(); return; }
         }
       }
+      /* Q3-3 · MOVE, and Q3-1 · MARQUEE. Order matters and is the whole safety property:
+         grips (above) win inside 8 px, then the BODY of an already-selected shape moves, then EMPTY
+         paper sweeps a marquee, and everything else — the body of a shape nobody selected, blank
+         chrome, Space held — pans exactly as it did before this batch. */
+      if (e.button === 0 && !spaceHeld && state.tool === 'select' && pane === AP() && pane.viewport && hasSheet()) {
+        const p0 = evtToPdf(pane, e);
+        if (shapeBodyHit(pane, p0)) {
+          if (beginShapeDrag(pane, e)) { e.preventDefault(); return; }
+        } else if (!pickCandidates(pane, p0).length && sectionChipAt(pane, p0) == null && sectionChipEyeAt(pane, p0) == null) {
+          beginMarquee(pane, e, { add: e.shiftKey }); e.preventDefault(); return;
+        }
+      }
       const panning = e.button === 1 || (e.button === 0 && (state.tool === 'select' || state.tool === 'pan' || spaceHeld));
       if (panning && hasSheet()) {
         pan = { wrap, x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop, moved: false };
@@ -6605,6 +6678,9 @@ function wirePaneInput() {
     overlay.addEventListener('pointermove', (e) => {
       if (pane !== AP() || !pane.viewport) return;
       const p = evtToPdf(pane, e);
+      // Q3-2: where the hand is, in both spaces — the chip opens here and Shift+Space cycles here.
+      lastPointerScreen = { x: e.clientX, y: e.clientY };
+      lastPointerPdf = { page: pane.pageNum, x: p.x, y: p.y };
       if (state.calDraft) { state.calDraft.cursor = maybeSnap(pane, p); drawOverlay(pane); updateLive(); }
       else if (state.draft) { state.draft.cursor = maybeSnap(pane, p); drawOverlay(pane); updateLive(); }
       else if (state.secDraft && state.secDraft.page === pane.pageNum) { state.secDraft.cursor = maybeSnap(pane, p); drawOverlay(pane); }
@@ -6616,6 +6692,10 @@ function wirePaneInput() {
 
     overlay.addEventListener('click', (e) => {
       if (!pane.viewport) return;
+      if (pane.viewport && pane === AP()) {   // Q3-2: a click is a landing too (a hand that never moved still has a place)
+        lastPointerScreen = { x: e.clientX, y: e.clientY };
+        const lp = evtToPdf(pane, e); lastPointerPdf = { page: pane.pageNum, x: lp.x, y: lp.y };
+      }
       if (suppressNextClick) { suppressNextClick = false; return; }
       // One active measuring pane: a click on an inactive pane activates it
       // and is consumed — it never drops a vertex or a marker.
@@ -6687,6 +6767,8 @@ function wirePaneInput() {
       }
 
       if (state.tool === 'select') {
+        // Q3-3: a carried selection is put down by this click, and the click is spent doing it.
+        if (shapeDrag && shapeDrag.carry) { shapeDrag.moved = true; moveShapeDrag(e); shapeDrag.carry = false; endShapeDrag(); return; }
         // Q2-3: the chip's own eye takes the click before anything else does — never a select/drag.
         const eyeHit = sectionChipEyeAt(pane, p);
         if (eyeHit != null) { toggleRegionHidden(eyeHit); return; }
@@ -6699,7 +6781,7 @@ function wirePaneInput() {
           }
         }
         state.grip = null;              // a plain select-click disarms any grip
-        selectAt(pane, p);
+        selectAt(pane, p, { add: e.shiftKey });   // Q3-1: Shift+click adds to / takes out of the selection
       }
     });
 
@@ -6731,6 +6813,16 @@ function wirePaneInput() {
   }
 
   window.addEventListener('pointermove', (e) => {
+    if (shapeDrag) {   // Q3-3: a whole shape in hand
+      if (shapeDrag.carry || Math.abs(e.clientX - shapeDrag.x) + Math.abs(e.clientY - shapeDrag.y) > 3) shapeDrag.moved = true;
+      if (shapeDrag.moved) moveShapeDrag(e);
+      return;
+    }
+    if (marquee) {     // Q3-1: the sweep box
+      if (Math.abs(e.clientX - marquee.x) + Math.abs(e.clientY - marquee.y) > 3) marquee.moved = true;
+      if (marquee.moved) moveMarquee(e);
+      return;
+    }
     if (secDrag) {   // B2b (R-5g): a region corner in hand
       if (Math.abs(e.clientX - secDrag.x) + Math.abs(e.clientY - secDrag.y) > 3) secDrag.moved = true;
       if (secDrag.moved) moveSecGripDrag(e);
@@ -6748,6 +6840,8 @@ function wirePaneInput() {
     }
   });
   const endPanePointer = () => {
+    if (shapeDrag) { if (shapeDrag.carry) return; endShapeDrag(); return; }   // a CARRIED selection is put down by a click, not by a release
+    if (marquee) { endMarquee(); return; }
     if (secDrag) { endSecGripDrag(); return; }
     if (gripDrag) { endGripDrag(); return; }
     if (pan && pan.moved) suppressNextClick = true;
@@ -6913,9 +7007,12 @@ function sectionChipAt(pane, p) {
 // a click there toggles hidden and never opens rename/select. A hidden region has no chip in
 // __secChips at all (drawOverlay skipped it), so this returns null for it, same as sectionChipAt.
 function sectionChipEyeAt(pane, p) {
-  if (!pane || !pane.viewport || !pane.__secChips || !pane.__secChips.length) return null;
+  if (!pane || !pane.viewport) return null;
+  // Q3-0: the ghost chips of hidden regions are searched FIRST — they are the door back.
+  const list = (pane.__secGhosts || []).concat(pane.__secChips || []);
+  if (!list.length) return null;
   const c = pdfToCss(pane, p);
-  for (const ch of pane.__secChips) {
+  for (const ch of list) {
     if (!ch.eye) continue;
     if (c.x >= ch.eye.x && c.x <= ch.eye.x + ch.eye.w && c.y >= ch.eye.y && c.y <= ch.eye.y + ch.eye.h) return ch.id;
   }
@@ -7115,7 +7212,7 @@ function pickCandidates(pane, p) {
   inside.sort((a, b) => a.area - b.area);
   return on.concat(inside).map((x) => x.m);
 }
-function selectAt(pane, p) {
+function selectAt(pane, p, opts = {}) {
   const scale = pane.viewport.scale || 1;
   /* B2b (R-5g): a region is selected by its CHIP only — never by its outline or its interior,
      which would put a filing boundary in front of the traced work the estimator is aiming at
@@ -7131,19 +7228,451 @@ function selectAt(pane, p) {
   if (state.selectedSectionId != null) { state.selectedSectionId = null; drawOverlays(); }
   const cands = pickCandidates(pane, p);
   const ids = cands.map((m) => m.id).join(',');
+  /* Q3-1: Shift+click ADDS the top candidate to the set (or takes it back out). The pick ORDER is
+     AF-1's, untouched — Shift only decides what happens to what the order already chose. */
+  if (opts.add) {
+    const hit = cands[0];
+    if (!hit) { toolMsg('Shift+click lands on a shape to add it to the selection — there is nothing here.'); return; }
+    const set = new Set(selIds());
+    const had = set.has(hit.id);
+    if (had) set.delete(hit.id); else set.add(hit.id);
+    setSelection(Array.from(set), had ? null : hit.id);
+    lastPick = null; underCount = 0;
+    drawOverlays(); renderCards();
+    const n = selIds().size;
+    toolMsg(had
+      ? `Taken out of the selection — ${n} shape${n === 1 ? '' : 's'} still selected.`
+      : `Added — ${n} shape${n === 1 ? '' : 's'} selected. Shift+click another, Delete removes them all, Esc clears.`);
+    return;
+  }
   let best = cands[0] || null;
+  /* Q3-2: Shift+Space forces the same step a repeat click makes, without moving the hand. */
+  if (opts.cycle && cands.length > 1) {
+    const at = cands.findIndex((m) => m.id === state.selectedId);
+    lastPick = { page: pane.pageNum, scale, x: p.x, y: p.y, ids, i: at < 0 ? -1 : at };
+  }
   const again = !!(lastPick && cands.length > 1 && lastPick.page === pane.pageNum && lastPick.scale === scale
-    && lastPick.ids === ids && Math.hypot(p.x - lastPick.x, p.y - lastPick.y) <= 4 / scale);
+    && lastPick.ids === ids && (opts.cycle || Math.hypot(p.x - lastPick.x, p.y - lastPick.y) <= 4 / scale));
   if (again) { lastPick.i = (lastPick.i + 1) % cands.length; best = cands[lastPick.i]; }
   else lastPick = best ? { page: pane.pageNum, scale, x: p.x, y: p.y, ids, i: 0 } : null;
-  state.selectedId = best ? best.id : null;
+  setSelection(best ? [best.id] : [], best ? best.id : null);
+  underCount = cands.length;
   state.grip = null;                        // D3: fresh selection, no armed grip
   drawOverlays(); renderCards();
   const cond = best ? state.conditions.find((c) => c.id === best.conditionId) : null;
   const under = cands.length > 1 ? ` · ${cands.length - 1} more under it, click again to step through` : '';
   toolMsg(best
-    ? `Selected ${cond ? cond.name + ' · ' : ''}${VESCore.formatValue(best.type, best.value)}${under} · drag a corner grip to adjust · Alt+click a segment adds a point · Delete removes it.`
-    : 'Select: drag to pan · wheel zooms · click any line, region, or marker to select it.');
+    ? `Selected ${cond ? cond.name + ' · ' : ''}${VESCore.formatValue(best.type, best.value)}${under} · drag a corner grip to adjust · drag its body to move it · Alt+click a segment adds a point · Delete removes it.`
+    : 'Select: click any line, region, or marker to select it · drag empty paper to sweep a marquee · hold Space to pan · wheel zooms.');
+}
+
+/* ══ BATCH Q3 (plan §Q3 · Q3-1 … Q3-6) · SELECTION AFFORDANCES ════════════════════════════
+
+   Patrick's ask was one sentence: "click a LF in a SF to delete or edit it". AF-1 already made the
+   CLICK land on the thing he aimed at; what was missing were the DOORS after the pick. A pick used to
+   set `selectedId`, draw grips, and say a sentence in the tool strip — and every other verb an
+   estimator has (move it, copy it, file it under a different condition, do all three to four shapes
+   at once) either did not exist or lived only on the keyboard with nothing on screen naming it.
+
+   THE PIECES, and the one rule each:
+   · `state.selectedIds` is the selection; `state.selectedId` is its HEAD. Every existing reader of
+     `selectedId` keeps working unchanged, because a selection of ONE is still exactly `selectedId`
+     and `selIds()` derives the single case from it rather than duplicating it. Grips — the vertex
+     doors — render only when the set has one member: a corner belongs to a shape, not to a crowd.
+   · `pickCandidates` is NOT touched. AF-1's order (stroke within 8 px bucketed at 3, line/count over
+     area, smaller area first, then containing polygons smallest first, hidden never wins) is Patrick's
+     ruling from 2026-09-03 and this batch reads it, never rewrites it.
+   · MOVE is a door the SELECTION opens. A pointerdown on the body of an already-selected shape
+     translates it; the same pointerdown on anything else still pans, exactly as it did. That is the
+     whole safety property: nothing a hand did yesterday moves geometry today.
+   · Grips win inside 8 px — they are checked first, as they always were. A corner drag is a corner
+     drag even though the body under it would move the whole shape.
+   · Every bulk gesture is ONE journal entry. "delete 4 shapes" comes back on one Ctrl+Z or it is a
+     half-state, which is the thing D-25.2a rules against.
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+/* The estimator's word for each kind of traced thing — the same three words the select tool's own
+   sentence has always used ("click any line, region, or marker"). Journal labels and the chip read
+   from here so "move line" and "duplicate area" are one vocabulary, not two. */
+const SHAPE_WORD = { area: 'area', linear: 'line', count: 'marker' };
+const shapeWord = (m) => (m && SHAPE_WORD[m.type]) || 'shape';
+
+let underCount = 0;            // how many candidates the last pick had (the chip's "N more under it")
+let lastPointerScreen = null;  // {x, y} client px — where the hand last touched the sheet (the chip sits here)
+let lastPointerPdf = null;     // {page, x, y} — the same point in sheet units (Shift+Space cycles here)
+
+/* selIds() DERIVES the single case from `selectedId` instead of keeping a second copy of it: every
+   older path that writes `state.selectedId = null` (deleteMeasurement, an add's undo, a fresh pick)
+   therefore clears the selection correctly without knowing this batch exists. Only a real MULTI
+   selection is read out of the Set, and dead ids in it are filtered at the door. */
+function selIds() {
+  const raw = (state.selectedIds instanceof Set) ? Array.from(state.selectedIds) : [];
+  if (raw.length > 1) {
+    const live = raw.filter((id) => state.measurements.some((m) => m.id === id));
+    if (live.length > 1) return new Set(live);
+  }
+  return new Set(state.selectedId != null ? [state.selectedId] : []);
+}
+function selMeasurements() { const s = selIds(); return state.measurements.filter((m) => s.has(m.id)); }
+function setSelection(ids, head) {
+  const arr = Array.from(new Set(ids)).filter((id) => state.measurements.some((m) => m.id === id));
+  state.selectedIds = new Set(arr);
+  state.selectedId = (head != null && state.selectedIds.has(head)) ? head : (arr.length ? arr[arr.length - 1] : null);
+  if (state.selectedId != null) state.selectedSectionId = null;
+  if (arr.length !== 1) state.grip = null;
+}
+function clearSelection() {
+  if (state.selectedId == null && !(state.selectedIds && state.selectedIds.size)) return false;
+  state.selectedIds = new Set(); state.selectedId = null; state.grip = null; lastPick = null; underCount = 0;
+  closeReassignPicker();
+  drawOverlays(); renderCards();
+  return true;
+}
+
+/* A css-pixel offset, expressed in sheet units at the CURRENT zoom and rotation — the duplicate's
+   +12/+12 and any other "so many pixels over" has to survive a rotated sheet, so it goes through the
+   viewport both ways rather than assuming the pdf axes point the way the screen does. */
+function cssDeltaToPdf(pane, dxCss, dyCss, ref) {
+  const [vx, vy] = pane.viewport.convertToViewportPoint(ref.x, ref.y);
+  const [nx, ny] = pane.viewport.convertToPdfPoint(vx + dxCss, vy + dyCss);
+  return { dx: nx - ref.x, dy: ny - ref.y };
+}
+
+/* ── the chip ── Q3-2. It names the pick in the estimator's words and carries its doors. One
+   plate, rebuilt only when what it says changes (a drag redraws the overlay dozens of times a
+   second and must not rebuild DOM with it). */
+let _chipKey = '';
+const CHIP_DOORS_ONE = [['edit', 'Edit'], ['delete', 'Delete'], ['move', 'Move'], ['duplicate', 'Duplicate'], ['reassign', 'Re-assign'], ['cycle', 'Cycle']];
+const CHIP_DOORS_MANY = [['delete', 'Delete'], ['move', 'Move'], ['reassign', 'Re-assign']];
+function renderSelChip() {
+  const el = $('selChip'); if (!el) return;
+  const ms = selMeasurements();
+  if (state.tool !== 'select' || !ms.length || !hasSheet()) { el.hidden = true; el.innerHTML = ''; _chipKey = ''; return; }
+  const one = ms.length === 1 ? ms[0] : null;
+  const cond = one ? state.conditions.find((c) => c.id === one.conditionId) : null;
+  const key = one
+    ? ['1', one.id, one.value, one.page, cond ? cond.name : '', underCount].join('|')
+    : ['n', ms.length, ms.map((m) => m.id).join(',')].join('|');
+  if (key !== _chipKey) {
+    _chipKey = key;
+    el.innerHTML = '';
+    /* Q3-2: "trade word · condition · value · sheet · N more under it" — the separators are real text,
+       so the chip reads the same to the eye, to a screen reader, and to copy/paste (not "lineFlash"). */
+    const span = (cls, text) => {
+      if (el.childNodes.length) { const s = document.createElement('span'); s.className = 'sc-sep'; s.textContent = ' \u00b7 '; el.appendChild(s); }
+      const x = document.createElement('span'); x.className = cls; x.textContent = text; el.appendChild(x); return x; };
+    if (one) {
+      span('sc-word', shapeWord(one));
+      if (cond) span('sc-cond', cond.name);
+      span('sc-val', VESCore.formatValue(one.type, one.value) + (one.type === 'linear' ? ' LF' : ''));
+      span('sc-sheet', 'sheet ' + one.page);
+      if (underCount > 1) span('sc-under', (underCount - 1) + ' more under it');
+    } else {
+      span('sc-word', ms.length + ' shapes');
+      const pages = Array.from(new Set(ms.map((m) => m.page))).sort((a, b) => a - b);
+      span('sc-sheet', (pages.length === 1 ? 'sheet ' : 'sheets ') + pages.join(', '));
+    }
+    const doors = document.createElement('span'); doors.className = 'sc-doors';
+    for (const [k, w] of (one ? CHIP_DOORS_ONE : CHIP_DOORS_MANY)) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'sc-door'; b.dataset.door = k; b.textContent = w;
+      b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); runSelDoor(k); });
+      doors.appendChild(b);
+    }
+    el.appendChild(doors);
+  }
+  el.hidden = false;
+  try {
+    const anchor = lastPointerScreen || (() => { const r = $('toolMsg').getBoundingClientRect(); return { x: r.left, y: r.top - 34 }; })();
+    const b = el.getBoundingClientRect();
+    const L = Math.max(8, Math.min(anchor.x + 18, window.innerWidth - b.width - 8));
+    const T = Math.max(8, Math.min(anchor.y + 18, window.innerHeight - b.height - 8));
+    el.style.left = L + 'px'; el.style.top = T + 'px';
+  } catch (_) { el.style.left = '50%'; el.style.top = '40%'; }
+}
+function runSelDoor(k) {
+  if (k === 'edit') return armFirstGrip();
+  if (k === 'delete') return deleteSelectionDoor();
+  if (k === 'move') return carrySelection();
+  if (k === 'duplicate') return duplicateSelection();
+  if (k === 'reassign') return openReassignPicker();
+  if (k === 'cycle') return cycleUnderPointer();
+}
+function armFirstGrip() {
+  const ms = selMeasurements();
+  if (ms.length !== 1) { toast('Edit works on one shape at a time — the corners belong to a single trace.', 'warn'); return false; }
+  state.grip = { mid: ms[0].id, idx: 0 };
+  drawOverlays();
+  toolMsg('Corner 1 is armed — drag any corner grip to adjust it, Alt+click a segment adds a point, right-click a grip removes it, Delete removes the armed corner.');
+  return true;
+}
+
+/* ── MOVE ── Q3-3. The body of an already-selected shape, in hand. Every point of every selected
+   shape on this sheet translates by the same delta; the value re-measures as the hand moves (an
+   `exact` quantity is never overwritten — gripRecompute is the one rule for that, shared with the
+   vertex drag); Esc puts it back and journals nothing. */
+let shapeDrag = null;
+function shapeBodyHit(pane, p) {
+  const sel = selIds();
+  if (!sel.size) return null;
+  for (const m of pickCandidates(pane, p)) if (sel.has(m.id)) return m;
+  return null;
+}
+function beginShapeDrag(pane, e, opt = {}) {
+  const ms = selMeasurements().filter((m) => m.page === pane.pageNum);
+  if (!ms.length) return false;
+  const start = evtToPdf(pane, e);
+  shapeDrag = { pane, ms, start, x: e.clientX, y: e.clientY, moved: false, carry: !!opt.carry,
+    prior: ms.map((m) => m.points.map((q) => ({ x: q.x, y: q.y }))), priorValues: ms.map((m) => m.value) };
+  drawOverlay(pane);
+  return true;
+}
+function moveShapeDrag(e) {
+  const g = shapeDrag, pane = g.pane;
+  const p = evtToPdf(pane, e);
+  const dx = p.x - g.start.x, dy = p.y - g.start.y;
+  g.ms.forEach((m, i) => {
+    m.points = g.prior[i].map((q) => ({ x: q.x + dx, y: q.y + dy }));
+    gripRecompute(m);                       // the number moves with the hand, the same as a vertex drag
+  });
+  drawOverlays(); updateLive();
+}
+function endShapeDrag() {
+  const g = shapeDrag; shapeDrag = null;
+  /* Q3-3 meets AF-1: a press-and-release that never travelled 3 px is a CLICK, not a move. The
+     release goes on to the click handler and selectAt, so a repeat click on the selected body still
+     steps through the stack under it. Only a drag that actually moved something eats the click. */
+  if (!g.moved) { drawOverlay(g.pane); return; }
+  suppressNextClick = true;                 // the release is not a select-click
+  const ms = g.ms, prior = g.prior, priorValues = g.priorValues;
+  ms.forEach((m) => gripRecompute(m));
+  const next = ms.map((m) => m.points.map((q) => ({ x: q.x, y: q.y }))), nextValues = ms.map((m) => m.value);
+  journalPush({
+    label: ms.length === 1 ? 'move ' + shapeWord(ms[0]) : 'move ' + ms.length + ' shapes',
+    undo() { ms.forEach((m, i) => { m.points = prior[i].map((q) => ({ x: q.x, y: q.y })); m.value = priorValues[i]; }); },
+    redo() { ms.forEach((m, i) => { m.points = next[i].map((q) => ({ x: q.x, y: q.y })); m.value = nextValues[i]; }); },
+  });
+  state.snapHit = null;
+  markDirty(); renderCards(); drawOverlays(); updateLive();
+}
+function abortShapeDrag() {
+  const g = shapeDrag; if (!g) return false;
+  shapeDrag = null;
+  suppressNextClick = true;
+  g.ms.forEach((m, i) => { m.points = g.prior[i].map((q) => ({ x: q.x, y: q.y })); m.value = g.priorValues[i]; });
+  state.snapHit = null;
+  drawOverlays(); renderCards(); updateLive();
+  return true;
+}
+/* The chip's Move door, for a hand that would rather not hold the button down: the selection is
+   picked UP at the pointer and the next click puts it down. Same drag, same journal entry, same Esc. */
+function carrySelection() {
+  const pane = AP();
+  if (!pane || !pane.viewport || !lastPointerScreen) { toast('Point at the sheet first — Move picks the selection up at the pointer.', 'warn'); return false; }
+  const ms = selMeasurements().filter((m) => m.page === pane.pageNum);
+  if (!ms.length) { toast('Nothing on this sheet is selected.', 'warn'); return false; }
+  const ok = beginShapeDrag(pane, { clientX: lastPointerScreen.x, clientY: lastPointerScreen.y }, { carry: true });
+  if (ok) toolMsg('Carrying ' + (ms.length === 1 ? shapeWord(ms[0]) : ms.length + ' shapes') + ' — move the pointer, click to put it down, Esc puts it back where it was.');
+  return ok;
+}
+
+/* ── MARQUEE ── Q3-1. A drag on EMPTY paper sweeps a box; every shape whose stroke or vertex lies
+   inside joins the selection. A hidden condition is skipped, the same as it is skipped by the click
+   (L-06 / Q2-c): nothing invisible can be swept up and then deleted. */
+let marquee = null;
+function beginMarquee(pane, e, opt = {}) {
+  const p = evtToPdf(pane, e);
+  marquee = { pane, a: p, b: p, x: e.clientX, y: e.clientY, moved: false, add: !!opt.add };
+}
+function moveMarquee(e) { marquee.b = evtToPdf(marquee.pane, e); drawOverlay(marquee.pane); }
+/* Liang–Barsky: does the segment a→b touch the axis-aligned box at all? A long flashing run whose
+   two ends are both outside the box but which crosses it IS inside the sweep — "stroke or vertex". */
+function segHitsBox(a, b, x0, y0, x1, y1) {
+  let t0 = 0, t1 = 1;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const p = [-dx, dx, -dy, dy], q = [a.x - x0, x1 - a.x, a.y - y0, y1 - a.y];
+  for (let i = 0; i < 4; i++) {
+    if (p[i] === 0) { if (q[i] < 0) return false; continue; }
+    const r = q[i] / p[i];
+    if (p[i] < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+    else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return true;
+}
+function endMarquee() {
+  const g = marquee; marquee = null;
+  if (!g.moved) { drawOverlay(g.pane); return; }
+  suppressNextClick = true;
+  const x0 = Math.min(g.a.x, g.b.x), x1 = Math.max(g.a.x, g.b.x);
+  const y0 = Math.min(g.a.y, g.b.y), y1 = Math.max(g.a.y, g.b.y);
+  const inBox = (q) => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1;
+  const hits = state.measurements.filter((m) => {
+    if (m.page !== g.pane.pageNum) return false;
+    if (state.hiddenConds && state.hiddenConds.has(m.conditionId)) return false;   // Q3-h
+    const pts = Array.isArray(m.points) ? m.points : [];
+    if (!pts.length) return false;
+    if (pts.some(inBox)) return true;
+    if (m.type === 'count') return false;
+    const n = pts.length, segs = (m.type === 'area' && n > 2) ? n : n - 1;
+    for (let i = 0; i < segs; i++) if (segHitsBox(pts[i], pts[(i + 1) % n], x0, y0, x1, y1)) return true;
+    return false;
+  });
+  const ids = g.add ? Array.from(selIds()).concat(hits.map((m) => m.id)) : hits.map((m) => m.id);
+  setSelection(ids, hits.length ? hits[hits.length - 1].id : null);
+  lastPick = null; underCount = 0;
+  drawOverlays(); renderCards();
+  const n = selIds().size;
+  toolMsg(n
+    ? `${n} shape${n === 1 ? '' : 's'} selected — drag any one of them to move them all · Delete removes them · Shift+R files them under another condition · Esc clears.`
+    : 'The marquee swept up nothing — drag it across the shapes you want.');
+}
+function abortMarquee() {
+  if (!marquee) return false;
+  const g = marquee; marquee = null;
+  if (g.moved) suppressNextClick = true;
+  drawOverlays();
+  return true;
+}
+
+/* ── DUPLICATE ── Q3-4. The same condition, the same sheet, twelve pixels down and right so the
+   copy is visibly a copy and not a shape hiding under its original. The clones land SELECTED, which
+   is what makes "duplicate, then drag it where it goes" one gesture rather than two. */
+function duplicateSelection() {
+  const ms = selMeasurements();
+  if (!ms.length) { toast('Select a shape first — Ctrl+D copies what is selected.', 'warn'); return false; }
+  const pane = AP();
+  if (!pane || !pane.viewport) return false;
+  const copies = ms.map((m) => {
+    const ref = m.points[0];
+    const off = cssDeltaToPdf(pane, 12, 12, ref);
+    const c = Object.assign({}, m, { id: uid(), points: m.points.map((q) => ({ x: q.x + off.dx, y: q.y + off.dy })) });
+    if (!c.exact) c.value = VESCore.measureValue(c.type, c.points, calFor(c.page));
+    return c;
+  });
+  const add = () => { for (const c of copies) state.measurements.push(c); };
+  const drop = () => { for (const c of copies) { const i = state.measurements.indexOf(c); if (i >= 0) state.measurements.splice(i, 1); } };
+  add();
+  setSelection(copies.map((c) => c.id), copies[copies.length - 1].id);
+  lastPick = null; underCount = 0;
+  journalPush({
+    label: ms.length === 1 ? 'duplicate ' + shapeWord(ms[0]) : 'duplicate ' + ms.length + ' shapes',
+    undo() { drop(); if (state.selectedId != null && copies.some((c) => c.id === state.selectedId)) { state.selectedIds = new Set(); state.selectedId = null; state.grip = null; } },
+    redo() { add(); },
+  });
+  markDirty(); drawOverlays(); renderCards(); updateLive(); updateUncalBanner();
+  toast(copies.length === 1 ? 'Copy made — drag it where it goes, Ctrl+Z takes it back.' : copies.length + ' copies made — Ctrl+Z takes them back.', 'ok');
+  return true;
+}
+
+/* ── RE-ASSIGN ── Q3-5. `m.conditionId` has never been written after creation: a trace put on the
+   wrong card had to be deleted and re-traced. It is written HERE and nowhere else, and only onto a
+   condition of the same TYPE — square feet cannot be filed as a run of drip edge, and a deduct (a
+   hole) only belongs to an area. Both cards move in the same breath and the recap follows the new
+   condition's own Section/System, because the recap has always grouped by the condition. */
+function reassignTo(cond) {
+  const ms = selMeasurements();
+  if (!ms.length) { toast('Select a shape first — Re-assign files it under another condition.', 'warn'); return false; }
+  if (!cond) return false;
+  const kindWord = { area: 'area', linear: 'linear', count: 'count' };
+  const wrong = ms.find((m) => m.type !== cond.type);
+  if (wrong) {
+    const why = '"' + (cond.name || 'that condition') + '" is a ' + (kindWord[cond.type] || cond.type)
+      + ' condition and this is ' + (wrong.type === 'area' ? 'an area' : 'a ' + kindWord[wrong.type]) + ' — an area measures square feet, a line measures feet and a count measures each, so nothing here could be filed there. Nothing changed.';
+    toolMsg(why); toast('Re-assign refused — ' + why, 'warn');
+    return false;
+  }
+  if (ms.some((m) => m.sign === -1) && cond.type !== 'area') {
+    const why = 'A deduct is a hole in an area — it can only be filed under an area condition. Nothing changed.';
+    toolMsg(why); toast('Re-assign refused — ' + why, 'warn');
+    return false;
+  }
+  const prior = ms.map((m) => m.conditionId);
+  if (prior.every((id) => id === cond.id)) { toast('Already on "' + (cond.name || 'that condition') + '".', 'ok'); return false; }
+  const apply = (ids) => { ms.forEach((m, i) => { m.conditionId = ids[i]; }); drawOverlays(); renderCards(); updateLive(); };
+  apply(ms.map(() => cond.id));
+  journalPush({
+    label: (ms.length === 1 ? 're-assign ' + shapeWord(ms[0]) : 're-assign ' + ms.length + ' shapes') + ' to ' + journalWord(cond),
+    undo() { apply(prior); },
+    redo() { apply(ms.map(() => cond.id)); },
+  });
+  markDirty(); updateUncalBanner();
+  toast((ms.length === 1 ? 'Filed' : ms.length + ' shapes filed') + ' under "' + (cond.name || 'that condition') + '" — both cards moved, Ctrl+Z puts it back.', 'ok');
+  return true;
+}
+function closeReassignPicker() {
+  const el = $('reassignPick'); if (!el || el.hidden) return;
+  el.hidden = true; el.innerHTML = '';
+  if (reassignKey) { document.removeEventListener('keydown', reassignKey, true); reassignKey = null; }
+}
+let reassignKey = null;
+function openReassignPicker() {
+  const el = $('reassignPick'); if (!el) return false;
+  const ms = selMeasurements();
+  if (!ms.length) { toast('Select a shape first — Shift+R files it under another condition.', 'warn'); return false; }
+  const types = new Set(ms.map((m) => m.type));
+  if (types.size > 1) { toast('Re-assign takes one kind at a time — areas with areas, lines with lines, counts with counts.', 'warn'); return false; }
+  const type = ms[0].type;
+  const here = new Set(ms.map((m) => m.conditionId));
+  const opts = state.conditions.filter((c) => c.type === type && !(here.size === 1 && here.has(c.id)));
+  if (!opts.length) { toast('There is no other ' + type + ' condition on this job to file it under — add one first.', 'warn'); return false; }
+  closeReassignPicker();
+  el.innerHTML = '<div class="dp-head">File ' + (ms.length === 1 ? 'this ' + shapeWord(ms[0]) : 'these ' + ms.length + ' shapes') + ' under which condition?</div>'
+    + opts.map((c) => '<button type="button" class="dp-opt" data-cid="' + escA(String(c.id)) + '">'
+      + '<span class="dp-sw" style="background:' + escA(c.color || '#888') + '"></span>' + escA(descOf(c)) + '</button>').join('')
+    + '<button type="button" class="dp-opt dp-none" data-cid="">Leave it where it is</button>';
+  el.hidden = false;
+  try {
+    const anchor = lastPointerScreen || { x: window.innerWidth / 2, y: window.innerHeight / 3 };
+    const b = el.getBoundingClientRect();
+    el.style.left = Math.max(8, Math.min(anchor.x + 14, window.innerWidth - b.width - 8)) + 'px';
+    el.style.top = Math.max(8, Math.min(anchor.y + 14, window.innerHeight - b.height - 8)) + 'px';
+  } catch (_) { el.style.left = '50%'; el.style.top = '40%'; }
+  el.querySelectorAll('button').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const cid = b.dataset.cid;
+    closeReassignPicker();
+    if (cid !== '') reassignTo(state.conditions.find((c) => String(c.id) === cid) || null);
+  }));
+  reassignKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); closeReassignPicker(); } };
+  document.addEventListener('keydown', reassignKey, true);
+  const first = el.querySelector('button'); if (first) first.focus();
+  return true;
+}
+
+/* ── BULK DELETE ── Q3-6. One entry, one Ctrl+Z, all four back in their original places in the
+   array (insertion ascending by the index each held, so the order the file was written in survives). */
+function deleteSelectionDoor() {
+  const ms = selMeasurements();
+  if (!ms.length) return false;
+  if (ms.length === 1) { deleteMeasurement(ms[0].id); return true; }
+  return deleteSelection();
+}
+function deleteSelection() {
+  const ms = selMeasurements();
+  if (ms.length < 2) return false;
+  const entries = ms.map((m) => ({ m, idx: state.measurements.indexOf(m) })).sort((a, b) => a.idx - b.idx);
+  const drop = () => { for (const e of entries) { const i = state.measurements.indexOf(e.m); if (i >= 0) state.measurements.splice(i, 1); } };
+  const put = () => { for (const e of entries) state.measurements.splice(Math.min(e.idx, state.measurements.length), 0, e.m); };
+  drop();
+  state.selectedIds = new Set(); state.selectedId = null; state.grip = null; lastPick = null; underCount = 0;
+  journalPush({ label: 'delete ' + entries.length + ' shapes', undo() { put(); }, redo() { drop(); } });
+  toast(entries.length + ' shapes deleted — one Ctrl+Z brings them all back.', 'ok');
+  drawOverlays(); renderCards(); updateLive(); updateUncalBanner();
+  if (state.mode === 'ledger') renderLedger();
+  markDirty();
+  return true;
+}
+
+/* ── CYCLE ── Q3-2. Shift+Space steps the stack under the pointer without moving the hand — the
+   Bluebeam gesture. The repeat-click cycle (AF-1) is the same walk; this is the keyboard door to it. */
+function cycleUnderPointer() {
+  const pane = AP();
+  if (!pane || !pane.viewport || state.tool !== 'select') return false;
+  if (!lastPointerPdf || lastPointerPdf.page !== pane.pageNum) {
+    toast('Point at the stack you want to step through, then Shift+Space.', 'warn'); return false;
+  }
+  selectAt(pane, { x: lastPointerPdf.x, y: lastPointerPdf.y }, { cycle: true });
+  return true;
 }
 
 /* ---------- drafts ---------- */
@@ -7598,6 +8127,8 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if ((e.key === ' ' || e.code === 'Space') && hasSheet()) {
+    // Q3-2: Shift+Space steps the stack under the pointer (Bluebeam parity). Plain Space still pans.
+    if (e.shiftKey && state.tool === 'select') { cycleUnderPointer(); e.preventDefault(); return; }
     if (!spaceHeld) { spaceHeld = true; document.body.classList.add('space-pan'); }
     e.preventDefault(); return;                       // hold Space to pan; never types/scrolls here
   }
@@ -7607,7 +8138,13 @@ window.addEventListener('keydown', (e) => {
   }
   if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { if (!gripDrag) { if (e.shiftKey) redo(); else undo(); } e.preventDefault(); return; }
   if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) { if (!gripDrag) redo(); e.preventDefault(); return; }
+  /* Q3-4: Ctrl+D is DUPLICATE. It was not free — it fell through to the plain-D branch and toggled
+     Deduct (and opened the browser's bookmark door on the way). Taken here, deliberately, and D on
+     its own still arms Deduct exactly as Q1 left it. */
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) { if (state.tool === 'select') duplicateSelection(); e.preventDefault(); return; }
   if (e.key === 'Escape') {
+    if (abortShapeDrag()) { e.preventDefault(); return; }   // Q3-3: put the shape back exactly, journal nothing
+    if (abortMarquee()) { e.preventDefault(); return; }     // Q3-1: drop the sweep box, select nothing
     if (abortGripDrag()) { e.preventDefault(); return; }   // D3: drop the vertex back, journal nothing
     // N-10: Escape closes the sheet picker. It is a popover over the scale prompt's own buttons,
     // and Escape is this app's universal "back out of the thing that is open" (S0).
@@ -7640,6 +8177,9 @@ window.addEventListener('keydown', (e) => {
     if (state.selectedSectionId != null) { state.selectedSectionId = null; drawOverlays(); e.preventDefault(); return; }
     if (state.draft && state.draft.points && state.draft.points.length) { clearDraft(); e.preventDefault(); return; }
     if (disarmCondition()) { e.preventDefault(); return; }
+    // Q3-1: the selection is the last thing Esc lets go of — after the draft and after the arm, so
+    // nothing an older hand relied on ("Esc disarms") now needs a second press to reach.
+    if (state.tool === 'select' && clearSelection()) { e.preventDefault(); return; }
     clearDraft();
   } else if (e.key === 'Enter') {
     if (qtyBufferActive()) { commitQtyBuffer(); e.preventDefault(); return; }    // D-24.5d
@@ -7670,6 +8210,7 @@ window.addEventListener('keydown', (e) => {
           && state.grip.idx < gm.points.length && removeGripPoint(gm, state.grip.idx)) return;
       state.grip = null;   // stale/count grip → normal Delete below
     }
+    if (selIds().size > 1) { deleteSelection(); return; }   // Q3-6: one entry, one Ctrl+Z
     if (state.selectedId != null) deleteMeasurement(state.selectedId);
   }
   else if (e.key === 'v' || e.key === 'V') setTool('select');
@@ -7677,7 +8218,9 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'b' || e.key === 'B') toggleRect();
   else if (e.key === 'd' || e.key === 'D') toggleDeduct(e.shiftKey);   // Q1-2: Shift keeps it armed for a row of skylights
   else if (e.key === 'c' || e.key === 'C') { if (state.pdf) setTool('calibrate'); }
-  else if (e.key === 'r' || e.key === 'R') rotateCurrent();
+  /* Q3-7: R was TAKEN (rotate sheet 90°, on the keys card since long before this batch), so the
+     re-assign door is Shift+R — the same shape H/Shift+H already has, and plain R still rotates. */
+  else if (e.key === 'r' || e.key === 'R') { if (e.shiftKey && state.tool === 'select') openReassignPicker(); else rotateCurrent(); }
   else if (e.key === 'f' || e.key === 'F') { if (AP().page) fitToView(AP()); }
   else if (e.key === 'e' || e.key === 'E') showEstimate(!state.gridView);   // F10: lens door — mouse AND keyboard
   else if (e.key === 'g' || e.key === 'G') showSchedule(!state.schedView);   // F18: Schedule door
@@ -8021,6 +8564,12 @@ function openHotkeys() {
   row('H', 'hide the armed condition on the plan \u00b7 totals unchanged');
   row('Shift+H', 'show all hidden conditions');
   row('Alt+click a card\u2019s eye', 'Solo \u2014 show only that condition on the plan');
+  row('drag a selected shape', 'move it \u00b7 a corner grip still wins inside 8 px \u00b7 Esc puts it back');
+  row('drag empty paper', 'sweep a marquee over several shapes');
+  row('Shift+click a shape', 'add it to the selection \u00b7 or take it back out');
+  row('Shift+Space', 'step through the stack under the pointer');
+  row('Ctrl+D', 'duplicate the selection at +12 / +12');
+  row('Shift+R', 'file the selection under another condition of the same kind');
   row('?', 'this card');
   a.appendChild(dl);
   const act = document.createElement('div'); act.className = 'actions';
@@ -8036,6 +8585,7 @@ function openCmd() {
   const list = $('cmdList'); list.innerHTML = '';
   // §B: only state-valid actions appear — the palette never lists a no-op.
   const hasPDF = !!state.pdf, hasMeas = state.measurements.length > 0;
+  const hasSel = state.tool === 'select' && selIds().size > 0;
   const cmds = [
     { k: 'Open ledger', when: hasMeas, run: () => setMode('ledger') },
     { k: 'Single view', when: hasSheet(), run: () => setMode('single') },
@@ -8051,7 +8601,12 @@ function openCmd() {
     { k: 'Solo the armed condition', when: !!state.activeCond, run: () => soloCondition(state.activeCond) },
     { k: 'Hide others than the armed condition', when: !!state.activeCond, run: () => hideOthersCond(state.activeCond) },
     { k: 'Hide measured conditions', when: hasMeas, run: hideMeasuredConds },
-    { k: 'Show all (unhide)', when: !!(state.hiddenConds && state.hiddenConds.size), run: showAllHiddenConds },
+    { k: 'Show all (unhide)', when: !!((state.hiddenConds && state.hiddenConds.size) || (state.hiddenRegions && state.hiddenRegions.size)), run: showAllHiddenConds },
+    // Q3-2: the selection's own doors, gated on there being a selection at all
+    { k: 'Duplicate the selection', when: hasSel, run: duplicateSelection },
+    { k: 'File the selection under another condition', when: hasSel, run: openReassignPicker },
+    { k: 'Move the selection with the pointer', when: hasSel, run: carrySelection },
+    { k: 'Clear the selection', when: hasSel, run: clearSelection },
     { k: 'Keys \u2014 what the keyboard does', when: true, run: openHotkeys },
   ].filter((c) => c.when);
   for (const c of cmds) {
@@ -8763,12 +9318,24 @@ function toggleCondHidden(cond) {
   });
   toast(`${cond.name} ${wasHidden ? 'shown on plan' : 'hidden on plan'} — totals unchanged.`, 'ok');
 }
-function applyHiddenCondsGesture(label, nextIds) {
+function applyHiddenCondsGesture(label, nextIds, opts) {
   const prevIds = state.hiddenConds ? Array.from(state.hiddenConds) : [];
   const nextArr = Array.from(new Set(nextIds));
-  const apply = (ids) => { state.hiddenConds = new Set(ids); renderCards(); drawOverlays(); };
-  apply(nextArr);
-  journalPush({ label, undo() { apply(prevIds); }, redo() { apply(nextArr); } });
+  /* Q3-0 (R-12a): a gesture may carry the REGION half of hidden with it — Show all does, so that one
+     entry and one Ctrl+Z cover the whole sentence the estimator just spoke. Every other caller passes
+     nothing here and the region set is not touched at all. */
+  const wantsRegions = !!(opts && Array.isArray(opts.regions));
+  const prevRegs = state.hiddenRegions ? Array.from(state.hiddenRegions) : [];
+  const nextRegs = wantsRegions ? Array.from(new Set(opts.regions)) : null;
+  const apply = (ids, rids) => {
+    state.hiddenConds = new Set(ids);
+    if (rids) state.hiddenRegions = new Set(rids);
+    renderCards(); drawOverlays();
+  };
+  apply(nextArr, nextRegs);
+  journalPush({ label,
+    undo() { apply(prevIds, wantsRegions ? prevRegs : null); },
+    redo() { apply(nextArr, nextRegs); } });
   return nextArr;
 }
 function soloCondition(cond) {
@@ -8788,16 +9355,29 @@ function hideMeasuredConds() {
   toast(`Hid ${ids.length} measured condition${ids.length === 1 ? '' : 's'} — totals unchanged.`, 'ok');
 }
 function showAllHiddenConds() {
-  if (!state.hiddenConds || !state.hiddenConds.size) { toast('Nothing is hidden.', 'ok'); return; }
-  applyHiddenCondsGesture('show all', []);
-  toast('Show all — every condition draws on the plan again.', 'ok');
+  const nConds = state.hiddenConds ? state.hiddenConds.size : 0;
+  const nRegs = state.hiddenRegions ? state.hiddenRegions.size : 0;
+  if (!nConds && !nRegs) { toast('Nothing is hidden.', 'ok'); return; }
+  // Q3-0 (R-12a): Show all means ALL — regions come back with conditions, in ONE journal entry.
+  applyHiddenCondsGesture('show all', [], { regions: [] });
+  toast(nRegs
+    ? 'Show all — every condition and every section region draws on the plan again.'
+    : 'Show all — every condition draws on the plan again.', 'ok');
 }
 function renderHideStrip() {
   const strip = $('hideStrip'); if (!strip) return;
   const n = state.hiddenConds ? state.hiddenConds.size : 0;
+  const r = state.hiddenRegions ? state.hiddenRegions.size : 0;
   strip.hidden = !state.conditions.length;
   const chip = $('hiddenChip');
-  if (chip) { chip.hidden = n === 0; chip.textContent = n + ' hidden'; }
+  if (chip) {
+    // Q3-0 (R-12a): the chip counts the regions too, so a hidden region is never off the books.
+    const parts = [];
+    if (n) parts.push(n + ' hidden');
+    if (r) parts.push(r + ' region' + (r === 1 ? '' : 's'));
+    chip.hidden = !parts.length;
+    chip.textContent = parts.join(' · ');
+  }
 }
 function renderCardsNow() {
   const roll = VESCore.rollup(state.conditions, state.measurements);
@@ -15991,7 +16571,8 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.1.0-rc.2';  // 2.1.0-rc.2 (2026-09-15): Batch Q2 — HIDE / SOLO: finishing the screen-only visibility story (Patrick: hide = screen aid only). A rail-header strip above the cards (Solo · Hide others · Hide measured · Show all, plus a "N hidden" chip that IS Show all) writes state.hiddenConds wholesale through the SAME eye/journal pair the per-condition eye has always used — one Ctrl+Z reverses the whole gesture; Alt+click any card's own eye is Solo for that one condition, unchanged otherwise. `H` hides the ARMED condition (toggle, same funnel as the eye) and `Shift+H` is Show all — both keys were unbound; a nothing-armed `H` says why. Drawn regions get an eye of their own, ON the chip: `state.hiddenRegions` is a new Set (viz-only, mirrors hiddenConds); a hidden region paints nothing — outline AND chip both, drawOverlay skips it and its chip is never pushed to the pane's hit-test list, so it cannot be picked either — and hiding one never touches `state.sections`, containment tagging, or a section subtotal (regionsOnPage itself is never filtered). Screen only, exactly like the existing per-condition hide: the rollup, every card's quantity, the grid, the recap, the bid, the proposal and the takeoff paper are identical to the cent with everything hidden and with nothing hidden — the takeoff print already ignored `hiddenConds` by design (B6F) and prints a region regardless of `hiddenRegions` the same way, unchanged. TAKEOFF_VERSION unchanged (Q2-5): `hiddenRegions` rides beside `hiddenConds` in the existing viz blob; an older reader that has never heard of the key simply ignores it. No money moved: G0 GREEN 4/4. 2.1.0-rc.1 (2026-09-15): Batch Q1 — DEDUCTIONS. A cutout traced inside a field area subtracts its SF from that area, on the same condition, with one click to hand its perimeter to a flashing condition. `m.sign` (+1 default, -1 deduct) is set only through addMeasurement's opts and `value` stays a positive magnitude everywhere — `VESCore.rollup` is the one place the sign becomes a quantity (`qty += m.value * sgn`), with a named NET_FLOOR_ZERO clamp when the cutouts add up past the field: never a silent 0, the same sentence on the card, the grid row, the recap line, the audit file, the rollup file and the takeoff paper. Deduct is a rack MODIFIER beside Fills (key D, Shift keeps it armed) that disarms after one trace and refuses to arm on a linear or count condition with the reason spoken and nothing created; the cutout lands on the armed condition, is not required to lie inside anything (a soft note says when it does not), and two overlapping deducts both subtract. On the plan it is the condition's own hue with a dashed edge and a cross-hatch, labelled with the minus. When it closes, a picker opens at the pointer listing the job's linear conditions and "None": choosing one writes a sibling LINEAR measurement from the closed ring (the cutout's perimeter) and the pair is ONE journal entry — "deduct + perimeter to <condition>" — that one Ctrl+Z takes back whole. The audit CSV and the condition-rollup CSV each carry one signed `Deduct` row per cutout so a reader summing the quantity column gets the net; the rollup row prints the gross above them and names the net in its Cost Basis. TAKEOFF_VERSION is 6 but `fileVersionNeeded()` WRITES 6 only when a measurement carries a sign — a takeoff with no deduct still says 5 and is byte-for-byte what 2.0.0 wrote; the version refusal now names the build that reads the file. The exact-quantity door still takes a positive magnitude and the sign rides through it. 2.0.0 (2026-09-15): RELEASE — the VES 2 line: one lineage (B0) · pitch one store rise/12 (B1) · sections typed + drawn (B2a/B2b) · 24 colors + custom + print patterns (B3) · every sheet prints (B4) · one description, EDGE column words (B5) · persona fix batch (B6F). Changelog: RELEASE_NOTES.md. MIT License © 2026 Patrick Moriarty / Bitumen Machina LLC.
+const VES_BUILD = '2.1.0-rc.3';  // 2.1.0-rc.3 (2026-09-15): Batch Q3 — SELECTION AFFORDANCES: the picked thing announces itself and offers its doors. A selection chip beside the pointer (trade word · condition · value · sheet · N more under it) with Edit · Delete · Move · Duplicate · Re-assign · Cycle; `state.selectedIds` beside `selectedId` (grips only when one is selected); Shift+click adds, a drag on EMPTY paper sweeps a marquee that skips hidden conditions, Esc clears; pointerdown on the BODY of an already-selected shape moves it (grips win inside 8 px; an unselected body still pans; a press that never travelled 3 px is a click, so a repeat click still steps the stack — AF-1 stands); Ctrl+D duplicates at +12/+12 and lands selected; Shift+R files the selection under another condition of the SAME kind (plain R still rotates; the wrong kind is refused with the reason spoken); bulk Delete / Move / Re-assign are ONE journal entry, one Ctrl+Z; Shift+Space steps the stack under the pointer; a hidden region keeps a faint ghost chip carrying its eye, and Show all clears hiddenRegions too (Q3-0, R-12a). Screen-side only: no money rule, no file version, no print path moved.
+// 2.1.0-rc.2:  // 2.1.0-rc.2 (2026-09-15): Batch Q2 — HIDE / SOLO: finishing the screen-only visibility story (Patrick: hide = screen aid only). A rail-header strip above the cards (Solo · Hide others · Hide measured · Show all, plus a "N hidden" chip that IS Show all) writes state.hiddenConds wholesale through the SAME eye/journal pair the per-condition eye has always used — one Ctrl+Z reverses the whole gesture; Alt+click any card's own eye is Solo for that one condition, unchanged otherwise. `H` hides the ARMED condition (toggle, same funnel as the eye) and `Shift+H` is Show all — both keys were unbound; a nothing-armed `H` says why. Drawn regions get an eye of their own, ON the chip: `state.hiddenRegions` is a new Set (viz-only, mirrors hiddenConds); a hidden region paints nothing — outline AND chip both, drawOverlay skips it and its chip is never pushed to the pane's hit-test list, so it cannot be picked either — and hiding one never touches `state.sections`, containment tagging, or a section subtotal (regionsOnPage itself is never filtered). Screen only, exactly like the existing per-condition hide: the rollup, every card's quantity, the grid, the recap, the bid, the proposal and the takeoff paper are identical to the cent with everything hidden and with nothing hidden — the takeoff print already ignored `hiddenConds` by design (B6F) and prints a region regardless of `hiddenRegions` the same way, unchanged. TAKEOFF_VERSION unchanged (Q2-5): `hiddenRegions` rides beside `hiddenConds` in the existing viz blob; an older reader that has never heard of the key simply ignores it. No money moved: G0 GREEN 4/4. 2.1.0-rc.1 (2026-09-15): Batch Q1 — DEDUCTIONS. A cutout traced inside a field area subtracts its SF from that area, on the same condition, with one click to hand its perimeter to a flashing condition. `m.sign` (+1 default, -1 deduct) is set only through addMeasurement's opts and `value` stays a positive magnitude everywhere — `VESCore.rollup` is the one place the sign becomes a quantity (`qty += m.value * sgn`), with a named NET_FLOOR_ZERO clamp when the cutouts add up past the field: never a silent 0, the same sentence on the card, the grid row, the recap line, the audit file, the rollup file and the takeoff paper. Deduct is a rack MODIFIER beside Fills (key D, Shift keeps it armed) that disarms after one trace and refuses to arm on a linear or count condition with the reason spoken and nothing created; the cutout lands on the armed condition, is not required to lie inside anything (a soft note says when it does not), and two overlapping deducts both subtract. On the plan it is the condition's own hue with a dashed edge and a cross-hatch, labelled with the minus. When it closes, a picker opens at the pointer listing the job's linear conditions and "None": choosing one writes a sibling LINEAR measurement from the closed ring (the cutout's perimeter) and the pair is ONE journal entry — "deduct + perimeter to <condition>" — that one Ctrl+Z takes back whole. The audit CSV and the condition-rollup CSV each carry one signed `Deduct` row per cutout so a reader summing the quantity column gets the net; the rollup row prints the gross above them and names the net in its Cost Basis. TAKEOFF_VERSION is 6 but `fileVersionNeeded()` WRITES 6 only when a measurement carries a sign — a takeoff with no deduct still says 5 and is byte-for-byte what 2.0.0 wrote; the version refusal now names the build that reads the file. The exact-quantity door still takes a positive magnitude and the sign rides through it. 2.0.0 (2026-09-15): RELEASE — the VES 2 line: one lineage (B0) · pitch one store rise/12 (B1) · sections typed + drawn (B2a/B2b) · 24 colors + custom + print patterns (B3) · every sheet prints (B4) · one description, EDGE column words (B5) · persona fix batch (B6F). Changelog: RELEASE_NOTES.md. MIT License © 2026 Patrick Moriarty / Bitumen Machina LLC.
 // 2.0.0-rc.8:  // 2.0.0-rc.8: Batch B6F — THE ONE FIX BATCH after the B6 persona pass. Money first. A measurement traced on a sheet with no scale is a PENDING measurement everywhere it changed a figure, not only on the takeoff paper: `rollup` carries `pagesIn` and `pendingPages` beside `pending`, `pendingOf(line)` is the one rule that reads them, and the named state (“pending scale on sheet 2”) reaches the recap (per line and as a job note), the Estimate grid, the client bid, the cost sheet, the Estimate CSV and the workbook (trailing `pending` column) — never a silent 0; the bid's per-line Sheet cell now lists only the sheets whose quantity is IN the number (it claimed “Sheet 1, 2” for a figure that was sheet 1's alone), the takeoff quantities page names the shortfall on the section TOTAL with the sheets to scale, and the uncalibrated notice is JOB-scoped (walking back to a calibrated sheet used to leave zero banners while the bid was short). `parsePitch` takes a rise per 12 and nothing else — a bare 0–24, n/12, n:12, n"/12, plus a legacy decimal FACTOR bounded to pitchFactor(24) — so 25 / 999 / 1e9 / -6 / abc / 6/13 / 6/1 are refused with the value unchanged and nothing journaled (a typed 1e9 priced one line at $2.96 trillion before this). The General lane rides the undo stack like the money it is: `addGeneralItem` / `removeGeneralItem` are journaled by name, field edits re-resolve their row BY ID, and a command whose target is gone is DROPPED with a toast that says so instead of replaying over nothing (three presses chasing a deleted $5,000 line used to reach past it and take $15,291.49 off the job); `journalWord()` formats every value a label carries, so “[object Object]” never prints. Undoing the R-3a reconcile is named “set flat: …” (`cmd.undoLabel`) and the standing banner rewrites itself, so it can never read “now priced at” over a sell that has fallen back; both migration banners carry TWO doors in plain words — Keep / Set these flat instead, Read it as 6/12 / Keep ×6.000 as saved — and the flat door is the same code path Ctrl+Z takes. ONE `sectionKeyOf()`: the takeoff quantities page and `proposalModel` compare through it (four measured conditions printed under no band at all, and the proposal showed four sections against the bid's three), and renaming into a name that keys equal to an existing section MERGES them, journaled. `releaseLatch()` runs as soon as `window.print()` returns on all four print doors, with `afterprint` kept as a second net — headless Chrome never delivers it and a late delivery lands after the latch is disarmed, so a takeoff stayed latched and the next Ctrl+P re-emitted it. Section regions that arrive with no id are GIVEN ids at the file door (two id-less regions both loaded as 0, and every door aimed at the second hit the first). Chrome: every unscaled sheet arms the calibrate tool on arrival, the way `openDocument` already did for sheet 1; “+ Add condition” defaults to the next unused palette hue and the form stays open with a cleared, focused name field (✕ or Esc closes); a new condition's card scrolls itself into view; the bid's refusal NAMES the lines that still need a price, on paper and in the toast, and the rail's need-price pill goes to the first one; the recap strip reads “Recap · by section, then system, then CSI”. No money moved: G0 GREEN 4/4, COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.7: Batch B5 — UNIFIED DESCRIPTIONS, EDGE COLUMN WORDS. `descOf(x)` is the one function every document/export that prints a name now calls — a condition's own `.name`, a general line's own `.label`, or itemLabel(x) suffixed "<name> — labor"/"<name> — equipment" for a linked line (the F6/S2 rule, idempotent via suffixKind so an already-suffixed name is never doubled); it replaces scattered ternaries on itemLabel+suffixKind and a recap mini-table that read a library line's raw (often blank) `.desc`. `const VOCAB` (beside PALETTE) is the one place the document column words live, read by five templates through a `VOCAB:<doc>` sentinel comment `tools/vocab-check.mjs` checks against: the takeoff quantities page is Legend | Pitch | Description | SF | LF | EA (a condition fills exactly one of the three quantity columns, the "Sheets" column folds into data-sheets — the per-sheet figure legends above already name it); the Estimate grid + CSV + XLSX carry the EDGE Consolidated chain Description | Quantity | EU | Ord Qty | Ord Un | Unit Price | Prc Un | Net Cost (Quantity is the engine's own qty_needed before purchase round-up, read-only, beside the existing editable Ord Qty — both visible and different on a wasted/rounded line; EU/Ord Un/Prc Un read the same unit today, stated rather than hidden, since this engine resolves one unit per line); the recap's per-line table and the cost sheet fold Overhead+Markup+Profit into one Markup/Markup $ pair per line (Description | Net Cost | Markup | Markup $ | Gross Price | Cost Unit | Unit), while the cost sheet's closing ladder keeps Overhead/Markup/Profit as separate named rows under Subtotal → Total (never folded there); the client bid renames Qty/Unit price to Quantity/Unit Price (CSI and Sheet stay — established columns outside the vocabulary list). `tools/vocab-check.mjs` is a new, zero-dep CI step: banned AI-speak words, "page" for a PDF sheet, VOCAB words reaching their templates, and a name built straight from an id outside itemLabel/descOf. No money moved. 2.0.0-rc.6: Batch B4 — THE TAKEOFF PRINTS EVERY SHEET. ONE print path: `printTakeoffDoc` is deleted and the three behaviours only it had fold into `printTakeoff` — a typed-only takeoff prints its quantity tables with no figure, a takeoff with nothing measured and nothing typed prints nothing and the toast names the two doors back to the work, and every early return releases the latch (D-24.7a). `visualFiguresHTML` is the ONE per-sheet figure builder: the takeoff's landscape sheets and the proposal's plan snapshots come out of it, and the proposal now carries a figure for EVERY measured sheet instead of the busiest one. The takeoff door opens a sheet chooser when more than one sheet is measured (measured checked, unmeasured listed and greyed, `state.printSheets` session-only and never saved); leaving one out puts “Sheets shown: 1, 3 of 3” on the paper's header, and the quantity tables still total the whole takeoff and say so. Each sheet figure now fits ONE landscape page — the legend packs two entries per row and the image's ceiling is what the caption, the header and that sheet's own legend leave (the three-sheet fixture rendered 5 pages for 3 sheets before; it renders 4 now). The latch releases on `afterprint`, armed only around our own print call. C-B0-1: `identity.fileSize` is read BEFORE pdf.js detaches the ArrayBuffer, so a PDF-backed takeoff saves its real byte length (6,366 on the fixture, 0 before); an existing file's 0 means UNKNOWN and is never compared, so those files still load with no identity review. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
 // 2.0.0-rc.2: Batch B1 — PITCH: ONE STORE, ONE FUNCTION, ONE CONVENTION. `c.pitch` is the rise per 12 and the only store (the conditionOverrides pitch key is consumed at the file door and survives only as a non-enumerable read-only VIEW); VESCore.pitchFactor is the only plan→true conversion (area and up-the-slope √(1+(r/12)²), hip/valley √(1+(r/12)²/2), level and counts 1.0); VESCore.rollup applies it to EVERY condition so rollup().quantity is the money quantity on every face and resolveTakeoff is told not to pitch again (measuredPitched); R-4 gives a linear a lenKind (level | slope | hipvalley) beside its pitch, defaulted by name; both doors (✎ card field, depth-panel row) write the one store and are journaled by name; a library row's pitchDefault seeds a condition once at creation; TAKEOFF_VERSION 3→4 converts v3 multipliers to rises unrounded (money-exact), consumes the override store, reconciles R-3a's display-pitched/price-flat library conditions to the DISPLAYED quantity with a per-condition cent delta on one banner, and holds a bare `6` at its legacy ×6 behind a per-condition confirm so no cent moves silently on reload. 2.0.0-rc.1: Batch B0 — ONE LINEAGE. F18.72 (estimate-sheet depth, AF–AI on branch estimate-sheet-depth) and F18.71 (Patrick's 9/03 fixes on branch kind-curie: the takeoff is a document · the click picks what you aimed at · one click means one thing on the rail · pitch reads as rise over 12 · dropdowns in trade words) content-merged from their true base F18.66; the door prints his multi-sheet takeoff (printTakeoff), main's printTakeoffDoc stays for B4 to fold in. The F18.x stamp line ended here because both branches reused F18.69–F18.71 for different content. Semver from here; the corner chip reads this live.
 // F18.72: Batch AI (persona pass 3 on F18.71 — density 0 refused at the book and gated on the line, never an included $0; the book refuses a formula that cannot parse; a book equal to the seed reads as the seed; the Flags list names an unpriced line and its row is tinted; waste words at four decimals; basis column clean, waste as percent, a linked labor line carries its basis; parser names a stray operator and a case mismatch; lens Escape says nothing when nothing was typed; landing/README say which lines carry a formula)  // F18.71: Batch AH (persona pass 2 on F18.70 — a malformed number literal and a wrong function arity gate the line; an empty unit / zero production rate refused in the Library lens and the unit gate never prints "undefined"; the cue follows the Qty cell and dies with the takeoff; lens selects carry the seed mark; waste words at two decimals and the box says what it did on blur; the phone pin follows the wordless segments; segment names; tr.gated; coarse ＋ Add; lens Escape/Enter grammar)  // F18.70: Batch AG (persona pass 1 on F18.69 — P-GAME · P-TRADE · P-MARKET · P-SEAT, read-only, synthetic fixtures; triage by the NOTES.md rubric; owner's word 2026-09-04 "run persona pass; if accepted finalize build and push to main") — WHAT THE PERSONAS SAW, ANSWERED. Money-honesty: a line formula that evaluates to 0 now gates (ZERO_QTY — flagged, excluded, said on the row) instead of pricing an included $0 (P-TRADE 5); a formula typed while a Qty is typed is checked and the cue says the typed qty stands and whether the dormant formula evaluates (P-TRADE 7); the parser names the token it choked on instead of "trailing tokens" (P-TRADE 8). Library: the authored-item id comes from the library's own counter, so a fresh takeoff's ＋ Add never replaces yesterday's item (P-MARKET 1); a blank CSI lands under the assembly's code (P-MARKET 7); edited cells read in the accent against the built-in seed, items the seed lacks say "authored here", match code is a column, ＋ Add sits by the description, cells meet the coarse-pointer rule (P-MARKET 6/9, P-GAME 9/10); the toast says every takeoff priced from the book follows — no project override written (P-TRADE 10, P-GAME 10). Grid: the derivation names the item waste that turns needed into ordered and the Waste header says which waste it is (P-MARKET 2); a FIXED formula reads "fixed Q"; a line-level number is "line value", a formula "line formula"; Q's meaning by kind is in the cell title and the sheet foot names the whole scope (P-TRADE 9/11, P-MARKET 5); the lens cue clears after a good commit (P-GAME 5); Escape in a cell stops at the cell (P-GAME 3, control). Entry row: the funnel line sits under the description, the measure select follows the unit in the Tab walk, an empty row explains both paths, a partial names the closest library name, the name match forgives case and dash (P-GAME 6/7/8, P-TRADE 12). Toolbar: the fourth lens segment no longer covers Files & exports (the document-door pin moved with it) and the segments drop their words under 720 px (P-GAME 1/2). Waste door: "abc" gets its own sentence and a refused value never stays in the box (P-GAME 12, P-TRADE 13). Exports: qty needed is a number cell and the ladder labels read "(× Pct)" (P-TRADE 2); BOM headers in Title Case (P-GAME 16). Landing + README name the derivation, the line formula and the Library lens (P-MARKET 10, P-TRADE 16). CI: probe-af fetches the F18.68 bytes by full sha (P-SEAT 2). Recorded, not built (LEDGER §Batch AG): cost per estimated unit, auto-round control, grid CSI column, item creation from the grid, recap-drawer derivation, phone segment height, Library lens first frame 265 ms, the guard hook's text match, stale D-series line citations. Gates: probe-af 29/29 (RED-first 16/29 on F18.69 — 13 of the 14 new rows red, AF19 a control) · probe-v · probe-u · probe-z · probe-ab · probe-ad · probe-ae · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress.  // F18.69: Batch AF (TEST BUILD on a branch, not release — architect commission "Estimate sheet depth", rulings R1–R7 in lane, Patrick's veto open) — THE SHEET RENDERS WHAT IT COMPUTES, AND A FORMULA CAN LIVE ON THE LINE. The engine line carries its derivation (`driver`: which of coverage / density / formula / typed qty / fixed / identity priced it, from which layer, the expression, its parameters, and RAW/ADJ/WASTE/Q — the record it priced on, never a second evaluation); the item's own drivers sit on the ITEM layer so the level is true (values byte-identical, G0 4/4). Per-line parameters ({name: number}) merge ITEM < ASSEMBLY < PROJECT < LINE outside resolveOverride and enter the formula scope; the closed grammar gains ceil floor round abs max min and nothing else. NEW-4 is REVERSED (LEDGER AF-R3): qty_expr and params ride the takeoff file, typed at the door (string ≤ 500 chars; ≤ 50 identifier-named finite numbers), and F18.68 drops them under the standing banner — loud, never silent; takeoff version stays 3. Estimate grid: an 8th column, Formula — marker chip (library / project / line formula / typed qty / manual line), the derivation in words (412.5 LF · width 1.25 · lbsf 1.156 = 596.06 → 597 LB), the gate reason when flagged, and two text cells (formula · inputs) on the same delegated editLine path; the qty cell edits from the full-precision figure (F1.4 m); Unit $ says "per order unit" on the grid, recap and cost sheet (R5). Add-a-line says its funnel before ✓ Add — a library match names the assembly, its item count and its fixed allowances with their sum (priced by resolveItem, not re-implemented) — and asks the unit chain in EDGE order with a measure select that follows the unit (an LF line is linear, never a count). Condition waste has a door on the Condition detail panel beside pitch, journaled, negatives refused (the Flags advisory it answers goes quiet). Exports: grid CSV, Estimate .xlsx and BOM CSV carry driver · formula · params · qty_needed · basis as trailing columns; the workbook ladder multiplies by Pct cells (column I) so it re-margins in Excel; client papers carry none of it (probe-af AF5). ＋ labor OFF-note reads the qtyLink reference, name match as fallback (R6). Library lens (L): every item with its full field set and every assembly's list and overrides, editable in place, validated by the import's own validateLibrary on a clone before commit (one driver per item, refused with its words), persisted to the library and never the project; desc and params survive the workbook round-trip. Gates: probe-af 15/15 (RED-first 1/15 on F18.68 — the provenance-colour control) · probe-v 17/17 · probe-u 8/8 · probe-z 6/6 · probe-ab 4/4 · probe-ad 5/5 · probe-ae 5/5 · probe-x · probe-y · probe-aa · probe-ac · G0 4/4 · verifier PASS 0 new egress. FREEZE: the engine fence was edited on purpose; the manifest is absent, so the fence gated nothing (Patrick's act, before merge review). Follow-ons OPEN, not done: price unit / price formula (R5), labor sub-record (R6), general-line drivers, two-assembly item sharing, assembly itemOverrides unsanitized on JSON import.  // F18.68: Batch AE (owner's word 2026-09-04: a Print takeoff door, its shape the seat's) — THE PLAN AS MEASURED, AND NOTHING PRICED. A third paper beside the bid and the cost sheet: Files & exports → Print takeoff… (and the command palette) writes the latch with the same plan snapshot and legend the proposal composes, every condition with the quantity the estimate uses (traced × pitch, D-26.1, the factor shown beside it), and every measurement with its sheet, points and calibration as the Audit CSV records them. No $ figure and no money word reach it; a typed-only takeoff prints its tables without a snapshot; with nothing measured the latch is released and the door says so (D-24.7a); the toast names the print (T-06). Gates: probe-ae 5/5 (RED-first 1/5 on F18.67) · probe-u · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.67: Batch U (READINESS_ad07fff ship-line item 2, owner-approved 2026-09-04) — THE UNLINK FREEZE KEEPS THE QUANTITY THE LINE WAS PRICED ON. U1 (P-CODE pass 3, HIGH): the card editor's Unlink wrote the source's store-A rollup quantity into the frozen measurement while the link had fed the engine dispQtyOf(source) — store B's pitch applied — so on a 6/12 library source a labor line priced on 1,118.03 SF was frozen at the flat 1,000, sell 80,506.89 → 80,138.80 on the fixture with no toast, no journal entry, and Ctrl+Z removed the whole line; the comment at the qty-link site said the engine pitched the frozen measurement again. The freeze now writes the same dispQtyOf quantity the link priced on, the toast names the frozen quantity and the source it no longer follows, and the gesture sits on the journal under its own name (D-25.2a); the comment tells the truth. Reproduced from the UI (✎ pitch → ＋ labor → ✓ Add → ✎ Unlink) by tools/sweep/probe-u.mjs. Gates: probe-u 8/8 (RED-first 2/8 on F18.66) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.66: Batch AD (the personas' cheap candidates + bar M2's internal half; owner's standing word 2026-09-02 'anything else you see fit') — THE ESTIMATE STILL COMPUTES IN EXCEL, AND THE SMALL THINGS ARE REMEMBERED. Estimate .xlsx: every line's Qty × Unit as a live formula, Cost as SUM, the ladder as formulas, Sell as their sum, values cached; the exports menu now carries it and the client review workbook; a print sets the toast to say what went to print; the money peek has a keyboard door (focus on a card control); snap, split mode and the dock width persist with the other rest state. Gates: probe-ad 5/5 (RED-first 0/5 on F18.65) · probe-ab · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.65: Batch AB (P-TRADE / P-MARKET money-honesty rows, owner-approved 2026-09-02) — ONE SET OF CLIENT NUMBERS, AND THE FILE NAMES ITS PRICE BOOK. The client-review .xlsx exported COST while the bid printed SELL ($12,816 apart on the demo); the bid's cent apportionment and derived rate are now one helper (bidCents / bidRate) both papers read, and the workbook is the bid in sell only, with live SUM formulas for subtotals and the Total. A takeoff file carries the library's name and fingerprint; loading it under a different book raises the standing banner instead of silently re-pricing. The estimate CSV footer carries Overhead / Markup / Profit rows apportioned so Cost + ladder = Sell. The landing and README name the audit trail. Gates: probe-ab 4/4 (RED-first 0/4 on F18.64) · probe-v · G0 4/4 · verifier PASS.  // F18.64: Batch AC (P-GAME rows G1–G7 on Batch AA's UI scale, same approval) — THE SCALE KNOWS THE SCREEN, AND PAPER IGNORES IT. Print media resets the root zoom (a bid at 150% had paginated onto two pages). The scale range follows the viewport (narrow ≤ 115%, mid ≤ 130%) and coarse pointers floor at 100%, so the rail's controls, Hide, the exports menu and the money peek stay on a 390 px screen; the exports menu carries a Text size item because the toolbar control sits in the rest sliver on a phone; the menu's height cap is measured again after the toolbar expands; the peek's width is computed in zoomed px; schedule inputs join the coarse-pointer 40 px / 16 px rule. Gates: probe-ac 5/5 (RED-first 1/5 on F18.63) · probe-aa · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.63: Batch AA (PASS_2026-09 rows G5 + G7, owner-approved B5) — REST STATE IS REMEMBERED, AND THE UI HAS A SIZE. One store the app owns (ves:prefs, never the takeoff) keeps the rail, the drawer pin, the fill mode, the grid's feet-per-square and the new UI scale across reloads; theme keeps its own key. A UI-scale control beside the theme toggle cycles 100 → 115 → 130 → 150 → 90 % via CSS zoom on the root, so layout and pointer math scale together — a two-click trace at 1.5x reads the same feet, and every lens stays inside a 1440x900 viewport. The narrow-screen rail default now yields to a saved choice and never records itself as one. Gates: probe-aa 5/5 (RED-first on F18.62) · probe-z · probe-v · G0 4/4 · verifier PASS.  // F18.62: Batch Z (PASS_2026-09 row G6, owner-approved B4) — GLANCEABLE MONEY. Hover (350 ms) or long-press (500 ms) on a condition card floats a read-only peek beside it: the condition's priced lines with quantity and amount (off lines struck, gated lines named), cost, sell, and its share of the total — without leaving the sheet, arming, selecting or opening a lens. Reads recapModel/resolveAssembly/rollup only; shared lines attributed 1/N so per-condition sells plus fixed allowances reproduce the recap sell to the cent (probe-z Z4). Gates: probe-z 6/6 (RED-first on F18.61) · probe-v · G0 4/4 · verifier PASS.  // F18.61: Batch X (PASS_2026-09 rows T1 + T2, owner-approved 2026-09-01) — THE ABSENCE STATED, AND THE PARSER OFF THE MAIN THREAD. T1: landing and README say no seat fee, no report fee, no device limit, no login. T2 root cause: under file:// pdf.js silently ran its parser on the main thread (fake worker after a null-origin same-origin test); the app now starts the Worker itself and hands pdf.js the port — a 40k-segment sheet's longest main-thread task fell from 552 ms to under 60 ms on desktop. Gates: probe-x (RED-first 0/5 on F18.60) · probe-v · G0 4/4 · verifier PASS 0 new egress.  // F18.60: Batch W (owner's ruling 2026-09-01: there is no local seat — the repo carries every gate) — THE FILE IS ONE FILE IN TWENTY NAMED BLOCKS, AND THE RECAP FITS A SHORT SCREEN. The application script is split at its own module banners into <script data-ves-module=…> blocks (condition-set · engine · library · interchange · state · viewer · grid-canvas · tools · cards · condition-library · ledger · assemblies · recap · estimate-grid · schedule · persistence · proposal · boot; core and pdfjs named too): classic scripts share one global scope and 0 top-level statements call a later-defined function, so execution order is unchanged — proven by a reverse transform that reproduces the F18.59 bytes exactly, G0 4/4, and the verifier now naming the block in every SYNTAX finding. C-N1 class: under 560px of viewport height the summoned recap panel takes the dock column with its own scroll and close control (it sat at y = −74 on a landscape phone). Gates: G0 4/4 · probe-v 17/17 (V12/V13 RED-first on F18.59) · verifier PASS, 0 new egress, FREEZE 2 regions.  // F18.59: Batch V (sweep 68c8e23 + mobile-feasibility items, owner-approved 2026-09-01) — THE FILE DOOR REFUSES WHAT IT CANNOT PRICE, AND THE PHONE GETS THE SHEET. U2: measurements and conditions are typed at normalizeSnapshot (a non-numeric or negative quantity drops the measurement; non-array points drop it; a non-numeric unitCost becomes null; a non-positive pitch is dropped; an unknown geometry type drops the condition and its measurements), every drop counted into the ONE load toast and the standing R3/T4 banner — on F18.58 a string quantity priced as ZERO in the engine while every quantity face showed the number ($26,741.91 silent on the demo). Proposal legend swatches keep their color under 'background graphics off' (print-color-adjust; measured on rendered PDF bytes). Under 720px the rail rests collapsed and is one tap back (the phone's sheet column was 68px); coarse pointers get 40px money cells and menu items, 16px inputs (no focus-zoom), and a 16MP raster cap (a 64MP raster took 20.8s at 4x throttle); the exports menu scrolls inside a short viewport. VESCore and VESASM carry freeze fences (the manifest is the owner's act). Seed-library provenance comments scrubbed of names and local paths. Gates: G0 4/4 · probe-v 15/15 (RED-first 13/15 on F18.58) · verifier PASS, 0 new egress.  // F18.58: Batch T (P-CODE pass 2 NEW rows; rulings D-26.4 + the T2 qty-link mechanism) — THE ROW MULTIPLIES, AND A LINK FOLLOWS THE WHOLE SOURCE. NEW-1 (P0): S4 changed the bid's Qty basis and left Unit price alone, so Qty × Unit fell short of Amount by the whole waste factor while the basis note blamed rounding — the P0-3 class recreated by the batch that closed it. D-26.4: on the S4-re-based rows the printed rate is Amount ÷ Qty, DERIVED (waste and purchasing round-up ride inside the price, where they always were economically); Amount pinned — exactly ONE cell in the whole document changed on the fixture ($3.74 → $4.12), and the note now tells the truth. NEW-2 (HIGH): the qty-link loop fed the engine a store-B-blind rollup quantity, so a +labor line linked to a pitched LIBRARY source priced FLAT — 11.8% short at 6/12, 41.4% at 12/12, in the engine — against a tooltip promising 'Qty follows X'; it now feeds dispQtyOf(source): one truth, applied once, plain sources don't double-apply. NEW-4: qty_expr (the one override that rewrites a quantity without touching a number, rendered on NO surface) is dropped at the load door under its own name; override dicts cap at 5,000 keys, general[] at 2,000, counted as 'past the size limit'. NEW-5/C-R3: the drop notice also raises a PERSISTENT banner — a toast is not a record. NEW-7: apportionCents enforces its own promise (terminal remainder onto the largest part, non-finite parts excluded as null and printed '—', never a firm $0.00). Gates: G0 4/4, w2t 131/131 both engines (RED-first 65/131, the $1,186.48 one-row gap on the record), w2s 147/147, w2p 143/143, w2r 177/177, w2q 95/95, w2j, w2e, print-pdf, smoke, l08+w2g+w2o extra, verifier 0 new egress. F18.57: Batch S (P-BUYER pass 1 fixes S1-S12 + D-26.3; B-01 REFUTED-environmental) — THE BUYER'S CHECK, ANSWERED ON THE PAPER. Audit CSV now answers who/when/at-what-scale (identity block + the calibration VALUE beside the word; per-measurement money stays C-S1). Contractor license is identity: a Project-info field that prints on bid and proposal — and adding it exposed that the form's commit row had ALWAYS sat below its own modal (S2-g: sticky commit row; probe-w2n caught the break on the first try). Printed components now SUM to printed totals on the Estimate footer and the cost sheet's ladder and Division row (largest-remainder onto components, every total pinned — exactly two cents moved, both INTO components). One measurement prints ONE quantity on the client bid (measured scope, not the purchase order; the internal cost sheet keeps ordered BECAUSE it is a purchasing sheet) and the basis note names both roundings. The unlabeled $224K was a COST 20% under SELL and now says so; the landing states the full data-safety trio; STD/INF/OBS have a legend; the file:// banner DECODES its own filename (the hardcode the buyer reported did not exist — the encoding did); the long-name toolbar wrap is cured at 1440 with the narrow-width overlay recorded as C-S4 (it happens with NO name); the stray ')' was a live collapse control now reading Hide; the proposal caption says NEW WINDOW — because B-01 was the harness photographing the opener while the document lived in the popup (cdp.mjs gains additive popup-target awareness, H-S1, so that misread is now impossible). D-26.3: Ctrl+Z from a committed money cell routes to the journal (R5 un-broke the designed caret walk and the input guard was swallowing undo — the silence D-25.2a forbids); a drafted cell reverts the draft, named. Gates: G0 4/4, w2s 147/147 both engines (RED-first 75/147), w2p 141/141 RESTORED, w2j, w2e, w2q 95/95, w2r 177/177, print-pdf, smoke, verifier 0 new egress; w211's header assumption updated for the identity block.
@@ -16047,6 +16628,9 @@ window.VESApp = {
   // per-condition funnel the eye, Alt+click and H all call; the region's own chip eye.
   toggleCondHidden, applyHiddenCondsGesture, soloCondition, hideOthersCond, hideMeasuredConds, showAllHiddenConds,
   toggleRegionHidden, sectionChipAt, sectionChipEyeAt,
+  // Batch Q3 (Q3-1..Q3-6): the selection and its doors — the set, the chip, move, duplicate, re-assign, bulk delete, cycle.
+  selIds, setSelection, clearSelection, renderSelChip, duplicateSelection, reassignTo, openReassignPicker,
+  carrySelection, deleteSelection, cycleUnderPointer,
   openDocument, openPDF, openFromBytes, showPane, setZoom, rotateCurrent, fitToView,
   setTool, activateCondition, setActivePane, setMode,
   toggleSnap, toggleRect, maybeSnap,
