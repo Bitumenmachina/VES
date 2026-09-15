@@ -162,6 +162,11 @@ jobs:
           git show "$Q1_OLD_SHA:src/VES_PM.html" > "$RUNNER_TEMP/VES_2.0.0.html" || true
           node tools/sweep/probe-deduct.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" "$RUNNER_TEMP/VES_2.0.0.html" 2>&1 | tee -a probes.txt
           code20=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code20
+          # Batch Q2 (VES 2.1): hide / solo — the rail-header strip, H / Shift+H, the region eye, and
+          # the takeoff paper's indifference to all of it. No old build needed: every row here reads
+          # the current bytes only.
+          node tools/sweep/probe-hide.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" 2>&1 | tee -a probes.txt
+          code21=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code21
           {
             echo '## sweep probes'
             echo
