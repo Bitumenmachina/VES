@@ -5,6 +5,29 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q1 — VES 2.1 · DEDUCTIONS (build 2.1.0-rc.1, 2026-09-15)
+
+Rulings Q1-1…Q1-6 (`.scratch/charter-q1.md`, copied to `research/qol-2.1.0/CHARTER-Q1.md` at release). Opus agent (356K), RED-first:
+`tools/sweep/probe-deduct.mjs` **1/10 on the base (release 2.0.0, md5 b1898283) → 10/10 on the patch**; applied by md5 contract
+(declared `1fe43476e9820cb9d03d30584f15adb9` = applied). Product: sha256 `18809005adc56c0763b4cb83ace497de2b1e349adc59dfa1a0412d35a0f6261d`, 3871718 bytes.
+- `m.sign ∈ {+1,-1}` set only through `addMeasurement` opts; `rollup` sums signed then clamps `NET_FLOOR_ZERO` (named on card, grid
+  row, audit warnings, takeoff paper — "deductions exceed the area — held at 0"). Deduct toggle on the rack (`D`; disarms after one
+  trace, Shift-click stays armed) — a cutout on the armed area condition, same hue, dashed edge, cross-hatch, label `−101.2 SF`; card
+  `1156.7 SF (−101.2)` + "1 deduct" chip; refused with a spoken reason on linear/count conditions. Perimeter picker opens at the last
+  corner (one button per linear condition with its swatch, "None — just the deduct", Esc = none; never opens with no linear condition
+  on the job); deduct + sibling LF = ONE journal entry "deduct + perimeter to <condition>", one undo removes both. Exact door keeps
+  the sign (160 on a deduct = −160; −20 refused).
+- **Ratified decisions (agent-declared):** **R-11a** the rollup CSV prints the condition's GROSS row plus one signed `Deduct` row under
+  it so a summing consumer lands on net; Extended Cost stays net money and the Cost Basis names the net. **R-11b — a money path
+  fixed:** `assemblyMeasured` (the ENGINE's input, not a display) summed `m.value` unsigned — library-backed conditions would have
+  shown the estimator the net while the assembly BOUGHT the gross; it now sums signs per condition, clamps, then pitches; conditions
+  with no cutout keep the original expression in the original float order, so G0 did not move. **R-11c** `TAKEOFF_VERSION` = 6 but
+  `fileVersionNeeded()` writes 6 only when a sign exists — a deduct-free save is BYTE-IDENTICAL to 2.0.0's (14,515 B on the probe);
+  2.0.0 refuses a v6 file by number (its bytes are frozen; the build-naming refusal text lives in 2.1.0 and forward). Fixture:
+  `takeoff.v6.json` (the v3 fixture with the pitch migration replayed + two cutouts + one handoff, generator flag `--v6`) and
+  `golden.v6.cents.json` (cost 40,850,862¢ / sell 50,957,366¢; cutouts removed → 41,085,687¢ — the engine paid the net).
+- **Gates on `1fe43476e9820cb9d03d30584f15adb9` (orchestrator rerun):** ves-verify PASS · G0 GREEN 4/4 · vocab-check 0 · deduct ALL GREEN — 10 pass · b0-fixture 7/7 · b6f ALL GREEN — 17 pass · b1-pitch 12/12 · b4-print 9/9 · af 40/40 · u 8/8 · (agent's run also: b2a · b2b · b3 · b5 · b7 · ae · v · x/y/z/aa/ab/ac/ad · p903 ×5 green).
+
 ## RELEASE 2.0.0 — VES 2 (2026-09-15)
 
 Product `src/VES_PM.html`: **sha256 `52a0c0f0a0b11a4324472bf1147b6082d0c9d23b0e29d3ea4de4b369a12d9374` · md5 `b1898283f693a23e3e1040c1d50915fd` · 3845864 bytes · `VES_BUILD = '2.0.0'`** · MIT line inside the
