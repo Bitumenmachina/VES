@@ -576,6 +576,26 @@ if (NOSUB) {
   check('Q4-l G0 GREEN (money path untouched by this batch)', r.status === 0 && /G0 GREEN/.test(out), { code: r.status, ms: Date.now() - t0, tail: out.trim().split('\n').slice(-6).join(' | ') });
 }
 
+/* ════════ Q5F-a (persona Q5-04) · the cutout-perimeter picker lists linear conditions alphabetically ════════ */
+if (want('m')) {
+  await loadFixture();
+  const Z = await addCond('Zeta edge (Q5F)', 'linear', 3);
+  const A = await addCond('alpha drip (Q5F)', 'linear', 3);
+  const M = await addCond('Mid rake (Q5F)', 'linear', 3);
+  const F = await addCond('Field Q5F', 'area', 5);
+  const r = await tryEv(`(() => { const cond = VESApp.state.conditions.find(c => c.id === ${F.id});
+    const pts = [{ x: 100, y: 100 }, { x: 200, y: 100 }, { x: 200, y: 200 }, { x: 100, y: 200 }];
+    openDeductHandoff(cond, null, pts, true);
+    const el = document.getElementById('deductPick');
+    const names = Array.from(el.querySelectorAll('.dp-opt:not(.dp-none)')).map(b => b.textContent.trim());
+    el.hidden = true; el.innerHTML = '';
+    const mine = names.filter(n => /\(Q5F\)/.test(n));
+    const sorted = names.slice().sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    return { names, mine, isSorted: JSON.stringify(names) === JSON.stringify(sorted) }; })()`);
+  const ok = !r.error && Array.isArray(r.mine) && r.mine.length === 3 && r.isSorted === true;
+  check('Q5F-a (persona Q5-04) the cutout-perimeter picker lists linear conditions in alphabetical order (case-insensitive, numbers in order), not in rail order', ok, r);
+}
+
 console.log('\n' + (fail === 0 ? 'ALL GREEN' : 'RED') + ' — ' + pass + ' pass, ' + fail + ' fail, ' + rows.length + ' rows');
 try { c.close(); } catch (_) {}
 try { chrome.kill('SIGKILL'); } catch (_) {}
