@@ -1112,6 +1112,21 @@
     font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--txt-3); font-weight: 600;
     padding: 11px 12px; border-bottom: 1px solid var(--hair); }
   table.estgrid thead th.num { text-align: right; }
+  /* Q4-7 · Description is the anchor column: at 125–150% zoom the grid is wider than .gscroll's
+     own viewport and scrolls horizontally INSIDE it (.gscroll's overflow:auto already contains
+     that — #gridview is position:fixed, so it was never a page-level scrollbar); without this,
+     scrolling right to reach Waste / Unit Price / Formula / Net Cost loses which line you are on.
+     A sticky column reserves nothing by itself — width/min-width/max-width pin it to the SAME
+     number in the header and every row, so it never resizes mid-scroll (the roofnerd lesson).
+     :not([colspan]) excludes the section/division-header and add-line rows, which span the
+     whole row on purpose and must not be clipped to this column's width. */
+  table.estgrid th:first-child, table.estgrid tr td:first-child:not([colspan]) {
+    position: sticky; left: 0; width: 240px; min-width: 240px; max-width: 240px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    background: var(--stage-bg); box-shadow: 1px 0 0 var(--hair);
+  }
+  table.estgrid thead th:first-child { z-index: 3; white-space: normal; }   /* stays above the sticky body cells AND the sticky header row */
+  tr.gentry td:first-child:not([colspan]) { background: var(--panel-2); }   /* keeps the entry row's own "work surface" tint under its sticky cell too */
   table.estgrid td { padding: 9px 12px; color: var(--ink); border-bottom: 1px solid var(--hair); }
   table.estgrid td.num { text-align: right; font-family: var(--mono); }
   table.estgrid td.klab { color: var(--ink-dim); font-size: 11.5px; text-transform: capitalize; }   /* F18.8: kind visible per line */
@@ -1144,15 +1159,15 @@
   /* N-6 (mechanical half) · at the split width the money columns are the half that must be
      readable without a scrollbar. Kind / Unit / Waste are authored in the full Estimate lens
      (E) and are hidden here — stated trade, not a redesign; the full column set is one key
-     away and the split panel keeps Description, Qty, Unit $ and Total. */
+     away and the split panel keeps Description, Qty, Unit $ and Total.
+     Q4-6 renumbered these: Kind stays 2nd, but EU/Ord Un/Prc Un collapsed into ONE Unit column
+     moved Unit to 5th and Waste to 6th (was 4th/6th/7th across the three old unit columns). */
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(2),
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(2),
-  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(4),
-  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(4),
+  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(5),
+  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(5),
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(6),
-  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(6),
-  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid th:nth-child(7),
-  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(7) { display: none; }   /* Batch AF: the Formula column is a full-lens column too */
+  body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td:nth-child(6) { display: none; }
   body[data-mode="split"]:not(.grid-view) #gridview .gscroll { padding: 0 10px; }
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid td,
   body[data-mode="split"]:not(.grid-view) #gridview table.estgrid thead th { padding-left: 7px; padding-right: 7px; }
@@ -1849,18 +1864,21 @@
   #selChip .sc-door { pointer-events: auto; background: transparent; color: var(--ink); border: 1px solid var(--line);
     border-radius: 6px; padding: 2px 7px; font: inherit; font-size: 11px; cursor: pointer; }
   #selChip .sc-door:hover, #selChip .sc-door:focus { background: var(--panel); outline: none; }
-  /* Q3-5: the re-assign picker — the perimeter picker's plate, listing only conditions of the SAME type. */
-  #reassignPick { position: fixed; z-index: 92; min-width: 230px; max-width: min(340px, calc(100vw - 16px));
+  /* Q3-5: the re-assign picker — the perimeter picker's plate, listing only conditions of the SAME type.
+     Q4-4/Q4-10: #condMenu is the SAME plate shape, anchored under the card's own ⋮ button instead of
+     the pointer — it carries "Duplicate condition" and "Type a quantity…". */
+  #reassignPick, #condMenu { position: fixed; z-index: 92; min-width: 200px; max-width: min(340px, calc(100vw - 16px));
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0,0,0,.4); padding: 7px; font-size: 12px; }
-  #reassignPick[hidden] { display: none; }
-  #reassignPick .dp-head { font-weight: 600; padding: 2px 5px 6px; color: var(--ink-dim); }
-  #reassignPick .dp-opt { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left;
+  #reassignPick[hidden], #condMenu[hidden] { display: none; }
+  #reassignPick .dp-head, #condMenu .dp-head { font-weight: 600; padding: 2px 5px 6px; color: var(--ink-dim); }
+  #reassignPick .dp-opt, #condMenu .dp-opt { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left;
     background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 7px;
     padding: 6px 8px; font: inherit; cursor: pointer; }
-  #reassignPick .dp-opt:hover, #reassignPick .dp-opt:focus { background: var(--panel); border-color: var(--line); outline: none; }
+  #reassignPick .dp-opt:hover, #reassignPick .dp-opt:focus, #condMenu .dp-opt:hover, #condMenu .dp-opt:focus { background: var(--panel); border-color: var(--line); outline: none; }
   #reassignPick .dp-sw { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
   #reassignPick .dp-none { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 7px 7px; color: var(--ink-dim); }
+  .card .card-menu { position: absolute; top: 5px; right: 84px; min-height: 24px; padding: 0 5px; }
   .card .qty .dedq { color: var(--ink-dim); font-family: var(--mono); }
   .dednote { color: var(--ink-dim); font-size: 11px; }
 </style>
@@ -1934,8 +1952,15 @@
       <div class="menu-sec">Spreadsheets</div>
       <button id="btnMenuEstimateXlsx" title="Every line's Qty × Unit as a live formula, Cost as a SUM, the ladder as formulas. Not for clients."><b>Estimate (.xlsx)</b><small>for you: live formulas, margins included</small></button>
       <button id="btnMenuReviewXlsx" title="The bid as a workbook — sell prices only, live sums. Safe to send."><b>Client review (.xlsx)</b><small>for the client: the bid's numbers, sell only</small></button>
-      <button id="btnCSVGrid" title="The priced lines as a CSV — the same file the Estimate screen exports"><b>Estimate (CSV)</b><small>the priced lines, one row each</small></button>
-      <button id="btnCSVSupplier" title="Quantities for vendors to price — no money inside"><b>Supplier RFQ (CSV)</b><small>quantities for vendors to price — no money</small></button>
+      <button id="btnCSVGrid" title="The priced lines as a CSV — the same file the Estimate screen exports"><b>Estimate (CSV)</b><small>the priced lines</small></button>
+      <!-- Q4-11: one Exports door lists every file — the three working CSVs kept their own doors
+           under Setup (Batch AI, P3-R3) and are not removed from there; these call the SAME
+           functions (exportBOMCSV / exportRollupCSV / exportAuditCSV) under new ids, same files,
+           same names, nothing merged. -->
+      <button id="btnMenuBOM" title="What the systems say to buy, priced — one row per item"><b>Bill of materials (CSV)</b><small>what to buy</small></button>
+      <button id="btnMenuRoll" title="One row per condition: measured quantity, pitch, unit cost, extended cost, and where it was measured"><b>Condition totals (CSV)</b><small>what each condition totals</small></button>
+      <button id="btnMenuAudit" title="Every measurement, with the sheet it came from and the scale it was measured at — for checking the count against the drawings"><b>Audit (CSV)</b><small>every stroke, with its sheet and scale</small></button>
+      <button id="btnCSVSupplier" title="Quantities for vendors to price — no money inside"><b>Supplier RFQ (CSV)</b><small>quantities for vendors, no money</small></button>
       <div class="menu-sep"></div>
       <div class="menu-sec">Settings</div>
       <button id="btnMenuScale" title="Text size — cycles the size of the whole screen (remembered)">Text size <small id="menuScaleLabel">100%</small></button>
@@ -1994,6 +2019,7 @@
     <div id="selChip" hidden></div>
     <!-- Q3-5: the re-assign picker. Built and positioned by openReassignPicker(). -->
     <div id="reassignPick" hidden></div>
+    <div id="condMenu" hidden></div>
     <div id="activeIndicator" hidden></div>
     <button id="railReopen" hidden title="Show the conditions panel">⟨ Conditions</button>
     <div id="empty">
@@ -2169,6 +2195,20 @@
     <div class="row">
       <button id="calCancel">Cancel</button>
       <button id="calOK" class="armed">Set scale</button>
+    </div>
+  </div>
+</div>
+
+<!-- Q4-10: "Type a quantity…" — a manual measurement for a condition, reached from the card menu -->
+<div class="modalBack" id="qtyModalBack">
+  <div class="modal">
+    <h3 id="qtyModalTitle">Type a quantity</h3>
+    <p id="qtyModalPrompt"></p>
+    <input id="qtyModalInput" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 320">
+    <div class="err" id="qtyModalErr"></div>
+    <div class="row">
+      <button id="qtyModalCancel">Cancel</button>
+      <button id="qtyModalOK" class="armed">Add quantity</button>
     </div>
   </div>
 </div>
@@ -2410,14 +2450,15 @@
   <div class="gtabs" id="gTabs"></div>
   <div class="gscroll">
     <table class="estgrid">
-      <!-- R-6b (B5): VOCAB.grid — Description | Quantity | EU | Ord Qty | Ord Un | Unit Price | Prc Un |
-           Net Cost, the EDGE Consolidated chain (estimated → ordered → priced). Kind and Waste are this
-           engine's own columns, kept alongside; Formula (Batch AF) sits after the eight VOCAB words but
-           BEFORE Net Cost, so Net Cost — the money a subtotal row's last cell reads — stays the rightmost
-           column, as it always was. EU / Ord Un / Prc Un read the same unit today: this engine resolves one
-           unit per line, so the three columns agree row for row — stated, not hidden behind one column. -->
+      <!-- R-6b (B5) / Q4-6: VOCAB.grid — Description | Quantity | Ord Qty | Unit | Unit Price |
+           Net Cost, the EDGE Consolidated chain (estimated → ordered → priced) with EU / Ord Un /
+           Prc Un collapsed to the one Unit column they always agreed on (this engine resolves one
+           unit per line — three columns honestly repeating each other was never a second fact).
+           Kind and Waste are this engine's own columns, kept alongside; Formula (Batch AF) sits
+           after the six VOCAB words but BEFORE Net Cost, so Net Cost — the money a subtotal row's
+           last cell reads — stays the rightmost column, as it always was. -->
       <!-- VOCAB:grid -->
-      <thead><tr><th>Description</th><th>Kind</th><th class="num" title="Estimated — the engine's own qty_needed, before purchasing round-up. Same figure as Ord Qty on a line with no waste to round.">Quantity</th><th title="Estimate unit">EU</th><th class="num" title="Ordered — qty_needed rounded up for purchasing (ordered = needed × (1 + waste), ceiling).">Ord Qty</th><th title="Order unit">Ord Un</th><th class="num" title="Item waste — applied at the ordered step; a separate figure from the condition’s waste, which is on the condition’s card and inside ADJ">Waste</th><th class="num" title="Per order unit ($/hr where a production rate is set).">Unit Price</th><th title="Price unit — the unit Unit Price is per.">Prc Un</th><th title="How the quantity was derived: the driving measurement (RAW; ADJ = with condition waste), the driver the library or this line supplies, the quantity needed, and the ordered quantity after purchasing round-up. Type a formula here to put this line on its own derivation.">Formula</th><th class="num">Net Cost</th></tr></thead>
+      <thead><tr><th>Description</th><th>Kind</th><th class="num" title="Estimated — the engine's own qty_needed, before purchasing round-up. Same figure as Ord Qty on a line with no waste to round.">Quantity</th><th class="num" title="Ordered — qty_needed rounded up for purchasing (ordered = needed × (1 + waste), ceiling).">Ord Qty</th><th title="The unit every quantity and price on this row is in — one unit per resolved line.">Unit</th><th class="num" title="Item waste — applied at the ordered step; a separate figure from the condition’s waste, which is on the condition’s card and inside ADJ">Waste</th><th class="num" title="Per order unit ($/hr where a production rate is set).">Unit Price</th><th title="How the quantity was derived: the driving measurement (RAW; ADJ = with condition waste), the driver the library or this line supplies, the quantity needed, and the ordered quantity after purchasing round-up. Type a formula here to put this line on its own derivation.">Formula</th><th class="num">Net Cost</th></tr></thead>
       <tbody id="estgridBody"></tbody>
     </table>
   </div>
@@ -4829,6 +4870,7 @@ const state = {
   hiddenConds: null,              // Set<condId> once the eye toggle is used (F18.14); null reads as "none hidden"
   hiddenRegions: null,            // Q2-3: Set<sectionId> once a region's chip eye is used; null reads as "none hidden"
   fillMode: null,                 // 'on' | 'faint' | 'off'; every reader defaults null → 'on'
+  labelMode: null,                // Q4-2: 'on' | 'values' | 'off'; every reader defaults null → 'on'
   hudMode: null,                  // 'dollar' | 'count'; null reads as 'dollar'
   drawerOpen: false, drawerPinned: false, drawerCollapsedByUser: false,
 };
@@ -4867,9 +4909,11 @@ const VOCAB = {
   // Estimate grid + Estimate CSV/XLSX (internal). The EDGE Consolidated chain: estimated →
   // ordered → priced. Quantity is the estimated/needed figure (qty_needed where the engine
   // computed one, else the ordered figure); Ord Qty is the purchase-rounded figure that always
-  // existed as `ordered`. EU / Ord Un / Prc Un are the three unit columns EDGE carries — in this
-  // engine they read the same unit today (one unit per resolved line), which is stated, not hidden.
-  grid: ['Description', 'Quantity', 'EU', 'Ord Qty', 'Ord Un', 'Unit Price', 'Prc Un', 'Net Cost'],
+  // existed as `ordered`. Q4-6: EU / Ord Un / Prc Un — the three unit columns EDGE carries — always
+  // read the SAME unit (this engine resolves one unit per line), so they collapse to ONE Unit
+  // column; the three-unit EDGE chain stays the roadmap target, written here rather than shipped
+  // as three columns honestly agreeing with each other every row.
+  grid: ['Description', 'Quantity', 'Ord Qty', 'Unit', 'Unit Price', 'Net Cost'],
   // Recap + cost sheet (internal). Class bands are Material / Labor / Equipment / Other /
   // Supervision as the FILE's own kinds map — this engine's kind values are material/labor/
   // equipment today, so Other and Supervision print only on a file whose kinds map carries them.
@@ -5912,7 +5956,9 @@ function drawOverlay(pane) {
       selected: selSet.has(m.id) || flash, flash,
       pattern: patternOf(patternIndexFor(c)),   // R-7c
       deduct: m.sign === -1,                   // Q1-3: the condition's own color, cut with a dashed edge and a cross-hatch
-      label: m.type === 'count' ? null : (confMeasurement(m, c).glyph + ' ' + (m.sign === -1 ? '−' : '') + VESCore.formatValue(m.type, m.value)),
+      label: (m.type === 'count' || state.labelMode === 'off') ? null
+        : state.labelMode === 'values' ? ((m.sign === -1 ? '−' : '') + VESCore.formatValue(m.type, m.value))
+        : (confMeasurement(m, c).glyph + ' ' + (m.sign === -1 ? '−' : '') + VESCore.formatValue(m.type, m.value)),
     });
   }
 
@@ -6287,6 +6333,7 @@ function newTakeoff() {
     state.assemblyProject.lineOverrides = {};
     state.assemblyProject.conditionOverrides = {};
     state.adhoc = { assemblies: {}, conditions: {}, items: {} };
+    state.drawerCollapsedByUser = false;   // Q4-5: a fresh takeoff is a fresh project — no carried-over toggle
     startBlankCanvas($('gridFt') ? $('gridFt').value : VESGrid.DEFAULT_FT_PER_SQUARE);
     if (typeof renderAssembly === 'function') renderAssembly();
     // SEAM-C (N1): the fresh-grid door OFFERS recovery, mirroring the PDF-open
@@ -6359,6 +6406,7 @@ let pan = null;
 let gripDrag = null;   // D3: {pane, m, idx, x, y, moved, prior, priorValue} — one vertex in hand
 let suppressNextClick = false;
 let spaceHeld = false;   // hold Space → temporary pan-grab regardless of active tool
+let orthoMsgShown = false;   // Q4-3: edge-triggered toolMsg('ortho') while the constraint is live
 let wheelIdle;           // §6 blur-perf: settle timer to restore glass after a zoom burst
 
 /* ---------- snap-to-own-geometry ---------- */
@@ -6380,8 +6428,27 @@ function snapCandidates(pane) {
   if (state.secDraft && state.secDraft.page === pane.pageNum) for (const q of state.secDraft.points) out.push(q);
   return out;
 }
-function maybeSnap(pane, p) {
+function maybeSnap(pane, p, opts) {
   state.snapHit = null;
+  /* ── Q4-3 · ORTHO LOCK. Shift held while placing a vertex constrains the new segment to the
+     nearest 0/45/90° ray from the PREVIOUS vertex of the shape being drawn — an explicit modifier
+     held at the moment of the gesture, read off the event at the call site (never a sticky global:
+     a keyup lost to a lens switch or an alt-tab must not leave ortho stuck on). It wins over
+     point-to-point snap outright: the estimator's own held key is not a guess the app is making
+     for them. Independent of the Snap toggle — ortho is a drawing constraint, not a candidate
+     search. ── */
+  state.orthoHit = false;
+  if (opts && opts.ortho && state.draft && state.draft.points && state.draft.points.length) {
+    const prev = state.draft.points[state.draft.points.length - 1];
+    const dx = p.x - prev.x, dy = p.y - prev.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 1e-6) {
+      const step = Math.PI / 4;   // 45°
+      const angle = Math.round(Math.atan2(dy, dx) / step) * step;
+      state.orthoHit = true;
+      return { x: prev.x + Math.cos(angle) * dist, y: prev.y + Math.sin(angle) * dist };
+    }
+  }
   if (!state.snap || !pane.viewport) return p;
   const scale = pane.viewport.scale || 1;
   const tol = 12 / scale;   // F18.15: constant 12 css-px snap feel at every zoom — the 24-doc-unit cap weakened snap when zoomed out (field report at 45–51%)
@@ -6408,6 +6475,17 @@ function applyFillMode(mode) {   // AA: the one place the fill mode lands (state
   const b = $('btnFills');
   if (b) { const tl = b.querySelector('.tl'); if (tl) tl.textContent = state.fillMode === 'on' ? 'Fills' : state.fillMode === 'faint' ? 'Faint' : 'No fill';
     b.classList.toggle('armed', state.fillMode !== 'on'); }
+}
+function applyLabelMode(mode) {   // Q4-2: the one place the label mode lands (state only \u2014 no rack button this batch)
+  state.labelMode = (mode === 'values' || mode === 'off') ? mode : 'on';
+}
+function cycleLabels() {   // Q4-2: Shift+L \u2014 value labels on \u2192 values only \u2192 off; shapes and print untouched
+  const order = ['on', 'values', 'off'];
+  applyLabelMode(order[(order.indexOf(state.labelMode || 'on') + 1) % 3]);
+  savePref('labelMode', state.labelMode);
+  drawOverlays();
+  toolMsg(state.labelMode === 'on' ? 'Labels on \u2014 confidence + value.'
+    : state.labelMode === 'values' ? 'Labels \u2014 values only.' : 'Labels off \u2014 shapes only.');
 }
 function cycleFills() {   // F18.14: fill opacity cycle \u2014 field: "no opaqueness", plan unreadable under stacked fills
   const order = ['on', 'faint', 'off'];
@@ -6495,6 +6573,10 @@ function syncState() {
      nothing is measured and names the two doors back to the work (probe-ae AE5). A disabled button
      says none of that; it just does nothing when an estimator clicks it. */
   gateCtl('btnCSVBOM', hasMeas, 'Trace or load a system first.');   // AI-2: the button moved into Setup's working files
+  // Q4-11: the Exports door's own copies of the three working CSVs — same gates as their Setup twins
+  gateCtl('btnMenuRoll', hasCond, 'Add a condition first.');
+  gateCtl('btnMenuAudit', hasMeas, 'Measure something first.');
+  gateCtl('btnMenuBOM', hasMeas, 'Trace or load a system first.');
   // body state classes for CSS-driven visibility (thin rail / quiet total before work)
   document.body.classList.toggle('no-pdf', !sheet);
   document.body.classList.toggle('no-scale', sheet && !hasScale);
@@ -6694,7 +6776,12 @@ function wirePaneInput() {
       lastPointerScreen = { x: e.clientX, y: e.clientY };
       lastPointerPdf = { page: pane.pageNum, x: p.x, y: p.y };
       if (state.calDraft) { state.calDraft.cursor = maybeSnap(pane, p); drawOverlay(pane); updateLive(); }
-      else if (state.draft) { state.draft.cursor = maybeSnap(pane, p); drawOverlay(pane); updateLive(); }
+      else if (state.draft) {
+        state.draft.cursor = maybeSnap(pane, p, { ortho: e.shiftKey });   // Q4-3
+        if (state.orthoHit && !orthoMsgShown) { toolMsg('ortho'); orthoMsgShown = true; }
+        else if (!state.orthoHit && orthoMsgShown) { toolMsg(''); orthoMsgShown = false; }
+        drawOverlay(pane); updateLive();
+      }
       else if (state.secDraft && state.secDraft.page === pane.pageNum) { state.secDraft.cursor = maybeSnap(pane, p); drawOverlay(pane); }
       else if (state.tool === 'measure' || state.tool === 'calibrate' || state.tool === 'verify' || state.tool === 'section') {
         const before = state.snapHit; maybeSnap(pane, p);          // live snap indicator before the first click
@@ -6714,7 +6801,7 @@ function wirePaneInput() {
       if (pane !== AP()) { setActivePane(pane.idx); return; }
       if (state.tool === 'pan') return;                 // pan tool: navigation only, never drops a point
       let p = evtToPdf(pane, e);
-      if (state.tool !== 'select') p = maybeSnap(pane, p);
+      if (state.tool !== 'select') p = maybeSnap(pane, p, { ortho: e.shiftKey });   // Q4-3
 
       if (state.tool === 'calibrate' || state.tool === 'verify') {
         if (!state.calDraft) state.calDraft = { points: [p], cursor: p };
@@ -7651,6 +7738,136 @@ function openReassignPicker() {
   return true;
 }
 
+/* ── Q4-4 / Q4-10 · THE CARD MENU. A card's ⋮ opens a small plate (same shape as the re-assign
+   picker) anchored under the button rather than the pointer, carrying two doors that had no
+   reachability before this batch: Duplicate condition and Type a quantity…. ── */
+function closeCondMenu() {
+  const el = $('condMenu'); if (!el || el.hidden) return;
+  el.hidden = true; el.innerHTML = '';
+  if (condMenuKey) { document.removeEventListener('keydown', condMenuKey, true); condMenuKey = null; }
+}
+let condMenuKey = null;
+function openCondMenu(cond, anchorEl) {
+  const el = $('condMenu'); if (!el || !cond || !anchorEl) return false;
+  closeCondMenu(); closeReassignPicker();
+  el.innerHTML = '<div class="dp-head">' + escA(descOf(cond)) + '</div>'
+    + '<button type="button" class="dp-opt" data-act="dup">Duplicate condition</button>'
+    + '<button type="button" class="dp-opt" data-act="qty">Type a quantity…</button>';
+  el.hidden = false;
+  try {
+    const r = anchorEl.getBoundingClientRect();
+    const b = el.getBoundingClientRect();
+    el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - b.width - 8)) + 'px';
+    el.style.top = Math.max(8, Math.min(r.bottom + 4, window.innerHeight - b.height - 8)) + 'px';
+  } catch (_) { el.style.left = '50%'; el.style.top = '40%'; }
+  el.querySelectorAll('button[data-act]').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const act = b.dataset.act;
+    closeCondMenu();
+    if (act === 'dup') duplicateCondition(cond);
+    else if (act === 'qty') openManualQtyPrompt(cond);
+  }));
+  condMenuKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); closeCondMenu(); } };
+  document.addEventListener('keydown', condMenuKey, true);
+  const first = el.querySelector('button'); if (first) first.focus();
+  return true;
+}
+/* Q4-4: same library ref/type/pitch/section, next unused color, zero measurements, journaled;
+   the price book (assemblyProject) is never written — a library condition's pitch/waste ride
+   conditionOverrides[libRef], keyed by the SHARED libRef the duplicate carries, so it is already
+   "the same" with nothing to copy; a plain condition's pitch lives on c.pitch itself and is
+   copied explicitly. */
+function duplicateCondition(cond) {
+  if (!cond) return null;
+  const now = new Date().toISOString();
+  const c = {
+    id: uid(), name: 'Copy of ' + (cond.name || ''), color: nextFreeColor(), type: cond.type,
+    csi: cond.csi || '', wbs: cond.wbs || '', location: cond.location || '', notes: '',
+    unitCost: cond.libRef ? null : (cond.unitCost != null ? cond.unitCost : null),
+    tags: (cond.tags || []).slice(), sortOrder: state.conditions.length + 1, createdAt: now, updatedAt: now,
+  };
+  if (cond.libRef) { c.libRef = cond.libRef; c.assembly = cond.assembly; }
+  if (typeof cond.pitch === 'number') c.pitch = cond.pitch;
+  if (cond.pitchLegacyFactor != null) c.pitchLegacyFactor = cond.pitchLegacyFactor;
+  if (PALETTE.indexOf(c.color) < 0) c.patternIdx = nextFreePatternIdx();
+  state.conditions.push(c);
+  journalPush({
+    label: 'duplicate condition ' + journalWord(cond),
+    undo() { const i = state.conditions.indexOf(c); if (i >= 0) state.conditions.splice(i, 1); renderCards(); },
+    redo() { state.conditions.push(c); renderCards(); },
+  });
+  renderCards(); markDirty(); revealCard(c.id);
+  toast('Duplicated "' + (cond.name || 'condition') + '" as "' + c.name + '" — zero measurements, ready to trace. Ctrl+Z removes it.', 'ok');
+  return c;
+}
+/* ── Q4-10 · "Type a quantity…" — the door existed (addManualQuantity, the L-02 money door /
+   the qty-buffer's own library fork); it was reachable only by arming the condition and typing
+   digits over the on-canvas banner (O1: "no way to enter 320 lf of DS"). This is the SAME two-fork
+   commit commitQtyBuffer already uses — a library condition journals at the CALLER (D-24.9a: the
+   money door itself is "not itself journaled"), a plain condition's measurement is pushed and
+   journaled directly — reached from the card without arming anything or touching the sheet. */
+function addManualQtyForCard(cond, v) {
+  if (!cond || !isFinite(v) || v <= 0) return false;
+  const unit = ({ linear: 'LF', area: 'SF', count: 'EA' })[cond.type] || '';
+  if (cond.libRef && state.library.conditions[cond.libRef]) {
+    const condsBefore = state.conditions.length;
+    const measBefore = state.measurements.length;
+    addManualQuantity(cond.libRef, v);
+    const m = (state.measurements.length === measBefore + 1) ? state.measurements[state.measurements.length - 1] : null;
+    const madeCond = (state.conditions.length === condsBefore + 1) ? state.conditions[state.conditions.length - 1] : null;
+    const madeAt = madeCond ? state.conditions.length - 1 : -1;
+    if (m) journalPush({
+      label: 'typed quantity ' + v + ' ' + unit + ' → ' + (cond.name || 'condition'),
+      undo() {
+        const i = state.measurements.indexOf(m); if (i >= 0) state.measurements.splice(i, 1);
+        if (madeCond) { const j = state.conditions.indexOf(madeCond); if (j >= 0) state.conditions.splice(j, 1);
+          if (state.activeCond === madeCond) setTool('select'); }
+        renderAssembly(); renderCards();
+      },
+      redo() {
+        if (madeCond && state.conditions.indexOf(madeCond) < 0) {
+          state.conditions.splice(Math.min(madeAt < 0 ? state.conditions.length : madeAt, state.conditions.length), 0, madeCond);
+        }
+        state.measurements.push(m);
+        renderAssembly(); renderCards();
+      },
+    });
+    renderCards();
+  } else {
+    const m = { id: uid(), conditionId: cond.id, page: null, type: cond.type, points: [], value: v, notes: '', manual: true };
+    state.measurements.push(m);
+    journalPush({
+      label: 'typed quantity ' + v + ' ' + unit + ' → ' + (cond.name || 'condition'),
+      undo() { const i = state.measurements.indexOf(m); if (i >= 0) state.measurements.splice(i, 1); },
+      redo() { state.measurements.push(m); },
+    });
+    renderCards(); drawOverlays(); updateLive();
+  }
+  markDirty();
+  toast(`Typed quantity: ${v} ${unit} → ${cond.name}.`, 'ok');
+  return true;
+}
+let qtyModalCond = null;
+function openManualQtyPrompt(cond) {
+  if (!cond) return;
+  qtyModalCond = cond;
+  const unit = ({ linear: 'LF', area: 'SF', count: 'EA' })[cond.type] || '';
+  $('qtyModalTitle').textContent = 'Type a quantity — ' + (cond.name || descOf(cond));
+  $('qtyModalPrompt').textContent = 'Enter a quantity in ' + (unit || 'units') + '. Lands as one manual measurement, journaled — Ctrl+Z takes it back.';
+  $('qtyModalInput').value = '';
+  $('qtyModalErr').textContent = '';
+  $('qtyModalBack').classList.add('open');
+  setTimeout(() => $('qtyModalInput').focus(), 0);
+}
+function closeQtyModal() { $('qtyModalBack').classList.remove('open'); qtyModalCond = null; }
+function applyQtyModal() {
+  const cond = qtyModalCond; if (!cond) return;
+  const v = Number($('qtyModalInput').value);
+  if (!isFinite(v) || v <= 0) { $('qtyModalErr').textContent = 'Quantity must be a number greater than zero.'; return; }
+  addManualQtyForCard(cond, v);
+  closeQtyModal();
+}
+
 /* ── BULK DELETE ── Q3-6. One entry, one Ctrl+Z, all four back in their original places in the
    array (insertion ascending by the index each held, so the order the file was written in survives). */
 function deleteSelectionDoor() {
@@ -7731,12 +7948,13 @@ function clearDraft() {
    and the autosave never serialize it. Replays mutate state directly and never
    re-enter journalPush. `exact`-flagged values are never recomputed by a
    replay — priors are restored verbatim (LIFO order keeps them consistent). */
-function journalReset() { state.journal.undo.length = 0; state.journal.redo.length = 0; allowanceSaid = false; allowanceEpoch++; }
+function journalReset() { state.journal.undo.length = 0; state.journal.redo.length = 0; allowanceSaid = false; allowanceEpoch++; undoEmptySaid = false; }   // Q4-8: a new takeoff boundary is a new chance to say UNDO_EMPTY once
 /* D-25.3c: "once per takeoff" needs a takeoff boundary, and the app already has exactly one —
    journalReset() is called by openDocument, startBlankCanvas, newTakeoff and applySnapshot and
    by nothing else. A new takeoff is a new undo history is a new chance to say this. The epoch
    is what a deferred message checks before it speaks (see the call site in renderHud). */
 let allowanceSaid = false, allowanceEpoch = 0;
+let undoEmptySaid = false;   // Q4-8: the empty-stack sentence fires once per takeoff, not per press
 
 function journalPush(cmd) {
   state.journal.undo.push(cmd);
@@ -7790,7 +8008,10 @@ function undo() {
     return;
   }
   const cmd = state.journal.undo.pop();
-  if (!cmd) { sayHere(UNDO_EMPTY); return; }
+  // Q4-8: "once, not per press" — the first Ctrl+Z against an empty stack this takeoff says the
+  // sentence; the control's own title (syncUndoRedoButtons) carries it on every later look, so a
+  // repeat press stays silent rather than re-toasting the same fact.
+  if (!cmd) { if (!undoEmptySaid) { sayHere(UNDO_EMPTY); undoEmptySaid = true; } return; }
   /* ── B6F-C1 (B6C-1) · NO PHANTOM UNDO. A command whose target is no longer on the takeoff used
      to replay over nothing and still announce "Undid: unit price → Dumpsters" — three presses
      chasing a deleted $5,000 line reached past it and took $15,291.49 off the job instead. A
@@ -8236,7 +8457,9 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'f' || e.key === 'F') { if (AP().page) fitToView(AP()); }
   else if (e.key === 'e' || e.key === 'E') showEstimate(!state.gridView);   // F10: lens door — mouse AND keyboard
   else if (e.key === 'g' || e.key === 'G') showSchedule(!state.schedView);   // F18: Schedule door
-  else if (e.key === 'l' || e.key === 'L') showLibrary(!state.libView);      // Batch AF: Library door (L was unbound)
+  else if (e.key === 'l' || e.key === 'L') {   // Q4-2: Shift+L cycles labels; plain L still opens the Library door (R-14a, same shape as H/Shift+H, R/Shift+R)
+    if (e.shiftKey) cycleLabels(); else showLibrary(!state.libView);
+  }
   else if (e.key === 'h' || e.key === 'H') {   // Q2-2: H hides the ARMED condition; Shift+H shows all (H/Shift+H were unbound)
     if (e.shiftKey) showAllHiddenConds();
     else if (state.activeCond) toggleCondHidden(state.activeCond);
@@ -8322,6 +8545,47 @@ function applyScaleCalibration(parsed, pageN) {
     redo() { replayCalibration(pageN, c); },
   });
   updateCalStatus(); renderCards(); drawOverlays(); updateUncalBanner(); markDirty();
+  offerScaleToUnscaledSheets(pageN, c);   // Q4-1
+}
+
+/* ── Q4-1 · a fresh calibration offers itself to every OTHER sheet that has none yet — the
+   overwhelmingly common case is one scale across a whole sheet set, and re-typing "1/4 in = 1 ft"
+   sheet after sheet was the friction (O-series field note). A toast with a button, never
+   automatic: a sheet that already carries its own scale is never touched, Apply is ONE journal
+   entry naming every sheet it reached ("scale 1/8 in = 1 ft on sheets 2, 3"), and it re-prices
+   whatever was pending on those sheets the same way a direct calibration already does — the
+   pending note is a READ of state.calibrations[page], so it clears itself the moment the sheet
+   has one. ── */
+function offerScaleToUnscaledSheets(pageN, c) {
+  const total = state.numPages || 0;
+  if (total < 2 || !c) return;
+  const targets = [];
+  for (let p = 1; p <= total; p++) { if (p !== pageN && !calFor(p)) targets.push(p); }
+  if (!targets.length) return;
+  const label = c.typed || (c.fromGrid ? 'grid' : 'this scale');
+  const sheetWord = (n) => n === 1 ? 'sheet' : 'sheets';
+  showBanner('scale-offer',
+    `Use this scale (${label}) on the ${targets.length} ${sheetWord(targets.length)} without one — ${targets.join(', ')}?`,
+    [
+      { label: 'Apply', armed: true, run: () => {
+        const prevMap = {}, nextMap = {};
+        for (const p of targets) {
+          prevMap[p] = calFor(p);
+          const nc = Object.assign({}, c, { page: p, points: null, verifications: [] });
+          state.calibrations[p] = nc;
+          nextMap[p] = nc;
+          for (const m of state.measurements) if (m.page === p && !m.exact) m.value = VESCore.measureValue(m.type, m.points, nc);
+        }
+        journalPush({
+          label: `scale ${label} on ${sheetWord(targets.length)} ${targets.join(', ')}`,
+          undo() { for (const p of targets) replayCalibration(p, prevMap[p]); },
+          redo() { for (const p of targets) replayCalibration(p, nextMap[p]); },
+        });
+        updateCalStatus(); renderCards(); drawOverlays(); updateUncalBanner(); markDirty();
+        toast(`Scale applied to ${sheetWord(targets.length)} ${targets.join(', ')} — pending measurements there re-priced.`, 'ok');
+      } },
+      { label: 'No thanks', run: () => {} },
+    ], 'ok');
 }
 
 // D4 replay helper — assign or remove a page calibration and recompute that
@@ -8456,6 +8720,7 @@ function applyCalEntry() {
   toast(`Sheet ${pageN} calibrated. Verify against a second dimension to be sure.`, 'ok');
   markDirty();
   setTool('select');
+  offerScaleToUnscaledSheets(pageN, c);   // Q4-1
 }
 
 function updateCalStatus() {
@@ -8573,6 +8838,7 @@ function openHotkeys() {
   row('E', 'Estimate \u21c4 Plan lens');
   row('G', 'Schedule \u21c4 Plan lens');
   row('L', 'Library \u21c4 Plan lens \u00b7 the price book, every item with its formula');
+  row('Shift+L', 'cycle plan labels \u2014 on \u2192 values only \u2192 off');
   row('H', 'hide the armed condition on the plan \u00b7 totals unchanged');
   row('Shift+H', 'show all hidden conditions');
   row('Alt+click a card\u2019s eye', 'Solo \u2014 show only that condition on the plan');
@@ -8582,6 +8848,7 @@ function openHotkeys() {
   row('Shift+Space', 'step through the stack under the pointer');
   row('Ctrl+D', 'duplicate the selection at +12 / +12');
   row('Shift+R', 'file the selection under another condition of the same kind');
+  row('hold Shift while placing a vertex', 'ortho lock — snaps the segment to 0/45/90° from the last point');
   row('?', 'this card');
   a.appendChild(dl);
   const act = document.createElement('div'); act.className = 'actions';
@@ -9619,7 +9886,12 @@ function renderCardsNow() {
       if (state.activeCond && state.activeCond.id === c.id) disarmCondition();
       else activateCondition(c);
     });
-    card.appendChild(main); card.appendChild(edit); card.appendChild(eye); card.appendChild(arm); if (isHid) card.style.opacity = '.55';
+    // Q4-4 / Q4-10: the card menu — Duplicate condition, Type a quantity…
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'quiet card-menu'; menuBtn.textContent = '⋮';
+    menuBtn.title = 'More — Duplicate condition · Type a quantity…';
+    menuBtn.addEventListener('click', (e) => { e.stopPropagation(); openCondMenu(c, menuBtn); });
+    card.appendChild(main); card.appendChild(edit); card.appendChild(eye); card.appendChild(arm); card.appendChild(menuBtn); if (isHid) card.style.opacity = '.55';
 
     // P1 (F18.1): the editor no longer mounts in the card — renderDepthPanel owns it (dock surface).
     groupEls[keyFor(c)].appendChild(card);
@@ -10584,11 +10856,23 @@ function toggleDrawer() {
   if (state.drawerOpen) { state.drawerCollapsedByUser = true; collapseDrawer(); }
   else { state.drawerCollapsedByUser = false; openDrawer(); }
 }
-// Gate D-UI (outcome 4) — STRIP-FIRST. The drawer summary bar is always visible and
-// carries the live consequence (project + system total, sell, tabs), so we no longer
-// auto-EXPAND the full BOM body on load/trace: the estimator measures with the canvas
-// dominant. The full drawer opens only on an explicit tab pick or the expand toggle.
-function openDrawerAuto() { /* no auto-expand — the consequence strip stays; user expands the BOM */ }
+// Gate D-UI (outcome 4) — STRIP-FIRST stands for an UNPRICED takeoff: the drawer summary bar is
+// always visible and carries the live consequence (project + system total, sell, tabs), so an
+// empty or not-yet-priced canvas still measures with the canvas dominant, full drawer collapsed.
+// Q4-5 (charter): a project that ALREADY carries priced lines the moment it is loaded/opened
+// opens the full recap by default instead of making the estimator go find it — a per-project
+// pref seeded into drawerOpen at the load door (applySnapshot resets drawerCollapsedByUser to
+// "never touched" on every fresh load). The user's own last toggle (toggleDrawer, the control
+// itself — not Esc's ordinary dismiss of an unpinned summoned panel) always wins from there:
+// this never re-opens a drawer they just closed, and never re-closes one they opened early.
+function openDrawerAuto() {
+  /* R-14d (Q4 landing, 2026-09-15): Q4-5 as built is REVERTED to the D-UI strip-first no-op above.
+     The recap in this layout is a SUMMONED overlay (#4 §4d), not a dock: auto-opening it on a priced
+     load painted it over the rail's cards at desktop AND phone width and ate the first click (probe-z
+     Z5 and p903-rail AG1/AG2 went red; elementFromPoint at a card's name row returned the recap's TD).
+     Nothing from the stage may paint over the cards (R-14b). F-F7 ("recap collapsed") stays OPEN until
+     the recap has a lane of its own — candidate C-Q4-1. drawerCollapsedByUser stays as harmless state. */
+}
 function syncDrawerToggle() { const b = $('drawerToggle'); if (b) b.textContent = state.drawerOpen ? '▾' : '▴'; }
 // #4 (§4d): the recap is a SUMMONED floating-glass overlay. Pinned, it stays open; unpinned,
 // it dismisses on click-away / Esc (wired in app-boot / app-tools). Pinning also summons it.
@@ -12602,12 +12886,12 @@ function renderEstimateGrid() {
       landing a cent over it (the same round-then-sum trap S3 and F5 closed on the papers). The
       section figure itself is untouched — it is still the sum of the rows in it. */
    const sysCents = apportionCents(SEC.order.map((g) => bySec[sn].byG[g].sub), SEC.sub);
-   html += `<tr class="sech" data-sec="${escA(sn)}"><td colspan="11">Section: ${escA(sn)} ${secRenameBtn(sn)}</td></tr>`;
+   html += `<tr class="sech" data-sec="${escA(sn)}"><td colspan="9">Section: ${escA(sn)} ${secRenameBtn(sn)}</td></tr>`;
    let sysIdx = 0;
    for (const g of SEC.order) {
     const G = SEC.byG[g];
     const csiLbl = (G.csi && G.csi !== '—') ? (escA(G.csi) + ' — ' + escA(g)) : escA(g);
-    html += `<tr class="divh" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td colspan="11">${csiLbl}</td></tr>`;
+    html += `<tr class="divh" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td colspan="9">${csiLbl}</td></tr>`;
     for (const it of G.items) {
       const qtyDisp = it.qty == null ? null : +(Math.round(it.qty * 100) / 100);
       const qtyCell = (it.edit === 'engine' || it.edit === 'gen') ? cell(it, 'qty', qtyDisp, it.unit, false, it.qty) : num(it.qty);   // Batch AF: edits from the full-precision figure (F1.4 m)
@@ -12633,8 +12917,8 @@ function renderEstimateGrid() {
       const trCls = [it.omitted ? 'omitted' : '', (it.gate || it.status === 'NO_MATCH') ? 'gated' : ''].filter(Boolean).join(' ');   // Batch AI: an unpriced library line is excluded too — same tint   // Batch AH (P-GAME pass 2 finding 1): a gated row stays findable after the cue expires
       // R-6b (B5-4): Quantity (estimated, qtyEst) is READ-ONLY here — it is the engine's own
       // qty_needed, before purchasing round-up; Ord Qty (qtyCell) stays the one editable quantity
-      // cell, as it always was. EU / Ord Un / Prc Un read the same unit in this engine (one unit
-      // per resolved line) — three columns, honestly the same value, not a fabricated split.
+      // cell, as it always was. Q4-6: EU / Ord Un / Prc Un read the same unit in this engine (one
+      // unit per resolved line) and are now the ONE Unit column below, not three repeats of it.
       const qtyEstCell = it.qtyEst == null ? '—' : num(it.qtyEst);
       const unitCell = escA(it.unit || '');
       const pendMark = it.pending ? ` <span class="pendnote" title="A measurement on a sheet with no scale — it is not in this row's quantity or its cost. Set that sheet's scale and it prices itself.">(${escA(linePendingWord(it))})</span>` : '';   // B6F-C2
@@ -12642,17 +12926,17 @@ function renderEstimateGrid() {
       // reconciles this row against the plan and finds 160 SF missing with nothing to explain it.
       const dedMark = it.deducts ? ` <span class="dednote" title="${escA('Gross less ' + it.deducts + ' deduct' + (it.deducts === 1 ? '' : 's') + ' traced on the plan. The quantity here is the net.')}">(${escA(deductWord(it))})</span>` : '';   // Q1-3
       html += `<tr${trCls ? ` class="${trCls}"` : ''}><td${lockT}>${omitBox}<span class="cdot" title="${escA(confWord(it.conf))}" style="background:${escA(it.conf)}"></span>${escA(it.label)}${pendMark}${dedMark}</td><td class="klab"${lockT}>${escA(it.kind || '')}${kact}</td>`
-        + `<td class="num">${qtyEstCell}</td><td${lockT}>${unitCell}</td>`
+        + `<td class="num">${qtyEstCell}</td>`
         + `<td class="num">${linkMark}${qtyCell}</td><td${lockT}>${unitCell}</td>`
         + `<td class="num">${wasteCell}</td>`
-        + `<td class="num${it.np ? ' np' : ''}">${costCell}</td><td${lockT}>${unitCell}</td>`
-        + derivCell(it)   // Batch AF: the Formula column — after the eight VOCAB words, before Net Cost
+        + `<td class="num${it.np ? ' np' : ''}">${costCell}</td>`
+        + derivCell(it)   // Batch AF: the Formula column — after the six VOCAB words, before Net Cost
         + `<td class="num${it.total == null ? ' np' : ''}">${it.total == null ? '—' : money(it.total)}</td></tr>`;
     }
-    html += `<tr class="sub" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td>Subtotal — ${escA(g)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>`
+    html += `<tr class="sub" data-sec="${escA(sn)}" data-sys="${escA(g)}"><td>Subtotal — ${escA(g)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>`
       + `<td class="num${G.partial ? ' np' : ''}">${G.partial ? '≥ ' : ''}${money(centsVal(sysCents[sysIdx++]))}</td></tr>`;
    }
-   html += `<tr class="secsub" data-sec="${escA(sn)}"><td>Subtotal — Section: ${escA(sn)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>`
+   html += `<tr class="secsub" data-sec="${escA(sn)}"><td>Subtotal — Section: ${escA(sn)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>`
      + `<td class="num${SEC.partial ? ' np' : ''}">${SEC.partial ? '≥ ' : ''}${money(SEC.sub)}</td></tr>`;
   }
   // F18.17: the entry row's library door — a datalist of the loaded library's condition names
@@ -12677,22 +12961,22 @@ function renderEstimateGrid() {
          the row and the Tab walk; the funnel line sits under the description where the estimator is typing (on a phone
          the 8th column was three screens to the right). */
       + '<td><select id="geKind" class="gen-edit ge-sel"><option value="material">material</option><option value="labor">labor</option></select></td>'
-      // R-6b (B5): a typed line carries no separate "estimated" figure \u2014 Quantity and EU sit blank;
-      // what the estimator types IS the ordered quantity and its unit, same as it always was.
-      + '<td class="num">\u2014</td><td>\u2014</td>'
+      // R-6b (B5) / Q4-6: a typed line carries no separate "estimated" figure \u2014 Quantity sits
+      // blank; what the estimator types IS the ordered quantity and its unit, same as it always
+      // was. The Unit column (collapsed from EU/Ord Un/Prc Un) is the geUnit input itself, below.
+      + '<td class="num">\u2014</td>'
       + '<td class="num"><input id="geQty" type="number" min="0" step="any" inputmode="decimal" placeholder="qty" class="gen-edit"></td>'
       + '<td><input id="geUnit" type="text" placeholder="unit" title="EA, SF, SQ, LF, DAY \u2026 \u2014 SF/SQ/SY set the measure to area, LF/LY to linear" class="gen-edit ge-unit"> '
       + '<select id="geType" class="gen-edit ge-sel" title="Measure \u2014 what the quantity counts: pieces (count), an area, or a length. Follows the unit you type; change it here if the unit is unusual."><option value="count">count</option><option value="area">area</option><option value="linear">linear</option></select></td>'
       + '<td class="num">\u2014</td>'
       + '<td class="num"><input id="gePrice" type="number" min="0" step="any" inputmode="decimal" placeholder="$" title="Unit cost \u2014 leave blank and the line stays unpriced (never $0)." class="gen-edit"></td>'
-      + '<td>\u2014</td>'
       + '<td class="deriv"></td>'
       + '<td class="num"><button id="geAdd" class="gexport" title="Add this line (Enter)">\u2713 Add</button> <button id="geClose" class="quiet" title="Close (Esc)">\u2715</button></td>'
       + '</tr>'
       /* L-A: the refusal cue lives HERE, in the lens, under the row it is about. It is rendered
          always and hidden until there is something to say, because a refusal does NOT re-render
          the grid — the message has to land in a live element. */
-      + '<tr class="gentry gentry-msg" id="geMsgRow" hidden><td colspan="11"><span id="geMsg" class="ge-msg"></span></td></tr>';
+      + '<tr class="gentry gentry-msg" id="geMsgRow" hidden><td colspan="9"><span id="geMsg" class="ge-msg"></span></td></tr>';
   } else if (html) {
     /* ── N3b (Patrick, field notes V2: "i see a way to add on plan screen not estimate screen")
        · The doors EXIST — the ＋ Line entry row (F18.9) and the ＋L add-labor gesture on material
@@ -12700,13 +12984,13 @@ function renderEstimateGrid() {
        shipped. The affordance now sits where an estimator looks for "add a row": the LAST ROW of
        the sheet, in the app's own words, as a real door rather than a label. It opens the same
        entry row the toolbar button opens — one funnel, two doors. ── */
-    html += '<tr class="gaddrow"><td colspan="11">'
+    html += '<tr class="gaddrow"><td colspan="9">'
       + '<button type="button" class="gaddbtn" id="gAddInline">\uFF0B Add a line</button>'
       + '<span class="gaddhint">type a description, quantity, unit and price right here — or a library item\u2019s name to price it from the library. Material rows also carry \uFF0B labor.'
       + ' <b>Formula cells</b> take RAW (measured) \u00b7 ADJ (measured + condition waste) \u00b7 WASTE \u00b7 Q (RAW for labor, ADJ for material) \u00b7 your inputs (name=value) \u00b7 ceil floor round abs max min.</span>'   // Batch AG (P-MARKET finding 5): the scope on the sheet, not only in a tooltip
       + '</td></tr>';
   }
-  body.innerHTML = html || '<tr><td colspan="11" style="padding:44px;text-align:center;color:var(--ink-dim)">No priced lines yet — measure a condition in the Plan view, and it appears here.</td></tr>';
+  body.innerHTML = html || '<tr><td colspan="9" style="padding:44px;text-align:center;color:var(--ink-dim)">No priced lines yet — measure a condition in the Plan view, and it appears here.</td></tr>';
   if (renderEstimateGrid.reveal) { const r = renderEstimateGrid.reveal; renderEstimateGrid.reveal = null; revealGridLine(r); }   // F4
   if (gridEntry) refreshEntryMode();   // Batch AF: the entry row states its funnel from the first render
   /* S3 (B-06): MATERIAL $93,662.12 + LABOR $130,418.67 + O&P $55,437.59 read $279,518.38 under a
@@ -13685,6 +13969,10 @@ async function applySnapshot(d) {
   else if (pv && pv.tool === 'pan') setTool('pan');
   else setTool('select');
   renderCards(); renderAssembly(); drawOverlays(); updateCalStatus(); updateUncalBanner(); updateLive();
+  // Q4-5: a per-project pref — every load starts "never toggled" so THIS project's own money
+  // decides the drawer's rest state, never a choice carried over from the project before it.
+  state.drawerCollapsedByUser = false;
+  if (typeof openDrawerAuto === 'function') openDrawerAuto();
   if (typeof renderSheetStrip === 'function') renderSheetStrip();   // D3: marks follow the load
   /* R3: ONE load toast. When the sanitiser dropped anything, the count IS the load message —
      it outranks "loaded" and cannot be overwritten by it.
@@ -15291,13 +15579,13 @@ function exportEstimateXLSX() {
       if (x.total != null) sub += x.total;
       // Batch AF: columns A\u2013H stay exactly where they were (D\u00d7F, G sums); I is the ladder's own Pct cell; J\u2013N the derivation.
       const dc = derivColumns(x); if (dc[3] !== '' && isFinite(+dc[3])) dc[3] = +dc[3];   // Batch AG (P-TRADE finding 2b): qty needed is a number cell, like D/F/G
-      // R-6b: EU (P) / Prc Un (Q) \u2014 trailing, additive (the L-03/Batch AF precedent). This engine
-      // resolves one unit per line, so both read the same value as Unit (E/Ord Un) \u2014 stated, not hidden.
+      // Q4-6 (was R-6b's EU (P) / Prc Un (Q), trailing additive columns): removed \u2014 both always
+      // read the same value as Unit (E/Ord Un), collapsed away rather than repeated twice more.
       // B6F-C2: R (pending) — trailing and additive again, so a workbook reader sees the named state, not a short figure with nothing beside it.
-      out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...dc, sn, x.unit || '', x.unit || '', linePendingWord(x)]);
+      out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...dc, sn, linePendingWord(x)]);
       r++;
     }
-    out.push(['', '', 'Section: ' + sn + ' section subtotal', '', '', '', { f: `SUM(G${first}:G${r - 1})`, v: sub }, '', '', '', '', '', '', '', sn, '', '', '']);
+    out.push(['', '', 'Section: ' + sn + ' section subtotal', '', '', '', { f: `SUM(G${first}:G${r - 1})`, v: sub }, '', '', '', '', '', '', '', sn, '']);
     subRefs.push('G' + r); r++;
   }
   const m = recapModel();
@@ -15306,7 +15594,7 @@ function exportEstimateXLSX() {
   /* Batch AF (ledger F4.3-4): the ladder percentages were baked into the formula strings as literals, so the
      workbook could not be re-margined in Excel without editing three formulas. Each ladder row now carries its
      fraction in column I and the formula multiplies by THAT cell; cached values are the same numbers as before. */
-  const pad = ['', '', '', '', '', '', '', '', ''];   // J\u2013N (the derivation) + O (section) + P/Q (R-6b's EU/Prc Un) + R (B6F's pending), blank on the ladder rows
+  const pad = ['', '', '', '', '', '', ''];   // J\u2013N (the derivation) + O (section) + P (B6F's pending, Q4-6 shifted up from R), blank on the ladder rows
   out.push(['', '', 'Cost (\u03a3 direct)', '', '', '', { f: 'SUM(' + (subRefs.length ? subRefs.join(',') : 'G2:G' + (r - 1)) + ')', v: m.cost }, '', '', ...pad]);
   // Batch AG (P-TRADE finding 2a): the label no longer bakes the percentage as text — the Pct cell IS the percentage,
   // so re-margining in Excel leaves no stale "(10%)" beside a changed rate.
@@ -15315,11 +15603,12 @@ function exportEstimateXLSX() {
   out.push(['', '', 'Profit (× Pct)', '', '', '', { f: `(G${cRow}+G${oRow}+G${kRow})*I${pRow}`, v: m.pfAmt }, '', m.pf, ...pad]);
   void pct;
   out.push(['', '', 'Sell', '', '', '', { f: `G${cRow}+G${oRow}+G${kRow}+G${pRow}`, v: m.sell }, '', '', ...pad]);
-  /* VOCAB:grid — R-6b: Description/Ord Qty/Ord Un/Unit Price/Net Cost rename existing columns in
+  /* VOCAB:grid — R-6b: Description/Ord Qty/Unit Price/Net Cost rename existing columns in
      place (D–G keep their positions — formulas above reference them by letter); "Qty needed" (M)
      keeps its established word (probe-b2a-sections reads it by that exact text) and IS the VOCAB
-     "Quantity" (estimated) figure; EU (P) / Prc Un (Q) are additive trailing columns. */
-  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Ord Qty', 'Ord Un', 'Unit Price', 'Net Cost', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis', 'Section', 'EU', 'Prc Un', 'Pending'], rows: out }];
+     "Quantity" (estimated) figure; Q4-6: Ord Un (E) is renamed to Unit — EU/Prc Un's old trailing
+     P/Q columns are gone (both always repeated E), so Pending shifts up to P. */
+  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Ord Qty', 'Unit', 'Unit Price', 'Net Cost', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis', 'Section', 'Pending'], rows: out }];
   const bytes = VESX.serializeXLSX(tabs);
   saveBlob(projectSlug() + '-estimate.xlsx', bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   toast('Estimate workbook exported (.xlsx) \u2014 live formulas, internal.', 'ok');
@@ -16063,13 +16352,21 @@ function moneyCellKeys(e) {
       } else if (!changed) { nxt.focus(); if (nxt.select) nxt.select(); }
     }
   } else if (e.key === 'Tab') {
-    // L-21 (P5): Tab commits AND walks ACROSS the row; Shift+Tab walks back.
-    // Same commit branches as Enter — only the walk axis differs. At a row edge
-    // the browser's natural tab order takes over (no preventDefault).
+    // L-21 (P5) / Q4-9 (T-22): Tab commits AND walks ACROSS the row; Shift+Tab walks back.
+    // Same commit branches as Enter — only the walk axis differs. At a row edge this now WRAPS
+    // to the first/last editable cell of the next/previous row (row-major order over the same
+    // input.recap-edit/gen-edit list, unfiltered by row) instead of falling through to the
+    // browser's own tab order — which would land on whatever is next in the DOM (a checkbox, a
+    // row button), not necessarily a cell an estimator can type into. Only at the very first or
+    // very last editable cell in the whole table does the browser's own tab order still take over.
     const rowKey = i.dataset.item || i.dataset.cond || i.dataset.gen;
-    const all = Array.from(this.querySelectorAll('input.recap-edit, input.gen-edit'))
+    const rowCells = Array.from(this.querySelectorAll('input.recap-edit, input.gen-edit'))
       .filter((x) => (x.dataset.item || x.dataset.cond || x.dataset.gen) === rowKey);
-    const nxt = all[all.indexOf(i) + (e.shiftKey ? -1 : 1)];
+    let nxt = rowCells[rowCells.indexOf(i) + (e.shiftKey ? -1 : 1)];
+    if (!nxt) {
+      const everyCell = Array.from(this.querySelectorAll('input.recap-edit, input.gen-edit'));
+      nxt = everyCell[everyCell.indexOf(i) + (e.shiftKey ? -1 : 1)];
+    }
     if (!nxt) return;
     e.preventDefault();
     const changed = i.value !== i.defaultValue;
@@ -16393,6 +16690,10 @@ $('btnCSVAudit').addEventListener('click', exportAuditCSV);
 $('btnCSVGrid').addEventListener('click', exportGridCSV);    // L-12: the four documents live on one surface
 $('btnCSVBOM').addEventListener('click', exportBOMCSV);
 $('btnCSVSupplier').addEventListener('click', exportSupplierCSV);   // L-10
+// Q4-11: the Exports door's own copies of the three Setup working-file CSVs — same functions.
+$('btnMenuBOM').addEventListener('click', exportBOMCSV);
+$('btnMenuRoll').addEventListener('click', exportRollupCSV);
+$('btnMenuAudit').addEventListener('click', exportAuditCSV);
 $('btnMenuSetup').addEventListener('click', openAssemblies);
 $('btnMenuPrint').addEventListener('click', () => printBidDoc());
 // AE-2 (Patrick 2026-09-03): the takeoff is a document. R-10c (B4): the door asks which sheets when there is more than one.
@@ -16520,6 +16821,13 @@ $('btnPrint').addEventListener('click', printBidDoc);
 
 wirePaneInput();
 initCondForm();
+// Q4-10: the "Type a quantity…" modal's own wiring — Cancel/OK, Enter commits, Esc reverts.
+$('qtyModalCancel').addEventListener('click', closeQtyModal);
+$('qtyModalOK').addEventListener('click', applyQtyModal);
+$('qtyModalInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyQtyModal(); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeQtyModal(); }
+});
 renderCards();
 renderAssembly();          // populate the quick-load picker + (Setup) raw BOM
 if (typeof renderRecap === 'function') renderRecap();   // seed the recap drawer
@@ -16583,7 +16891,8 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.1.0-rc.4';  // 2.1.0-rc.4 (2026-09-15): Batch Q2F — the one fix batch after Q2's regression was caught by the gate on the runner (CI on ebbea2c, probes job red at probe-z Z5): at phone width the file:// notice banner overflowed its 63px box across the rail's cards and, with the open rail at z-index auto, took the long-press that opens the money peek; Q2's strip had moved the first card down into that band. The open rail in the narrow layout now stacks above the stage's banners (z-index 21; R-14b). One CSS rule; no money, no file, no print path.
+const VES_BUILD = '2.1.0-rc.5';  // 2.1.0-rc.5 (2026-09-15): Batch Q4 — FRICTIONS + EXPORTS LIGHT TOUCH, eleven small doors. Q4-1: calibrating one sheet (typed scale, quick-pick, or click+type) offers the SAME scale to every OTHER sheet with none yet — a banner naming every sheet it reached, accepting is ONE journal entry, and pending measurements on those sheets re-price through the same path a direct calibration uses. Q4-2: Shift+L cycles the plan's value labels on → values only → off (a pref like the Fills cycle; shapes, fills and print untouched) — plain L keeps opening the Library door. Q4-3: holding Shift while placing a vertex locks the new segment to the nearest 0/45/90° from the previous vertex (ortho lock), read off the triggering event so a lost keyup can never stick it on; toolMsg names it "ortho". Q4-4: a card's new ⋮ menu duplicates a condition — same type/libRef/pitch/section, next unused palette color, "Copy of <name>", zero measurements, one journal entry, the price book (assemblyProject) never written. Q4-5: openDrawerAuto stops being a no-op — the recap dock opens by default the instant a loaded/opened project already carries priced lines (D-UI's STRIP-FIRST still holds for an unpriced one, canvas dominant); the user's own last toggle always wins from there, in either direction. Q4-6: VOCAB.grid collapses EU / Ord Un / Prc Un — three columns that always read the same value — into ONE Unit column, on the grid, its entry row and the Estimate workbook export (probe-b5-words B5-2 re-pointed; the three-unit EDGE chain stays the roadmap target, in a comment). Q4-7: at 125–150% UI scale the Estimate grid overflows and scrolls INSIDE its own .gscroll container, never the page (#gridview is position:fixed) — the Description column is now sticky, its width explicitly pinned to the same number in the header and every row, since a sticky column reserves nothing by itself. Q4-8: the empty-undo-stack sentence (B6F-9, E-F4) now fires once per takeoff instead of re-toasting on every Ctrl+Z pressed against the same empty stack. Q4-9 (T-22): Tab off the last editable cell of a grid row wraps to the first editable cell of the NEXT row (row-major order) instead of falling into the browser's own tab order, which could land on a checkbox; Shift+Tab wraps back; Enter's column-walk and Esc's revert-in-place are untouched. Q4-10 (O1): the card menu's "Type a quantity…" lands a journaled manual measurement without arming the condition or touching the sheet — addManualQuantity was always there, the door to reach it was not. Q4-11: the Files & exports menu now lists the bill-of-materials, condition-totals and audit CSVs too (same exportBOMCSV/exportRollupCSV/exportAuditCSV functions their Setup doors already call), each with a one-line trade-word purpose, beside the Estimate CSV and Supplier RFQ already there — same files, same names, nothing merged or removed from Setup. Gates: probe-qol.mjs 11/11 (RED-first on rc.3), G0 GREEN 4/4, verifier PASS, vocab-check 0 findings, 0 new egress. Q4-5 REVERTED at the landing (R-14d): auto-opening the summoned recap painted it over the cards and ate the first click (probe-z Z5, p903-rail AG1/AG2 red); openDrawerAuto stays the D-UI strip-first no-op; F-F7 stays open until the recap has a dock lane (C-Q4-1). Audit (CSV) purpose line reworded without seat-speak (p903-words AI1).
+// 2.1.0-rc.4:  // 2.1.0-rc.4 (2026-09-15): Batch Q2F — the one fix batch after Q2's regression was caught by the gate on the runner (CI on ebbea2c, probes job red at probe-z Z5): at phone width the file:// notice banner overflowed its 63px box across the rail's cards and, with the open rail at z-index auto, took the long-press that opens the money peek; Q2's strip had moved the first card down into that band. The open rail in the narrow layout now stacks above the stage's banners (z-index 21; R-14b). One CSS rule; no money, no file, no print path.
 // 2.1.0-rc.3:  // 2.1.0-rc.3 (2026-09-15): Batch Q3 — SELECTION AFFORDANCES: the picked thing announces itself and offers its doors. A selection chip beside the pointer (trade word · condition · value · sheet · N more under it) with Edit · Delete · Move · Duplicate · Re-assign · Cycle; `state.selectedIds` beside `selectedId` (grips only when one is selected); Shift+click adds, a drag on EMPTY paper sweeps a marquee that skips hidden conditions, Esc clears; pointerdown on the BODY of an already-selected shape moves it (grips win inside 8 px; an unselected body still pans; a press that never travelled 3 px is a click, so a repeat click still steps the stack — AF-1 stands); Ctrl+D duplicates at +12/+12 and lands selected; Shift+R files the selection under another condition of the SAME kind (plain R still rotates; the wrong kind is refused with the reason spoken); bulk Delete / Move / Re-assign are ONE journal entry, one Ctrl+Z; Shift+Space steps the stack under the pointer; a hidden region keeps a faint ghost chip carrying its eye, and Show all clears hiddenRegions too (Q3-0, R-12a). Screen-side only: no money rule, no file version, no print path moved.
 // 2.1.0-rc.2:  // 2.1.0-rc.2 (2026-09-15): Batch Q2 — HIDE / SOLO: finishing the screen-only visibility story (Patrick: hide = screen aid only). A rail-header strip above the cards (Solo · Hide others · Hide measured · Show all, plus a "N hidden" chip that IS Show all) writes state.hiddenConds wholesale through the SAME eye/journal pair the per-condition eye has always used — one Ctrl+Z reverses the whole gesture; Alt+click any card's own eye is Solo for that one condition, unchanged otherwise. `H` hides the ARMED condition (toggle, same funnel as the eye) and `Shift+H` is Show all — both keys were unbound; a nothing-armed `H` says why. Drawn regions get an eye of their own, ON the chip: `state.hiddenRegions` is a new Set (viz-only, mirrors hiddenConds); a hidden region paints nothing — outline AND chip both, drawOverlay skips it and its chip is never pushed to the pane's hit-test list, so it cannot be picked either — and hiding one never touches `state.sections`, containment tagging, or a section subtotal (regionsOnPage itself is never filtered). Screen only, exactly like the existing per-condition hide: the rollup, every card's quantity, the grid, the recap, the bid, the proposal and the takeoff paper are identical to the cent with everything hidden and with nothing hidden — the takeoff print already ignored `hiddenConds` by design (B6F) and prints a region regardless of `hiddenRegions` the same way, unchanged. TAKEOFF_VERSION unchanged (Q2-5): `hiddenRegions` rides beside `hiddenConds` in the existing viz blob; an older reader that has never heard of the key simply ignores it. No money moved: G0 GREEN 4/4. 2.1.0-rc.1 (2026-09-15): Batch Q1 — DEDUCTIONS. A cutout traced inside a field area subtracts its SF from that area, on the same condition, with one click to hand its perimeter to a flashing condition. `m.sign` (+1 default, -1 deduct) is set only through addMeasurement's opts and `value` stays a positive magnitude everywhere — `VESCore.rollup` is the one place the sign becomes a quantity (`qty += m.value * sgn`), with a named NET_FLOOR_ZERO clamp when the cutouts add up past the field: never a silent 0, the same sentence on the card, the grid row, the recap line, the audit file, the rollup file and the takeoff paper. Deduct is a rack MODIFIER beside Fills (key D, Shift keeps it armed) that disarms after one trace and refuses to arm on a linear or count condition with the reason spoken and nothing created; the cutout lands on the armed condition, is not required to lie inside anything (a soft note says when it does not), and two overlapping deducts both subtract. On the plan it is the condition's own hue with a dashed edge and a cross-hatch, labelled with the minus. When it closes, a picker opens at the pointer listing the job's linear conditions and "None": choosing one writes a sibling LINEAR measurement from the closed ring (the cutout's perimeter) and the pair is ONE journal entry — "deduct + perimeter to <condition>" — that one Ctrl+Z takes back whole. The audit CSV and the condition-rollup CSV each carry one signed `Deduct` row per cutout so a reader summing the quantity column gets the net; the rollup row prints the gross above them and names the net in its Cost Basis. TAKEOFF_VERSION is 6 but `fileVersionNeeded()` WRITES 6 only when a measurement carries a sign — a takeoff with no deduct still says 5 and is byte-for-byte what 2.0.0 wrote; the version refusal now names the build that reads the file. The exact-quantity door still takes a positive magnitude and the sign rides through it. 2.0.0 (2026-09-15): RELEASE — the VES 2 line: one lineage (B0) · pitch one store rise/12 (B1) · sections typed + drawn (B2a/B2b) · 24 colors + custom + print patterns (B3) · every sheet prints (B4) · one description, EDGE column words (B5) · persona fix batch (B6F). Changelog: RELEASE_NOTES.md. MIT License © 2026 Patrick Moriarty / Bitumen Machina LLC.
 // 2.0.0-rc.8:  // 2.0.0-rc.8: Batch B6F — THE ONE FIX BATCH after the B6 persona pass. Money first. A measurement traced on a sheet with no scale is a PENDING measurement everywhere it changed a figure, not only on the takeoff paper: `rollup` carries `pagesIn` and `pendingPages` beside `pending`, `pendingOf(line)` is the one rule that reads them, and the named state (“pending scale on sheet 2”) reaches the recap (per line and as a job note), the Estimate grid, the client bid, the cost sheet, the Estimate CSV and the workbook (trailing `pending` column) — never a silent 0; the bid's per-line Sheet cell now lists only the sheets whose quantity is IN the number (it claimed “Sheet 1, 2” for a figure that was sheet 1's alone), the takeoff quantities page names the shortfall on the section TOTAL with the sheets to scale, and the uncalibrated notice is JOB-scoped (walking back to a calibrated sheet used to leave zero banners while the bid was short). `parsePitch` takes a rise per 12 and nothing else — a bare 0–24, n/12, n:12, n"/12, plus a legacy decimal FACTOR bounded to pitchFactor(24) — so 25 / 999 / 1e9 / -6 / abc / 6/13 / 6/1 are refused with the value unchanged and nothing journaled (a typed 1e9 priced one line at $2.96 trillion before this). The General lane rides the undo stack like the money it is: `addGeneralItem` / `removeGeneralItem` are journaled by name, field edits re-resolve their row BY ID, and a command whose target is gone is DROPPED with a toast that says so instead of replaying over nothing (three presses chasing a deleted $5,000 line used to reach past it and take $15,291.49 off the job); `journalWord()` formats every value a label carries, so “[object Object]” never prints. Undoing the R-3a reconcile is named “set flat: …” (`cmd.undoLabel`) and the standing banner rewrites itself, so it can never read “now priced at” over a sell that has fallen back; both migration banners carry TWO doors in plain words — Keep / Set these flat instead, Read it as 6/12 / Keep ×6.000 as saved — and the flat door is the same code path Ctrl+Z takes. ONE `sectionKeyOf()`: the takeoff quantities page and `proposalModel` compare through it (four measured conditions printed under no band at all, and the proposal showed four sections against the bid's three), and renaming into a name that keys equal to an existing section MERGES them, journaled. `releaseLatch()` runs as soon as `window.print()` returns on all four print doors, with `afterprint` kept as a second net — headless Chrome never delivers it and a late delivery lands after the latch is disarmed, so a takeoff stayed latched and the next Ctrl+P re-emitted it. Section regions that arrive with no id are GIVEN ids at the file door (two id-less regions both loaded as 0, and every door aimed at the second hit the first). Chrome: every unscaled sheet arms the calibrate tool on arrival, the way `openDocument` already did for sheet 1; “+ Add condition” defaults to the next unused palette hue and the form stays open with a cleared, focused name field (✕ or Esc closes); a new condition's card scrolls itself into view; the bid's refusal NAMES the lines that still need a price, on paper and in the toast, and the rail's need-price pill goes to the first one; the recap strip reads “Recap · by section, then system, then CSI”. No money moved: G0 GREEN 4/4, COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.7: Batch B5 — UNIFIED DESCRIPTIONS, EDGE COLUMN WORDS. `descOf(x)` is the one function every document/export that prints a name now calls — a condition's own `.name`, a general line's own `.label`, or itemLabel(x) suffixed "<name> — labor"/"<name> — equipment" for a linked line (the F6/S2 rule, idempotent via suffixKind so an already-suffixed name is never doubled); it replaces scattered ternaries on itemLabel+suffixKind and a recap mini-table that read a library line's raw (often blank) `.desc`. `const VOCAB` (beside PALETTE) is the one place the document column words live, read by five templates through a `VOCAB:<doc>` sentinel comment `tools/vocab-check.mjs` checks against: the takeoff quantities page is Legend | Pitch | Description | SF | LF | EA (a condition fills exactly one of the three quantity columns, the "Sheets" column folds into data-sheets — the per-sheet figure legends above already name it); the Estimate grid + CSV + XLSX carry the EDGE Consolidated chain Description | Quantity | EU | Ord Qty | Ord Un | Unit Price | Prc Un | Net Cost (Quantity is the engine's own qty_needed before purchase round-up, read-only, beside the existing editable Ord Qty — both visible and different on a wasted/rounded line; EU/Ord Un/Prc Un read the same unit today, stated rather than hidden, since this engine resolves one unit per line); the recap's per-line table and the cost sheet fold Overhead+Markup+Profit into one Markup/Markup $ pair per line (Description | Net Cost | Markup | Markup $ | Gross Price | Cost Unit | Unit), while the cost sheet's closing ladder keeps Overhead/Markup/Profit as separate named rows under Subtotal → Total (never folded there); the client bid renames Qty/Unit price to Quantity/Unit Price (CSI and Sheet stay — established columns outside the vocabulary list). `tools/vocab-check.mjs` is a new, zero-dep CI step: banned AI-speak words, "page" for a PDF sheet, VOCAB words reaching their templates, and a name built straight from an id outside itemLabel/descOf. No money moved. 2.0.0-rc.6: Batch B4 — THE TAKEOFF PRINTS EVERY SHEET. ONE print path: `printTakeoffDoc` is deleted and the three behaviours only it had fold into `printTakeoff` — a typed-only takeoff prints its quantity tables with no figure, a takeoff with nothing measured and nothing typed prints nothing and the toast names the two doors back to the work, and every early return releases the latch (D-24.7a). `visualFiguresHTML` is the ONE per-sheet figure builder: the takeoff's landscape sheets and the proposal's plan snapshots come out of it, and the proposal now carries a figure for EVERY measured sheet instead of the busiest one. The takeoff door opens a sheet chooser when more than one sheet is measured (measured checked, unmeasured listed and greyed, `state.printSheets` session-only and never saved); leaving one out puts “Sheets shown: 1, 3 of 3” on the paper's header, and the quantity tables still total the whole takeoff and say so. Each sheet figure now fits ONE landscape page — the legend packs two entries per row and the image's ceiling is what the caption, the header and that sheet's own legend leave (the three-sheet fixture rendered 5 pages for 3 sheets before; it renders 4 now). The latch releases on `afterprint`, armed only around our own print call. C-B0-1: `identity.fileSize` is read BEFORE pdf.js detaches the ArrayBuffer, so a PDF-backed takeoff saves its real byte length (6,366 on the fixture, 0 before); an existing file's 0 means UNKNOWN and is never compared, so those files still load with no identity review. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.5: Batch B3 — COLORS. PALETTE grows from 8 to 24 hues (the first 8 byte-identical and in the same order — an existing file's colors do not move); the swatch row gains a native color input + hex field for any custom color, journaled like every other condition edit, persisting through save → reload onto the plan stroke, the card's own color chip, and the proposal/takeoff legends. `patternOf` gives every palette index (and, via a persisted `patternIdx`, every custom color) a unique line-dash + hatch pair — drawn as a subtle on-screen hatch inside area fills and as a glyph on the print legend swatches — so a grayscale print stays separable. `readableInk` picks black/white label ink by WCAG contrast for the plan label plate, the card color chip and the legend swatch glyph. The proposal and per-sheet takeoff legends are real tables now (a repeating `<thead>`, not a flex row that could clip against the takeoff sheet's fixed-height box) so a long legend paginates instead of truncating. No money moved; COLOR_RE and TAKEOFF_VERSION unchanged. 2.0.0-rc.4: Batch B2b — SECTIONS, DRAWN. A Section tool outlines a roof section on the sheet (`state.sections = [{id,name,page,points}]`, sheet coordinates, TAKEOFF_VERSION 5); a measurement completed inside a region files its condition under that section AT TAG TIME ONLY, once, journaled by name — a condition that already has a section keeps it and is told so. "Tag by regions" (Setup) catches up a whole takeoff in one undo step. Moving, renaming or deleting a region NEVER re-files money; a rename OFFERS the B2a section rename separately. Regions are not conditions: never on the rail, never priced, in no export but the audit CSV, and on the takeoff paper's sheet figures only — never the bid or the proposal. No money moved. 2.0.0-rc.3: Batch B2a — SECTIONS, TYPED. Section is `c.location`, canonical; every money surface groups SECTION → SYSTEM → line with a subtotal at each level (recap, Estimate grid, client bid, cost sheet, takeoff quantities, proposal scope, Estimate CSV + workbook, supplier RFQ); "Unassigned" / "Project" / "Multiple sections" are named sections, never dropped; CSI division stays a FILTER. Rename-section and move-to-section are journaled by name. One apportionment (sellCentsPerLine) so the recap and the papers print the same integers. No money moved.
@@ -16607,6 +16916,7 @@ const VES_BUILD = '2.1.0-rc.4';  // 2.1.0-rc.4 (2026-09-15): Batch Q2F — the o
     if (typeof p.uiScale === 'number') setUiScale(p.uiScale, { persist: false });
     if (typeof p.gridFt === 'number' && p.gridFt >= 1) { const g = $('gridFt'); if (g) g.value = String(p.gridFt); }
     if (p.fillMode === 'faint' || p.fillMode === 'off') applyFillMode(p.fillMode);
+    if (p.labelMode === 'values' || p.labelMode === 'off') applyLabelMode(p.labelMode);   // Q4-2
     if (p.drawerPinned === true) { state.drawerPinned = true; document.body.classList.add('drawer-pinned'); const b = $('drawerPin'); if (b) b.classList.add('on'); }
     if (typeof p.rail === 'boolean') toggleRail(p.rail, { persist: false });
     // AD-5 (G-12): snap, dock width, split mode

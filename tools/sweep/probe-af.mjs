@@ -247,9 +247,10 @@ check('AF20 a bad formula puts its reason in the lens cue; fixing it clears the 
 // AF21 — item waste is in the derivation words (P-MARKET 2)
 const af21 = await tryEv(`(async () => { const wait = (ms) => new Promise(r => setTimeout(r, ms)); ${COILBUILD} editLine('ssmr.eavedrip', 'waste', 0.10); await wait(150);
   const cell = document.querySelector('input.fx[data-item="ssmr.eavedrip"]'); const txt = cell ? cell.closest('tr').querySelector('td.deriv').textContent.replace(/\\s+/g, ' ') : ''; const l = VESApp.resolveAssembly().lines.find(x => x.item === 'ssmr.eavedrip');
-  // Batch B5 (R-6b): the grid header gained Quantity/EU/Ord Qty/Ord Un ahead of Waste — the Waste
-  // <th> is now the 7th column, not the 6th (was Description/Kind/Qty/Unit/Unit$/Waste/…).
-  return { txt: txt.slice(0, 160), ordered: l.ordered, wasteTitle: (document.querySelector('.estgrid thead th:nth-child(7)') || {}).title || '' }; })()`);
+  // Batch B5 (R-6b) / Q4-6: the grid header carries Quantity/Ord Qty/Unit ahead of Waste (Q4-6
+  // collapsed EU/Ord Un/Prc Un to the one Unit column) — the Waste <th> is the 6th column
+  // (Description/Kind/Quantity/Ord Qty/Unit/Waste/…), not the 7th it was before that collapse.
+  return { txt: txt.slice(0, 160), ordered: l.ordered, wasteTitle: (document.querySelector('.estgrid thead th:nth-child(6)') || {}).title || '' }; })()`);
 check('AF21 the derivation says the item waste that turns needed into ordered (412.5 + 10% item waste → 454 LF) and the Waste header says it is item waste',
   !af21.error && /10% item waste/.test(af21.txt) && af21.ordered === 454 && /Item waste/.test(af21.wasteTitle), af21);
 // AF22 — entry row: the funnel line sits under the description, the measure select follows the unit, the matcher forgives case and dash, a partial names the closest name (P-GAME 6/7/8, P-TRADE 12)

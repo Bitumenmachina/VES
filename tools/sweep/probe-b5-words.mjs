@@ -323,7 +323,7 @@ let r2ok = false; const r2d = {};
 if (!wd.error) {
   const VOCAB = {
     takeoff: ['Legend', 'Pitch', 'Description', 'SF', 'LF', 'EA'],
-    grid: ['Description', 'Quantity', 'EU', 'Ord Qty', 'Ord Un', 'Unit Price', 'Prc Un', 'Net Cost'],
+    grid: ['Description', 'Quantity', 'Ord Qty', 'Unit', 'Unit Price', 'Net Cost'],   // Q4-6: EU/Ord Un/Prc Un collapsed to ONE Unit column
     recap: ['Description', 'Net Cost', 'Markup', 'Markup $', 'Gross Price', 'Cost Unit', 'Unit'],
     costsheet: ['Description', 'Net Cost', 'Markup', 'Markup $', 'Gross Price', 'Cost Unit', 'Unit'],
     bid: ['Description', 'Quantity', 'Unit', 'Unit Price', 'Amount'],
@@ -350,15 +350,16 @@ const r4x = await tryEv(`(async () => {
   const rows = estimateRows().filter(r => r.edit === 'engine' && r.qtyEst != null && r.qty != null);
   const diverged = rows.filter(r => Math.abs(r.qtyEst - r.qty) > 1e-6);
   // read the two figures BACK OFF THE RENDERED ROW (not just the model) for one diverged line —
-  // Quantity is column index 2 (0-based: Description, Kind, Quantity, EU, Ord Qty, ...), Ord Qty is index 4
+  // Q4-6 collapsed EU/Ord Un/Prc Un to one Unit column: Quantity is column index 2 (0-based:
+  // Description, Kind, Quantity, Ord Qty, Unit, ...), Ord Qty is index 3
   let onScreen = null;
   if (diverged.length) {
     const target = diverged[0];
     const trs = [...document.querySelectorAll('#estgridBody tr')].filter(t => !t.className || !/sech|divh|sub|secsub|gentry|gaddrow/.test(t.className));
     const tr = trs.find(t => t.textContent.includes(target.label));
-    // Ord Qty (index 4) is an EDITABLE cell — its figure lives in an <input value>, not textContent
+    // Ord Qty (index 3) is an EDITABLE cell — its figure lives in an <input value>, not textContent
     const cellText = (td) => { if (!td) return ''; const inp = td.querySelector('input'); return inp ? inp.value : td.textContent; };
-    if (tr) { const tds = [...tr.children]; onScreen = { quantity: cellText(tds[2]), ordQty: cellText(tds[4]) }; }
+    if (tr) { const tds = [...tr.children]; onScreen = { quantity: cellText(tds[2]), ordQty: cellText(tds[3]) }; }
   }
   VESApp.showEstimate(false);
   return { rows: rows.length, diverged: diverged.length, sample: diverged[0] ? { label: diverged[0].label, qtyEst: diverged[0].qtyEst, qty: diverged[0].qty } : null, onScreen };

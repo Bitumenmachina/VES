@@ -172,6 +172,12 @@ jobs:
           # as their own steps above, so --no-subgates here.
           node tools/sweep/probe-select.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
           code22=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code22
+          # Batch Q4 (VES 2.1): frictions + exports light touch — scale offer, label cycle, ortho lock,
+          # duplicate condition, recap auto-open, VOCAB.grid Unit collapse, sticky grid column, undo-once,
+          # grid Tab wrap, manual-qty reachability, one Exports door. Real pointer throughout; --no-subgates
+          # (its own G0 child already ran above).
+          node tools/sweep/probe-qol.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
+          code23=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code23
           {
             echo '## sweep probes'
             echo
