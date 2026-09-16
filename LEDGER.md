@@ -5,6 +5,35 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q6 — VES 2.1 · THE MONEY TRIO (build 2.1.0-rc.6, 2026-09-15)
+
+Rulings M-1…M-3 (`.scratch/charter-q6.md` + amendments; Patrick 2026-09-15 "yes, rule them" — defaults his to reverse). Opus agent (327K /
+136 tool uses) in `.scratch/q6` off `56db1fc`, RED-first: `tools/sweep/probe-money-trio.mjs` — agent's base run 1/4, orchestrator rerun of
+the finished probe on the rc.5 bytes **3/5 red (Q6-b the money control green by design, Q6-e neutral) → 5/5 on the landed bytes**. Landed
+by squash; md5 `0d055e3e` byte-identical to the agent's; commit 85efec4. The agent wrote source before probe and said so; the base capture is real.
+- **R-15a (M-1)** CEIL stays the order-quantity default; per-line override CEIL / EXACT / NEAREST on the grid (`SELECT.rsel`), journaled, in
+  the derivation, `rounding` column in Estimate CSV/XLSX. Arithmetic on record: `ssmr.panel` qtyNeeded 4021.30625 SF, waste 0 → CEIL 4022
+  ($12,066.00), NEAREST 4021 ($12,063.00); Ctrl+Z restores 4022 and clears the override.
+- **R-15b (M-2)** Overhead is a NAMED row on every money face (recap ladder, cost sheet, grid footer — `O&P` unfolded to Overhead / Markup /
+  Profit — XLSX ladder, rollup CSV), never folded. **One printed cent moved — FLAG for Patrick:** on base the recap ladder and workbook printed
+  `round(ohAmt)` while the CSV and cost sheet printed an apportioned cent; on the fixture the three raw roundings summed to 10,156,453¢
+  against Sell−Cost 10,156,454¢, so the recap's Overhead read 4,105,276¢ while the cost sheet read 4,105,277¢ — the ladder a cent short of
+  its own Sell. Q6-c caught it. One `ladderCents()` now feeds all six faces → 4,105,277¢ everywhere. `recapModel()` floats and every golden
+  are unchanged (`golden.cents.json` `ohAmtCents` 4105276 is the raw rounding, still what the model returns): a printed cent, not a computed
+  one. His to reverse.
+- **R-15c (M-3)** zero-quantity general lines greyed "qty 0 — not included", under Not included on bid + cost sheet, `not_included` in
+  CSV/XLSX; a typed quantity includes them (journaled). D-23.9 stands: never an included $0.
+- **R-15d** "always-visible Overhead column" read as the grid FOOTER's columns, not a per-line column — R-6b folds per-line margin into one
+  Markup pair. No `<th>` added, so b5-words / af / qol read the same indices (no re-point). New CSV columns land before `section` (R-5d keeps
+  it last; b2a-4 went red on the agent's first cut and the PRODUCT was fixed, not the probe).
+- Agent's box note: `probe-hide` hit its 300 s ceiling at 7/8 on its runs, base and patch alike; the orchestrator's run on the landed bytes:
+  8/8 in 25 s (a box condition on the agent's seat, not the bytes).
+- **Gates on `0d055e3e` (one sequential sweep, 21:52–22:04, agent idle, raw in `.scratch/q6-sweep/`):** ves-verify PASS · vocab-check 0 ·
+  G0 GREEN · b0-fixture 7/7 · b1 12/12 · b2a 7/7 · b2b 8/8 · b3 8/8 · b4 9/9 · b5 6/6 · b6f 17/17 · deduct 10/10 · hide 8/8 · select 10/10 ·
+  qol 12/12 · **money-trio 5/5** · v 17/17 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · ae 5/5 · af 40/40 · p903-doc
+  8/8 · p903-aim 7/7 · p903-rail 5/5 · p903-pitch 6/6 · p903-words 5/5.
+- rc.5 on the runner: CI run 35044897522 GREEN (verify · gate · probes) after the rc.5 push.
+
 ## Batch Q4 — VES 2.1 · FRICTIONS + EXPORTS LIGHT TOUCH (build 2.1.0-rc.5, 2026-09-15)
 
 Rulings Q4-1…Q4-11 (`.scratch/charter-q4.md` + its spawn amendments). Sonnet agent (636K tokens / 316 tool uses), RED-first in
