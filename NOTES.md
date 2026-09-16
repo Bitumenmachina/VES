@@ -81,7 +81,11 @@ truth first, history compressed.
   rc.6 CI run 35046611396 GREEN.
 - **Q5 persona pass + Q5F LANDED — 2.1.0-rc.7** (2026-09-15, ff936fa). 5 findings, no P0/HIGH: Q5-04 built (picker alphabetical, R-16a), Q5-01 refuted by
   ruling, Q5-03/Q5-05 refuted with evidence, Q5-02 candidate. probe-qol 13/13; full sweep all 32 green on md5 `1c3de74a`. Release words + v6 demo
-  (98b7b84, sonnet). **PICKUP = RELEASE 2.1.0** (stamp → regression → ship ~/Downloads/VES_2.1.0.html → LEDGER §RELEASE 2.1.0 → merge + tag v2.1.0).
+  (98b7b84, sonnet). Release follows.
+- **RELEASE 2.1.0 SHIPPED** (2026-09-15, a5f0037 stamp). sha256 `a0148df21a5f68ca…` · md5 `d44290dc` · 3963636 bytes · `~/Downloads/VES_2.1.0.html` + `VES_2.1.0_NOTES.md` +
+  demo (v6). Full regression green on the release bytes (v rerun alone after a harness stall; LEDGER §RELEASE 2.1.0). Merged to `main` + tag `v2.1.0` on the
+  standing word. Open: C-Q2F-1 · C-Q4-1 · Q5-02; flagged R-15b · R-14d. **PICKUP = Patrick's cold test (research/COLD_TEST_2.1.0.md) and his word on R-15b / R-14d;
+  the 2.1 pass is COMPLETE.**
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the

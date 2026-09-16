@@ -5,6 +5,25 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## RELEASE 2.1.0 — VES 2.1 (2026-09-15)
+
+Product `src/VES_PM.html`: **sha256 `a0148df21a5f68ca9b96fe189b1a4de3c144a6248506754c78d1da0be5f442f1` · md5 `d44290dc048ab30737a411c51656f114` · 3963636 bytes · `VES_BUILD = '2.1.0'`** · version line in the file's first
+comment · shipped as `~/Downloads/VES_2.1.0.html` (byte-identical) beside `VES_2.0.0.html` and the F18 builds; `~/BUSINESS/VES_PM.html` untouched
+(md5 3eb98577 before and after). Words: `RELEASE_NOTES.md` §2.1.0, `README.md`, `release/README.md`, `research/COLD_TEST_2.1.0.md` (10 steps; sonnet
+agent, 167K, commit 98b7b84); demo `release/demo/demo-two-sheet.{json,pdf}` regenerated from its generator at version 6 with one deduct and one hidden
+condition, PDF byte-identical; `probe-b7-demo` D2 re-pointed (declared, 98604dc) → 7/7 cold on the release bytes. `research/qol-2.1.0/` archives the six
+Q charters and the persona findings. Batches in this line: Q1 · Q2 · Q3 · Q2F · Q4 · Q6 · Q5/Q5F (rulings R-11 … R-16, each in its section above).
+**Full regression on the release bytes (one sequential sweep, 22:51–23:08, raw in `.scratch/rel-sweep/`):** ves-verify PASS · vocab-check 0 · G0 GREEN
+· b0-fixture 7/7 · b1 12/12 · b2a 7/7 · b2b 8/8 · b3 8/8 · b4 9/9 · b5 6/6 · b6f 17/17 · deduct 10/10 · hide 8/8 · select 10/10 · qol 13/13 · money-trio 5/5
+· b7-demo 7/7 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · ae 5/5 · af 40/40 · p903-doc 8/8 · p903-aim 7/7 · p903-rail 5/5 ·
+p903-pitch 6/6 · p903-words 5/5 · **v: harness stall** — 14 PASS / 0 FAIL then the 300 s ceiling (exit 124) with an orphaned headless Chrome (2,323 s
+old) alive on the box; killed by PID, `probe-v` rerun alone twice on the same bytes: 17/17 in 6 s and 7 s. Not the bytes.
+**Open at release (design items, not defects):** C-Q2F-1 banners have no readable home at phone width · C-Q4-1 the recap needs a lane of its own before
+it can open by default (F-F7 stays open; Q4-5 reverted, R-14d) · Q5-02 the version-ceiling wording. **Flagged for Patrick, his to reverse:** R-15b (one
+printed cent on the recap ladder's Overhead) · R-14d (Q4-5 reverted).
+**MERGED + TAGGED on the standing word ("just merge all of it", 2026-09-15):** `origin/main` ← fast-forward of `ves2`; tag `v2.1.0` at the records commit;
+CI result recorded in the next records row.
+
 ## Batch Q5 — VES 2.1 · scoped persona pass + the one fix batch Q5F (build 2.1.0-rc.7, 2026-09-15)
 
 **Q5-P (P-ESTIMATOR, sonnet, 349K / 81 tool uses, observe-only, clone `.scratch/q5p` @ a3da297 = rc.6):** walked every Q5-P step (deduct ·
