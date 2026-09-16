@@ -4,6 +4,119 @@ One section per release. Every claim here names the gate that proved it — prob
 and the count on the build before the batch landed ("RED-first"), read from `LEDGER.md`. No time
 estimates, no promises: what is here landed and is gated; what is not built is named as open.
 
+## 2.1.0
+
+The stamp moves from `2.0.0` to `2.1.0` here — five batches plus one fix batch, closing out the
+quality-of-life items opened after the 2.0.0 release: deductions, hide/solo, selection, frictions
+and exports, and the money trio. Batch stamps ran `2.1.0-rc.1` … `2.1.0-rc.6`, `2.1.0` at this
+release (`LEDGER.md` §Batch Q1…Q6).
+
+### The batches
+
+**Q1 — Deductions.** Trace a cutout inside a measured area — a chimney, a curb, a skylight — with
+`D` and it subtracts from that area's own quantity instead of needing a second, offsetting
+condition. The cutout draws in the field's own color with a dashed edge and a cross-hatch fill,
+labeled with a minus sign, and the card, the grid, and the recap all read the net figure
+(`1,156.7 SF (−101.2)`). Closing the cutout offers to hand its perimeter straight to a flashing
+condition; the cutout and the flashing footage land as one entry, so one Ctrl+Z removes both. Cut
+past the field itself and the quantity holds at zero with a note saying so — never a negative
+price. **Gate:** `probe-deduct` 10/10 (1/10 on the release 2.0.0 build) — `LEDGER.md` §Batch Q1,
+build `2.1.0-rc.1`.
+
+**Q2 — Hide / solo.** A strip above the condition cards adds Solo, Hide others, Hide measured, and
+Show all, plus an "N hidden" chip that is itself a Show-all button. Alt+click any card's own eye to
+solo that one condition; a plain click keeps the existing single toggle. `H` hides whatever
+condition is armed, `Shift+H` brings everything back. Hiding is a screen aid only — the rollup,
+every card's quantity, the grid, the recap, the bid, and the printed takeoff itself read exactly
+the same whether a condition is shown or hidden. **Gate:** `probe-hide` 8/8 (red on the build
+before this batch — the strip's own functions did not exist yet) — `LEDGER.md` §Batch Q2, build
+`2.1.0-rc.2`.
+
+**Q3 — Selection.** Clicking a condition now names what you hit in a chip beside the pointer —
+trade word, condition name, value, sheet — with buttons to edit, delete, move, duplicate, or
+re-assign it. Shift+click adds more to the selection; dragging on empty paper sweeps a marquee
+around several shapes; `Ctrl+D` duplicates in place, landing selected; `Shift+R` re-assigns the
+selection to another condition of the same kind (the wrong kind is refused, with the reason
+spoken); `Shift+Space` steps through whatever is stacked under the pointer; `Esc` clears the
+selection. Dragging the body of a selected shape moves it; dragging an unselected one still pans
+the sheet. A bulk delete, move, or re-assign is one entry on the undo stack, whole. **Gate:**
+`probe-select` 10/10 (2/10 on the Q2 build, before this batch) — `LEDGER.md` §Batch Q3, build
+`2.1.0-rc.3`.
+
+**Q4 — Frictions and exports.** Calibrate one sheet and it now offers to apply the same scale to
+every other unscaled sheet in one step. `Shift+L` cycles the on-plan value labels (plain `L` still
+opens the Library, unchanged). Holding Shift while drawing locks the line to level, plumb, or a
+45° angle. A condition card's `⋮` menu gains Duplicate condition and Type a quantity…. The
+Estimate grid's three unit columns (estimating, ordering, pricing) fold into one Unit column, the
+grid scrolls inside its own frame with the Description column pinned, Tab now wraps row by row
+across the grid's cells, and the empty-undo sentence prints once per takeoff instead of on every
+press. Files & exports now lists the BOM, condition-totals, and audit spreadsheets with a plain
+sentence saying what each one holds. **Gate:** `probe-qol` 12/12 (11/12 red on the rc.4 bytes
+before the landing edits, one neutral) — `LEDGER.md` §Batch Q4, build `2.1.0-rc.5`.
+
+**Q6 — The money trio.** Three rulings on how a job's dollars are shown and rounded. Order
+quantities keep rounding up by default; any line can now carry its own override to round to the
+nearest whole unit or to the exact figure instead. Overhead becomes its own named row everywhere
+money is shown, instead of riding folded inside a combined markup figure. A general line with no
+quantity typed into it greys out on the grid with the reason stated, is listed under Not included
+on the bid and the cost sheet, and comes back the moment a quantity is typed. **Gate:**
+`probe-money-trio` 5/5 (3/5 red on the rc.5 bytes before this batch, one green by design, one
+neutral) — `LEDGER.md` §Batch Q6, build `2.1.0-rc.6`.
+
+### The version-6 file rule
+
+The first time a takeoff has a deduct on it, saving writes format version 6, and opening that file
+in 2.0.0 is refused, by name — 2.0.0 says the file's version is newer than it understands rather
+than silently dropping the deduction. A takeoff with no deduct on it still saves exactly the way
+2.0.0 always saved it — version 5, byte for byte the same file 2.0.0 would have written — and opens
+in 2.0.0 with nothing to reconcile.
+
+### The money trio's defaults, and how to put one back
+
+Order quantities round up by default — CEIL, the safer number when buying material — unchanged
+from before this release. Any line on the Estimate grid can be set instead to round to the nearest
+whole unit, or to the exact figure with no rounding at all; making the change is logged by name
+("rounding → NEAREST on `<line>`"), shown in that line's own derivation, and carried as its own
+column in the Estimate CSV and workbook. To put a line back, set it back to round-up on the same
+control, or press Ctrl+Z right after changing it — either one clears the override and the line
+prices exactly as it did before.
+
+### The one printed cent (R-15b)
+
+Before this release, the recap's Overhead line and the cost sheet's Overhead line could print a
+cent apart — on the release fixture, the recap read Overhead as \$41,052.76 while the cost sheet
+read \$41,052.77 — because each of the six money surfaces rounded its own share of Overhead
+separately, and the recap's own rounding came up a cent short of Cost + Overhead + Markup + Profit
+actually adding to Sell. One shared rounding step now feeds all six surfaces — the recap ladder,
+the cost sheet, the grid's totals, the XLSX ladder, and the two CSVs — so Overhead prints
+\$41,052.77 everywhere. Flagged for Patrick at the batch; his to reverse if he wants the old
+per-surface rounding back.
+
+### Also in this release
+
+- **The Q2F phone fix.** On a phone-width screen, Q2's new strip above the cards had pushed the
+  first condition card down into the same band a file-notice banner sits in, so a long-press meant
+  to show that card's numbers hit the notice instead of the card. Fixed with one rule that keeps
+  the condition cards on top of anything the screen draws over them at phone width — the same rule
+  that already holds at full width. **Gate:** `probe-z` 6/6 (5/6 on the Q3 bytes, row Z5, before
+  the fix) — `LEDGER.md` §Batch Q2F, build `2.1.0-rc.4`.
+
+### Candidates left open
+
+Taste and layout items surfaced along the way; none of them move money or block a takeoff:
+
+- **C-Q2F-1** — at phone width, a notice banner (the kind that tells you this file is open over
+  `file://`) still has no place of its own; it now sits behind the condition cards instead of on
+  top of them, but giving it a proper spot at that width is still open.
+- **C-Q4-1** — the recap panel stays closed until you open it, even on a job that already has
+  priced conditions in it; it needs a place of its own on screen before it can open on its own
+  without covering the cards.
+- **Q5-02** — the sentence 2.0.0 uses to refuse a newer file ("Refusing to guess at it") reads like
+  an engineer's note rather than a plain sentence for whoever just opened the wrong file. Left as
+  it ships in the 2.0.0 bytes; a candidate for plainer wording going forward.
+
+Full detail and IDs: `LEDGER.md` §Batch Q1, §Batch Q2, §Batch Q2F, §Batch Q3, §Batch Q4, §Batch Q6.
+
 ## 2.0.0
 
 The stamp changes from `F18.x` to semver here (R-2, `LEDGER.md` §Batch B0). The F18 line ended

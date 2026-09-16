@@ -9,7 +9,7 @@ invented to exercise VES, not to describe a building anyone owns.
 | file | sheets | format | what it shows |
 | --- | --- | --- | --- |
 | `demo-flat-roof.json` | none (typed quantities) | version 3 | the plain path: no PDF, ten TPO conditions, two typed measurements. Used by most of `tools/sweep/`'s probes as their standing fixture — do not resize or reprice it; a dozen gates assert against it as-is. |
-| `demo-two-sheet.json` + `demo-two-sheet.pdf` | 2 | version 5 (current) | a two-sheet plan (`A-1 Main Roof`, `A-2 Garage`), two typed sections, a pitched roof (6/12) beside a flat one, seven conditions across seven colors. Built for this release to show the things a single flat-roof takeoff cannot: multi-sheet print, Section → System subtotals, and the current rise-per-12 pitch convention with nothing to migrate. |
+| `demo-two-sheet.json` + `demo-two-sheet.pdf` | 2 | version 6 (current) | a two-sheet plan (`A-1 Main Roof`, `A-2 Garage`), two typed sections, a pitched roof (6/12) beside a flat one, seven conditions across seven colors. Built for this release to show the things a single flat-roof takeoff cannot: multi-sheet print, Section → System subtotals, and the current rise-per-12 pitch convention with nothing to migrate. As of 2.1.0 it also carries one deduct (a cutout on the field area) and one hidden condition — it needs a 2.1.0 build to open correctly; 2.0.0 refuses it by version number. |
 
 Both are zero-dependency, seeded-random generators — re-running a generator reproduces its file
 byte for byte:

@@ -1,7 +1,7 @@
 {
   "app": "VES",
   "kind": "takeoff",
-  "version": 5,
+  "version": 6,
   "savedAt": "2026-09-15T00:00:00.000Z",
   "pdfName": "demo-two-sheet.pdf",
   "projectMeta": {
@@ -20,7 +20,9 @@
     "armedId": null
   },
   "viz": {
-    "hidden": [],
+    "hidden": [
+      4
+    ],
     "fillMode": "on"
   },
   "sheetDone": {},
@@ -398,6 +400,34 @@
       "value": 2,
       "notes": "",
       "manual": false
+    },
+    {
+      "id": 108,
+      "conditionId": 1,
+      "page": 1,
+      "type": "area",
+      "points": [
+        {
+          "x": 700,
+          "y": 500
+        },
+        {
+          "x": 724,
+          "y": 500
+        },
+        {
+          "x": 724,
+          "y": 524
+        },
+        {
+          "x": 700,
+          "y": 524
+        }
+      ],
+      "value": 9,
+      "notes": "",
+      "manual": false,
+      "sign": -1
     }
   ],
   "assemblyProject": {
@@ -410,5 +440,5 @@
     },
     "general": []
   },
-  "nextId": 108
+  "nextId": 109
 }

@@ -12,14 +12,24 @@
  *
  *   node tools/gen/fixture-demo-2sheet.mjs [outDir]   # default: <repo>/release/demo
  *
- * THE FORMAT, AS THE CURRENT BUILD READS IT (src/VES_PM.html, TAKEOFF_VERSION 5, read not guessed):
- *   · `version: 5` — the current format. No migration path runs; nothing to reconcile, no banner.
+ * THE FORMAT, AS THE CURRENT BUILD READS IT (src/VES_PM.html, TAKEOFF_VERSION 6, read not guessed):
+ *   · `version: 6` (Q5-R) — this file now carries one deduct (a measurement with `sign: -1`), so
+ *     it must say 6 to be read back honestly; `fileVersionNeeded()` in the shipped build makes the
+ *     same call off the same test. A file with no deduct in it still says 5 (`TAKEOFF_VERSION_BASE`)
+ *     and opens in 2.0.0 with nothing to reconcile — this fixture no longer does, on purpose, to
+ *     exercise that door in the demo the same way a real deduct would.
  *   · `c.pitch` is a RISE PER 12, the only store (Batch B1) — a bare 6 here means 6/12, not ×6.
  *   · Section = `c.location` (Batch B2a); this file uses TYPED sections only — `sections: []`
  *     (Batch B2b's drawn regions) is present and empty on purpose, to say so rather than omit it.
  *   · A measurement's sheet is its `page` (1-based); `identity` carries the real fileSize (the
  *     detach bug fixture-3sheet.mjs's identity works around was fixed in Batch B4 — this file is
  *     written fresh against the fixed build, so it carries the true byte length, not 0).
+ *   · One deduct (Q1, Batch Q1): a small cutout on `SSMR — field area` (condition 1, page 1),
+ *     `sign: -1`, sitting fully inside that condition's own field polygon — added AFTER the seeded
+ *     loop below so it consumes no `rnd()` calls and every other condition/measurement is
+ *     byte-identical to the pre-2.1.0 file.
+ *   · One hidden condition (Q2, Batch Q2): `viz.hidden` names one condition id, screen-only —
+ *     money, quantities and the printed takeoff are unaffected by it.
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -116,13 +126,25 @@ function buildTakeoff(identity) {
       value: measureValue(s.type, pts), notes: '', manual: false,
     });
   });
+
+  /* Q5-R: one deduct — a small cutout traced inside condition 1's own field polygon
+     (measurement 101, page 1: [[610,445],[980,445],[980,755],[610,755]]). Fixed coordinates, not
+     `rnd()`-drawn, and added after the seeded loop above so nothing already generated shifts. */
+  const DEDUCT_CONDITION_ID = 1;   // SSMR — field area, page 1
+  const deductPts = [[700, 500], [724, 500], [724, 524], [700, 524]];   // 24x24 units = 9.0 SF, well inside the field
+  measurements.push({
+    id: ++mid, conditionId: DEDUCT_CONDITION_ID, page: 1, type: 'area',
+    points: deductPts.map(([x, y]) => ({ x, y })),
+    value: measureValue('area', deductPts), notes: '', manual: false, sign: -1,
+  });
+
   const cal = (page) => ({
     ftPerUnit: FT_PER_UNIT, fromGrid: false,
     points: [{ x: 300, y: 1560 }, { x: 300 + SCALE_UNITS, y: 1560 }],
     typed: `${SCALE_FT} ft over the printed scale bar`, page, when: WHEN, verifications: [],
   });
   return {
-    app: 'VES', kind: 'takeoff', version: 5, savedAt: WHEN,
+    app: 'VES', kind: 'takeoff', version: 6, savedAt: WHEN,
     pdfName: 'demo-two-sheet.pdf',
     projectMeta: {
       name: 'Demo — Two-Sheet Sample', client: '', address: '', phone: '', email: '',
@@ -130,7 +152,7 @@ function buildTakeoff(identity) {
     },
     schedule: { rows: {} },
     view: { tool: 'select', armedId: null },
-    viz: { hidden: [], fillMode: 'on' },
+    viz: { hidden: [4], fillMode: 'on' },   // Q5-R: condition 4 (SSMR — pipe penetration) hidden on purpose, screen-only
     sheetDone: {},
     identity,
     grid: null,
@@ -220,4 +242,6 @@ const pages = {};
 for (const m of takeoff.measurements) pages[m.page] = (pages[m.page] || 0) + 1;
 console.log(`wrote ${join(OUT, 'demo-two-sheet.pdf')} ${pdf.bytes.length} bytes, ${SHEETS.length} sheets, fingerprint ${pdf.id}`);
 console.log(`wrote ${join(OUT, 'demo-two-sheet.json')} — ${takeoff.conditions.length} conditions, `
-  + `${takeoff.measurements.length} measurements, per sheet ${JSON.stringify(pages)}, sections Main Roof + Garage`);
+  + `${takeoff.measurements.length} measurements, per sheet ${JSON.stringify(pages)}, sections Main Roof + Garage, `
+  + `version ${takeoff.version}, 1 deduct on condition ${takeoff.measurements.find((m) => m.sign === -1).conditionId}, `
+  + `hidden ${JSON.stringify(takeoff.viz.hidden)}`);

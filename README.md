@@ -54,6 +54,41 @@ which sheet, at what calibration; the bid prints the sheet beside each line; eve
 how its quantity was derived (the measurement, the library's coverage / density / formula, the
 inputs, the ordered figure) and a library-priced line can carry its own formula and inputs.
 
+## What 2.1 adds for an estimator
+
+- **Cut a hole in a measured area and it comes off the number, not a separate line.** Press `D`,
+  trace the cutout inside the area — a chimney, a curb, a skylight — and it draws with the
+  condition's own color, a dashed edge, and a cross-hatch fill, labeled with a minus sign. The
+  card, the grid, the recap, and every export show the net figure with the cutout named in
+  parentheses (`1,156.7 SF (−101.2)`); cut past the area itself and the quantity holds at zero
+  with a note saying so, never a negative price.
+- **Hide clutter from the screen without touching a number.** A strip above the condition cards
+  adds Solo, Hide others, Hide measured, and Show all. Alt+click any card's own eye to solo just
+  that one condition; a plain click keeps the simple show/hide toggle. `H` hides whatever condition
+  is armed, `Shift+H` brings everything back. Hiding never changes a quantity, a dollar figure, or
+  what prints — it is a screen aid only.
+- **Click something and a chip beside the pointer tells you what it is** — trade word, condition,
+  value, sheet — with buttons to edit, delete, move, duplicate, or re-assign it. Shift+click adds
+  more to the selection; dragging across empty paper sweeps a marquee around several shapes at
+  once; `Ctrl+D` duplicates in place; `Shift+R` re-assigns the selection to another condition of
+  the same kind; `Shift+Space` steps through whatever is stacked under the pointer; `Esc` clears
+  the selection.
+- **Files & exports now says what each export is for.** The BOM, condition-totals, and audit
+  spreadsheets each carry a plain sentence naming what they hold, instead of a bare filename.
+- **One Unit column.** The Estimate grid's estimating-unit, ordering-unit, and pricing-unit columns
+  fold into a single Unit column — this engine has always resolved to one unit per line, so three
+  columns that always read the same value are now one.
+- **A rounding override, per line.** Order quantities still round up by default (the safer number
+  to buy to). Any line can be set instead to round to the nearest whole unit, or to the exact
+  figure with no rounding, right on the grid; the change is logged by name and shows in that
+  line's own derivation. Put it back by choosing the round-up option again, or Ctrl+Z right after
+  making the change.
+- **Overhead has its own row.** Overhead used to ride folded inside a combined markup figure; it
+  now prints as its own named row everywhere money is shown — the recap, the cost sheet, the
+  grid's totals, and every export — and reads the identical figure on every one of them.
+
+See `RELEASE_NOTES.md` for the gate behind each of the items above, with row counts.
+
 ## Opening an older file
 
 VES 2.0 reads every file an earlier build saved — nothing you have on disk stops working. What
@@ -80,8 +115,8 @@ changes is what you see on that first open:
 - `demo-flat-roof.json` — a small typed-quantity takeoff (no PDF), the one the sweep probes in
   `tools/sweep/` load against every gate.
 - `demo-two-sheet.json` + `demo-two-sheet.pdf` — a two-sheet plan with two sections (a pitched roof
-  and a flat one), current format (version 5). `release/README.md` has the load steps and the
-  cold-load proof.
+  and a flat one), current format (version 6 as of 2.1.0 — it carries one deduct and one hidden
+  condition). `release/README.md` has the load steps and the cold-load proof.
 
 ## Verify (any seat, including CI)
 
