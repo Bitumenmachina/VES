@@ -39,7 +39,7 @@ for output he has not seen.
 
 ## Identity (from bytes, 2026-09-05, cloud seat, branch claude/estimate-sheet-depth-vrhnf6 — a TEST BUILD, not main)
 - canonical file: src/VES_PM.html
-- build: 2.1.0-rc.7 (Batch Q5F, VES 2.1 — the one fix batch after the Q5 persona pass (5 findings, no P0/HIGH): the cutout-perimeter hand-off picker lists linear conditions alphabetically instead of rail order (Q5-04). Q5-01 (hidden conditions still print) refuted by ruling — hide is a screen aid only (Patrick 9/15; probe Q2-d pins the paper byte-identical); Q5-03 (ADJ unexplained) refuted with evidence — the Formula column header names RAW · ADJ · WASTE · Q and ADJ is a token the estimator can type; Q5-05 (no tell after Ctrl+D) refuted with evidence — the toast reads "Copy made — drag it where it goes, Ctrl+Z takes it back"; Q5-02 (the 2.0.0 refusal wording) lives in the shipped 2.0.0 bytes — candidate for the ceiling text here.)
+- build: 2.1.0 (RELEASE, 2026-09-15 — the VES 2.1 quality-of-life pass: Q1 deductions · Q2 hide/solo · Q3 selection · Q4 frictions + exports · Q6 money trio · Q5/Q5F persona + one fix · Q2F phone-peek fix; version-6 files; rulings R-11…R-16 and gates in LEDGER.md; changelog in RELEASE_NOTES.md)
 - bytes: 3961874
 - sha256: 8c27b6f8a4d78f883a7f2b528a6d4dc77b9fc3ef1a84bbb792df4e8cb73ed1ec
 - on `main`: F18.68 (Batch AE), 3570752 bytes, sha256 494d288baa32a2ee192d28d7668ba87e17c9291607ff03708a5fdcb78cea3760 — the line that moves forward until Patrick accepts this branch.
