@@ -5,6 +5,39 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q4 — VES 2.1 · FRICTIONS + EXPORTS LIGHT TOUCH (build 2.1.0-rc.5, 2026-09-15)
+
+Rulings Q4-1…Q4-11 (`.scratch/charter-q4.md` + its spawn amendments). Sonnet agent (636K tokens / 316 tool uses), RED-first in
+`.scratch/q4` off `ebbea2c`: `tools/sweep/probe-qol.mjs` 12 rows — the agent's base run had six real rows red (a–f) with g–k added
+after its checkpoint; the ORCHESTRATOR reran the finished probe on the rc.4 bytes (`e733c0b4`): **11/12 red, Q4-l neutral** → **12/12 on the
+landed bytes**. Agent md5 `73d49bff` was on a base the Q2F fix had since moved, so landing = `git merge --squash` onto `9a6b1d9`, stamp conflict
+resolved to rc.5; landed product = agent bytes + the Q2F hunk + stamp lines + the two landing edits below (26 differing lines, checked).
+Product: md5 `9155cd3c`, commit 4daf8c2.
+- Landed: Q4-1 scale offer to unscaled sheets (one entry) · Q4-2 `Shift+L` label cycle · Q4-3 Shift ortho lock · Q4-4 card ⋮ → Duplicate
+  condition · Q4-6 ONE `Unit` column (closes **C-B5-1**) · Q4-7 grid scroll container + sticky Description · Q4-8 empty-undo sentence once
+  (E-F4) · Q4-9 Tab wraps (T-22) · Q4-10 ⋮ → Type a quantity… (O1) · Q4-11 exports door lists BOM / Condition totals / Audit CSVs with plain
+  purpose lines. Collateral the agent found: split-mode column-hiding CSS still aimed at the 11-column layout (renumbered); `probe-b5-words`
+  B5-2/B5-4 and `probe-af` AF21 read the old column indices (re-pointed; values asserted unchanged).
+- **R-14a** labels = `Shift+L`; plain `L` has been the Library door since Batch AF. Same shape as H/R.
+- **R-14d — Q4-5 REVERTED at the landing.** The first sweep on the landed bytes went red in three probes that were green an hour earlier on
+  rc.4: probe-z Z5 (hit chain `TH.n › TABLE.recap`), p903-rail AG1/AG2 (a click on card 2 never armed it), p903-words AI1. `elementFromPoint`
+  at card 2's name row at 1440×900 returned the recap's `TD.n`: the recap in this layout is a SUMMONED overlay (#4 §4d), not a dock, and
+  auto-opening it on a priced load painted it over the rail's cards at desktop AND phone width and spent the first click dismissing it.
+  That is the R-14b principle again (nothing paints over the cards) and the AF-1 lesson (the click picks what you aimed at). `openDrawerAuto`
+  is the D-UI strip-first no-op again with the ruling in its comment; `drawerCollapsedByUser` stays as harmless state. **F-F7 ("recap
+  collapsed") stays OPEN; C-Q4-1: the recap needs a lane of its own before it can open by default.** Q4-e re-pointed to prove the ruling
+  (priced load → closed, card 2 reachable by a pointer, the user's toggle opens/closes, `openDrawerAuto()` a no-op on priced and blank).
+  Patrick's plan asked for Q4-5; the orchestrator reversed it on gate evidence — his to overrule.
+- **R-14e** the three CSVs return to the exports menu under plain purpose lines (Patrick's 9/15 plan §Q4-11; the AI-era "gone from the
+  menu" row AI2 still passes by its letter — the Setup doors remain). AI1 caught the word "provenance" in the Audit line — it came from the
+  charter's own wording; now "every stroke, with its sheet and scale". vocab-check 0.
+- Known gap: the agent did not audit every probe for stale column indices after Q4-6; the full sweep is that audit — all green.
+- **Gates on `9155cd3c` (one sequential sweep, 20:37–20:49, agent idle, raw in `.scratch/q4-sweep/`):** ves-verify PASS · vocab-check 0 ·
+  G0 GREEN · b0-fixture 7/7 · b1 12/12 · b2a 7/7 · b2b 8/8 · b3 8/8 · b4 9/9 · b5 6/6 · b6f 17/17 · deduct 10/10 · hide 8/8 · select 10/10 ·
+  **qol 12/12** · v 17/17 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · ae 5/5 · af 40/40 · p903-doc 8/8 · p903-aim
+  7/7 · p903-rail 5/5 · p903-pitch 6/6 · p903-words 5/5. (First sweep on `3498bd49`, before the two landing edits: z 5/6 · p903-rail 3/5 ·
+  p903-words 4/5, everything else green — the diagnosis above.)
+
 ## Batch Q2F — VES 2.1 · the one fix batch after Q2's regression (build 2.1.0-rc.4, 2026-09-15)
 
 **Caught by the gate on the runner, not on the box.** CI on the merged `ebbea2c` (run 35034309659, Patrick's merge word): `verify` and

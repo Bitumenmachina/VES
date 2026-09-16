@@ -68,7 +68,12 @@ truth first, history compressed.
   phone width (R-14b; LEDGER §Batch Q2F has the mechanism and two dead ends). probe-z 6/6; sweep green except b4-print 8/9 whose child probes
   were killed by the concurrent Q4 agent's `/tmp/ves-*` cleanup (harness lesson; re-run alone before push). C-Q2F-1 open: banners have no phone
   **PUSHED on his word ("merge was already approved"): origin/main = `0319b63`, CI run 35037699224 GREEN (verify · gate · probes) — main green again.**
-  **PICKUP = Q4** (agent running in `.scratch/q4` off ebbea2c; lands as rc.5; charter `.scratch/charter-q4.md`; then Q6 → Q5 per plan §QoL).
+  Q4 lands as rc.5 — see the next entry.
+- **Q4 LANDED — 2.1.0-rc.5** (2026-09-15, 4daf8c2). md5 `9155cd3c`. Ten of eleven doors (scale offer, Shift+L labels, ortho lock, card ⋮ menu with Duplicate + Type a
+  quantity…, ONE Unit column, grid scroll + sticky Description, undo sentence once, Tab wraps, exports door lists every CSV with plain words). **Q4-5 REVERTED
+  (R-14d):** auto-opening the summoned recap painted it over the cards and ate the first click — F-F7 stays open, C-Q4-1 = the recap needs a dock lane.
+  probe-qol 12/12 (11/12 red on rc.4); full sweep all 31 green. R-14a/d/e in LEDGER §Batch Q4. NOT pushed (rides with the next merge word).
+  **PICKUP = Q6** (money trio, opus; charter `.scratch/charter-q6.md` + amendments; clone `.scratch/q6`; lands as rc.6) → Q5 persona + release 2.1.0.
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
