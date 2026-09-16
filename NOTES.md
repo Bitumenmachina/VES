@@ -67,7 +67,7 @@ truth first, history compressed.
   bisected on the box (2.0.0 + Q1 green, Q2 + Q3 red). **Q2F LANDED — 2.1.0-rc.4.** One CSS rule: the dock stacks above the stage's banners at
   phone width (R-14b; LEDGER §Batch Q2F has the mechanism and two dead ends). probe-z 6/6; sweep green except b4-print 8/9 whose child probes
   were killed by the concurrent Q4 agent's `/tmp/ves-*` cleanup (harness lesson; re-run alone before push). C-Q2F-1 open: banners have no phone
-  home. **Needs Patrick's merge word to push the fix; main CI stays red until then.**
+  **PUSHED on his word ("merge was already approved"): origin/main = `0319b63`, CI run 35037699224 GREEN (verify · gate · probes) — main green again.**
   **PICKUP = Q4** (agent running in `.scratch/q4` off ebbea2c; lands as rc.5; charter `.scratch/charter-q4.md`; then Q6 → Q5 per plan §QoL).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the

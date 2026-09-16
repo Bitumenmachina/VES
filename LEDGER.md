@@ -33,7 +33,9 @@ a seat adds rows, never rewrites them. Synthetic aliases only — no client, pro
   this sweep and by hand from both roots. Cause: the Q4 agent was building concurrently and its charter has it `rm -rf /tmp/ves-*` after
   every probe; b4 keeps its child PDFs under `/tmp/ves-b4-*` for its 171 s run and never checks mkpdf's exit. Harness lesson: the `/tmp/ves-*`
   cleanup is per-seat, not per-box — an orchestrator sweep must not overlap an agent's probe runs (the 18:36 Q3 sweep ran before the agent
-  was spawned and b4 was 9/9). b4-print is RE-RUN alone after the agent returns, before any push; recorded below when it has run.
+  was spawned and b4 was 9/9). b4-print's clean run is the runner's: Patrick ruled the first merge word covers the fix push ("merge was already approved"), so
+  `0319b63` went to `origin/main` at ~20:00 and **CI run 35037699224 is GREEN — verify · gate · probes (every probe incl. b4-print 9/9 and
+  z 6/6), Pages deployed. main is green again; C-Q3-1 closed by this run.**
 
 ## Batch Q3 — VES 2.1 · SELECTION AFFORDANCES (build 2.1.0-rc.3, 2026-09-15)
 
