@@ -101,6 +101,8 @@ const loaded = await ev(`(async () => {
     numPages: VESApp.state.numPages,
     conditions: VESApp.state.conditions.length,
     measurements: VESApp.state.measurements.length,
+    deducts: VESApp.state.measurements.filter((m) => m.sign === -1).length,   // 2.1.0: the demo carries one cutout
+    hidden: (() => { const h = VESApp.state.hiddenConds; return !h ? 0 : (h.size != null ? h.size : h.length); })(),   // 2.1.0: one hidden condition (a Set on this build)
     version: VESApp.core.TAKEOFF_VERSION,
     fileVersion: window.__take.version,
     // Q1-5: what THIS build would write for THIS state — the number that has to match the file
@@ -121,8 +123,9 @@ check('D2 the demo loads through the load door on the current version: nothing d
      still fails this row. */
   loaded.normOk && loaded.fileVersion === loaded.wouldSaveAs && loaded.fileVersion <= loaded.version
   && loaded.dropped === 0 && loaded.banners.length === 0
-  && !loaded.idModalOpen && loaded.idCompare.level === 'match' && loaded.conditions === 7 && loaded.measurements === 7,
-  { conditions: loaded.conditions, measurements: loaded.measurements, version: loaded.version,
+  && !loaded.idModalOpen && loaded.idCompare.level === 'match' && loaded.conditions === 7 && loaded.measurements === 8   // 2.1.0 (declared): 7 + the demo's one deduct
+  && loaded.deducts === 1 && loaded.hidden === 1,
+  { conditions: loaded.conditions, measurements: loaded.measurements, deducts: loaded.deducts, hidden: loaded.hidden, version: loaded.version,
     fileVersion: loaded.fileVersion, wouldSaveAs: loaded.wouldSaveAs, dropped: loaded.dropped,
     identity: loaded.idCompare.level, idModalOpen: loaded.idModalOpen, banners: loaded.banners });
 
