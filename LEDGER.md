@@ -5,6 +5,30 @@ register. It is seeded mechanically from every ruling ID the shipped bytes and N
 line in `src/VES_PM.html` that names each one (the full reasoning is in that comment block). Rulings are Patrick's;
 a seat adds rows, never rewrites them. Synthetic aliases only — no client, project, address, or job dollar figure.
 
+## Batch Q5 — VES 2.1 · scoped persona pass + the one fix batch Q5F (build 2.1.0-rc.7, 2026-09-15)
+
+**Q5-P (P-ESTIMATOR, sonnet, 349K / 81 tool uses, observe-only, clone `.scratch/q5p` @ a3da297 = rc.6):** walked every Q5-P step (deduct ·
+hide · select · frictions · money trio) with a real pointer and keyboard, 59 screenshots, 5 findings, no P0/HIGH; two of its own false
+leads caught and not filed (its driving script, not the product). Findings file archived at `research/qol-2.1.0/P-ESTIMATOR-Q5.md`.
+- **Q5-01 (MED) hidden conditions still print in full** — REFUTED BY RULING: hide is a screen aid only (Patrick 2026-09-15); probe Q2-d pins
+  the takeoff paper byte-identical with conditions hidden. On record, not built.
+- **Q5-02 (LOW) the version-6 refusal on the 2.0.0 bytes reads "Refusing to guess at it"** — that text is in the shipped 2.0.0 file and cannot
+  be changed from here; CANDIDATE for this build's own ceiling text (a v7 refusal one day).
+- **Q5-03 (LOW) "ADJ" in the Formula column unexplained** — REFUTED WITH EVIDENCE: the column header's title names RAW · ADJ · WASTE · Q
+  (`src` :2465 and :2507), and ADJ is a token the estimator can type in a line formula (Batch AF). A per-cell title is a LOW candidate.
+- **Q5-04 (MED) the cutout-perimeter picker lists linear conditions in rail order** — BUILT (Q5F, R-16a).
+- **Q5-05 (LOW) no on-screen tell after Ctrl+D** — REFUTED WITH EVIDENCE: the toast reads "Copy made — drag it where it goes, Ctrl+Z takes it
+  back" (`duplicateSelection`); the persona read the chip only, and the chip names the condition, which is unchanged by design.
+
+**Q5F (orchestrator, no agent):** **R-16a** the cutout-perimeter picker lists linear conditions alphabetically (case-insensitive, numbers in
+numeric order), not in rail order — a list scans by name. One sort in `openDeductHandoff`. RED-first: `probe-qol` row Q5F-a red on the rc.6
+bytes (names in rail order), green here; probe-qol 13/13. Product md5 `1c3de74a`, commit ff936fa.
+- **Gates on `1c3de74a` (one sequential sweep, 22:36–22:48, raw in `.scratch/q5f-sweep/`):** ves-verify PASS · vocab-check 0 · G0 GREEN ·
+  b0-fixture 7/7 · b1 12/12 · b2a 7/7 · b2b 8/8 · b3 8/8 · b4 9/9 · b5 6/6 · b6f 17/17 · deduct 10/10 · hide 8/8 · select 10/10 · **qol 13/13** ·
+  money-trio 5/5 · v 17/17 · x 5/5 · y 4/4 · z 6/6 · aa 5/5 · ac 5/5 · ab 4/4 · ad 5/5 · u 8/8 · ae 5/5 · af 40/40 · p903-doc 8/8 · p903-aim
+  7/7 · p903-rail 5/5 · p903-pitch 6/6 · p903-words 5/5.
+- rc.6 on the runner: CI run 35046611396 GREEN (verify · gate · probes).
+
 ## Batch Q6 — VES 2.1 · THE MONEY TRIO (build 2.1.0-rc.6, 2026-09-15)
 
 Rulings M-1…M-3 (`.scratch/charter-q6.md` + amendments; Patrick 2026-09-15 "yes, rule them" — defaults his to reverse). Opus agent (327K /

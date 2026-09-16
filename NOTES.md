@@ -78,7 +78,10 @@ truth first, history compressed.
   (one ladderCents() for all six; the recap ladder's Overhead moved ONE printed cent to agree with the cost sheet and Sell−Cost — R-15b, his to reverse) ·
   M-3 zero-qty general lines greyed + Not included + flagged. Goldens unchanged, G0 GREEN, fixture 7/7. probe-money-trio 5/5 (3/5 red on rc.5); full sweep
   all 32 green. R-15a..d in LEDGER §Batch Q6. Pushed on the standing word.
-  **PICKUP = Q5** (scoped persona on the Q1–Q4/Q6 gestures, sonnet, clone `.scratch/q5p`; one fix batch Q5F cap; then release 2.1.0 — charter `.scratch/charter-q5.md`).
+  rc.6 CI run 35046611396 GREEN.
+- **Q5 persona pass + Q5F LANDED — 2.1.0-rc.7** (2026-09-15, ff936fa). 5 findings, no P0/HIGH: Q5-04 built (picker alphabetical, R-16a), Q5-01 refuted by
+  ruling, Q5-03/Q5-05 refuted with evidence, Q5-02 candidate. probe-qol 13/13; full sweep all 32 green on md5 `1c3de74a`. Release words + v6 demo
+  (98b7b84, sonnet). **PICKUP = RELEASE 2.1.0** (stamp → regression → ship ~/Downloads/VES_2.1.0.html → LEDGER §RELEASE 2.1.0 → merge + tag v2.1.0).
 - **Branch `claude/estimate-sheet-depth-vrhnf6` = F18.72, Batch AI — persona pass 3 on F18.71, answered** — sha256
   `d07cd6ad1fe1a215fdaf38897fc30f3ec6bce90c43f6c4e4b4e20d52b3b15a70`, 3,657,712 bytes (2026-09-05, cloud seat, the same owner's word; iteration 3 of 3, the
   cap). Pass 3 re-ran all four personas on the F18.71 bytes: every pass-2 fix held on the filing persona's re-run; the
