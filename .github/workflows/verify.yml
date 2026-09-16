@@ -178,6 +178,12 @@ jobs:
           # (its own G0 child already ran above).
           node tools/sweep/probe-qol.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
           code23=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code23
+          # Batch Q6 (VES 2.1): the money trio — per-line rounding override (CEIL default, M-1),
+          # Overhead named and equal on every money surface (M-2), a zero-quantity general line not
+          # included and saying so (M-3). --no-subgates: its Q6-e child runs G0 and the fixture
+          # control, both of which are their own steps above.
+          node tools/sweep/probe-money-trio.mjs "$PWD/src/VES_PM.html" "$PWD/fixtures/synthetic/three-sheet" "$PWD" --no-subgates 2>&1 | tee -a probes.txt
+          code24=${PIPESTATUS[0]}; [ "$code" = 0 ] && code=$code24
           {
             echo '## sweep probes'
             echo

@@ -1105,6 +1105,10 @@
   .estgrid input.recap-edit.fx { width: 160px; text-align: left; font-family: var(--mono); font-size: 11px; }
   .estgrid input.recap-edit.fxp { width: 120px; text-align: left; font-family: var(--mono); font-size: 11px; }
   .estgrid input.recap-edit.fx::placeholder, .estgrid input.recap-edit.fxp::placeholder { color: var(--ink-dim); opacity: .45; font-family: var(--sans); font-style: italic; }
+  /* M-1 (Batch Q6): the per-line rounding control lives in the Formula column with the line's other
+     derivation cells. It is a SELECT, not a money input — the money-cell machinery never touches it. */
+  .estgrid select.rsel { font-size: 11px; padding: 1px 2px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); }
+  .estgrid select.rsel.ov { border-color: var(--accent); color: var(--accent); }
   .estgrid .ge-mode { display: block; font-size: 11px; line-height: 1.3; color: var(--ink-dim); white-space: normal; max-width: 420px; }
   .estgrid .ge-mode.lib { color: var(--accent); }
   table.estgrid { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }   /* R1: collapse breaks sticky thead in Firefox */
@@ -3495,6 +3499,18 @@ const VESASM = (() => {
   }
 
   const CEIL = (n) => Math.ceil(n - 1e-9);   // tolerate float noise just under an integer
+  /* ── M-1 (Batch Q6) · CEIL RATIFIED, AND STATEABLE PER LINE ─────────────────────────────────
+     An order quantity rounds UP to the order unit — that is what a purchase does, and it stays the
+     DEFAULT on every line. What was missing was a way to say otherwise on the one line where it is
+     wrong: a cut-to-length coil billed to the inch (EXACT), or a bulk unit an estimator buys to the
+     closest whole (NEAREST). The mode resolves through the SAME override stack as every other line
+     field (LINE > CONDITION > PROJECT > ASSEMBLY > ITEM > SCHEMA), defaults to CEIL, and is applied
+     at the one place this engine has ever rounded — the material `ordered` step. Nothing without
+     the override takes a different path, so no certified figure moves. */
+  const ROUND_MODES = ['CEIL', 'EXACT', 'NEAREST'];
+  const roundModeOf = (v) => { const m = String(v == null ? '' : v).trim().toUpperCase(); return ROUND_MODES.indexOf(m) >= 0 ? m : 'CEIL'; };
+  // NEAREST is the estimator's own half-up rounding; EXACT does not round at all. CEIL is unchanged.
+  const applyRounding = (n, mode) => (mode === 'EXACT' ? n : mode === 'NEAREST' ? Math.round(n) : CEIL(n));
 
   /* ---------- resolve a single item into one ledger line (or null) ---------- */
   function resolveItem(item, itemId, asmId, asmLabel, ctx) {
@@ -3652,6 +3668,8 @@ const VESASM = (() => {
     // null → unchanged).
     const prodRate = (item.kind === 'labor' && typeof prodRateRaw === 'number'
       && isFinite(prodRateRaw) && prodRateRaw > 0) ? prodRateRaw : null;
+    // M-1: the line's own rounding mode. Absent → CEIL, which is exactly what this step already did.
+    const roundMode = roundModeOf(ov('rounding', undefined));
     let ordered, lineUnit = item.unit;
     if (hasQtyOv) {
       ordered = qtyOvRaw;                                           // exactly as authored, in the line unit
@@ -3660,7 +3678,7 @@ const VESASM = (() => {
       ordered = prodRate ? qtyNeeded / prodRate : qtyNeeded;
       if (prodRate) lineUnit = 'hr';
     } else {
-      ordered = CEIL(qtyNeeded * (1 + itemWaste));
+      ordered = applyRounding(qtyNeeded * (1 + itemWaste), roundMode);   // M-1: CEIL by default — EXACT / NEAREST only when the line says so
     }
     const extended = match.unitCost == null ? null : ordered * match.unitCost;
 
@@ -3669,6 +3687,8 @@ const VESASM = (() => {
       item: itemId, desc: item.desc, kind: item.kind,
       csi: item.csi || '', matchCode: item.match_code || '',
       drivingRefs, qtyNeeded, ordered, unit: lineUnit, itemWaste, qtyOverridden: hasQtyOv,
+      rounding: roundMode,   // M-1: the mode this line's ordered quantity was produced under
+      rounds: !hasQtyOv && item.kind !== 'labor',   // M-1: whether the rounding step ran at all on this line
       coverage, density, productionRate: prodRate, laborHours: prodRate ? ordered : null,
       driver: driverOf(),   // Batch AF (R1/R2): the derivation actually used — additive key, G0's mapper copies nine named keys
       unitCost: match.unitCost, extended,
@@ -3685,6 +3705,7 @@ const VESASM = (() => {
       item: itemId, desc: item.desc, kind: item.kind,
       csi: item.csi || '', matchCode: item.match_code || '',
       drivingRefs, qtyNeeded: null, ordered: null, unit: item.unit, itemWaste: 0,
+      rounding: 'CEIL', rounds: false,   // M-1: a gated line never reached the rounding step
       productionRate: null, laborHours: null,
       driver: driver || NO_DRIVER,   // Batch AF: a gated line still says what it tried to run (the FIXED qty gate fires before a scope exists → NO_DRIVER)
       unitCost: null, extended: null,
@@ -3709,6 +3730,7 @@ const VESASM = (() => {
       item: g.id || ('general.' + idx), desc: g.label || '', kind: 'equipment',
       csi: g.csi || '', matchCode: g.match_code || g.csi || '',
       drivingRefs: [], qtyNeeded: qty, ordered: qty, unit: g.unit || 'LS', itemWaste: 0,
+      rounding: 'CEIL', rounds: false,   // M-1: a general line is the quantity typed — nothing to round
       qtyOverridden: false, coverage: undefined, density: undefined,
       productionRate: null, laborHours: null,
       driver: { kind: 'flat', value: qty, level: 'PROJECT', exprLevel: null, paramsLevel: null, expr: null, params: null, scope: null },   // Batch AF: a general line is qty × unit cost, typed on the project
@@ -3830,6 +3852,9 @@ const VESASM = (() => {
     // Batch AF: the DSL's closed vocabulary, exported so the sheet and the library view can say what a
     // parameter may be called without re-implementing the rule (one evaluator, one truth).
     FUNCS, SCOPE_NAMES, RESERVED_NAMES, PARAM_NAME,
+    // M-1 (Batch Q6): the closed vocabulary of rounding modes, exported so the grid control and the
+    // file-door sanitiser read the engine's own list instead of keeping a second copy of it.
+    ROUND_MODES, roundModeOf,
   };
 })();
 
@@ -9140,7 +9165,8 @@ function adhocCondForLine(itemId) {
 }
 /* D-25.2a: the estimator's own words for what a grid cell is (D-23.6 — no tool nouns). */
 const FIELD_WORD = { unit_cost: 'unit price', qty: 'quantity', waste: 'waste %',
-  coverage: 'coverage', density: 'density', qty_expr: 'quantity formula', production_rate: 'production rate' };
+  coverage: 'coverage', density: 'density', qty_expr: 'quantity formula', production_rate: 'production rate',
+  rounding: 'rounding' };   // M-1 (Batch Q6)
 /* ── B6F-C1 (B6C-10) · EVERY VALUE THAT REACHES A JOURNAL LABEL IS A WORD, NEVER A CAST.
    `'condition waste 0.17% → ' + libRef` printed "[object Object]" on screen and into the record the
    moment a caller handed the door the CONDITION instead of its library reference — and the toast
@@ -9175,6 +9201,9 @@ const FIELD_WORD_AF = { params: 'formula inputs' };
 function paramsText(p) { return (p && typeof p === 'object') ? Object.keys(p).map((k) => k + '=' + p[k]).join(' ') : ''; }
 function lineEditLabel(itemId, field, value) {
   const w = FIELD_WORD[field] || FIELD_WORD_AF[field] || field, nm = lineDisplayName(itemId);
+  // M-1 (Batch Q6): the rounding mode reads as the mode itself — "rounding → NEAREST on <line>" —
+  // because CEIL/EXACT/NEAREST are the estimator's own words for it, not values to format.
+  if (field === 'rounding') return value == null ? 'rounding → CEIL on ' + nm : 'rounding → ' + String(value) + ' on ' + nm;
   if (value == null) return w + ' cleared → ' + nm;
   const v = field === 'unit_cost' ? VESCore.fmtMoney(value)
     : field === 'waste' ? (Math.round(value * 1000) / 10) + '%'
@@ -11260,6 +11289,20 @@ function apportionCents(parts, total) {
    $0.00 — the silent zero the contract above refuses — so every consumer of an apportioned
    array converts through this, and `VESCore.fmtMoney(null)` renders "—". */
 const centsVal = (c) => (c == null ? null : c / 100);
+/* ── M-2 (Batch Q6) · ONE LADDER APPORTIONMENT, READ BY EVERY MONEY SURFACE ───────────────
+   Overhead is its own named row on the recap, the cost sheet, the Estimate grid footer, the
+   Estimate CSV, the workbook and the condition-totals CSV — and until this function those six
+   faces produced it two different ways. The recap and the workbook printed round(ohAmt); the CSV
+   and the cost sheet printed an APPORTIONED cent. On the three-sheet fixture those disagree: the
+   three raw roundings sum to 10,156,453¢ against a Sell − Cost of 10,156,454¢, so the recap ladder
+   was a cent short of its own Sell while the CSV was not. One apportionment, one integer per row,
+   named in one place — the same S3/R-5b discipline the section subtotals already follow.
+   `recapModel()` still returns the exact floats; this is the printed cents, nothing else. */
+function ladderCents(ohAmt, mkAmt, pfAmt, costC, sellC) {
+  const parts = apportionCents([ohAmt, mkAmt, pfAmt], (sellC - costC) / 100);
+  return { costC, sellC, ohC: parts[0], mkC: parts[1], pfC: parts[2] };
+}
+const ladderOf = (m) => ladderCents(m.ohAmt, m.mkAmt, m.pfAmt, Math.round(m.cost * 100), Math.round(m.sell * 100));
 /* S7 (B-11): STD | INF | OBS spelled out, in the library layer's own vocabulary
    (VESASM.LEVEL_AUTHORITY — ASSEMBLY/ITEM/SCHEMA are authored standards; LINE/CONDITION/PROJECT
    are values a human put in on this job). One string, so the tooltip and the legend cannot drift. */
@@ -12522,11 +12565,14 @@ function renderRecapSummary() {
   const pctRow = (label, pct, amt, on) => on
     ? `<tr><td class="l">${label} (${(pct * 100).toFixed(1)}%)</td><td class="n">${money(amt)}</td></tr>`
     : `<tr class="rmute-row"><td class="l">${label}</td><td class="n"><span class="rmute">— set above</span></td></tr>`;
+  // M-2 (Batch Q6): the printed cents, from the one apportionment every other face reads, so the
+  // three adder rows add to Sell − Cost exactly and Overhead here IS Overhead there.
+  const LC = ladderOf(m);
   const ladder = `<table class="recap recap-ladder"><tbody>`
     + `<tr><td class="l">Cost</td><td class="n">${money(m.cost)}</td></tr>`
-    + pctRow('Overhead', m.oh, m.ohAmt, m.oh > 0)
-    + pctRow('Markup', m.mk, m.mkAmt, m.mk > 0)
-    + pctRow('Profit', m.pf, m.pfAmt, m.pf > 0)
+    + pctRow('Overhead', m.oh, centsVal(LC.ohC) || 0, true)   // M-2: named and shown on every job, at whatever rate — never folded into markup or profit, never hidden
+    + pctRow('Markup', m.mk, centsVal(LC.mkC) || 0, m.mk > 0)
+    + pctRow('Profit', m.pf, centsVal(LC.pfC) || 0, m.pf > 0)
     + `<tr class="grand"><td class="l">Sell</td><td class="n rtotal">${money(m.sell)}</td></tr>`
     + `</tbody></table>`;
   const risk = m.excluded.length
@@ -12596,6 +12642,17 @@ function lineConfColor(l) {
   if (l.verify || l.authority === 'INF') return 'var(--est)';
   return 'var(--firm)';
 }
+/* M-3 (Batch Q6): one sentence for the state, so the grid, the CSV and the workbook cannot word it
+   three ways. D-23.9's gate stands underneath it — a zero-quantity line is never an included $0. */
+const GEN_ZERO_QTY_REASON = 'qty 0 — not included';
+/* M-3: what a row's money is NOT in, in the same words, for the two exports that carry a flag column.
+   Blank when the row's cost IS in the estimate — a flag that fires on every row says nothing. */
+function notIncludedReason(r) {
+  if (r.omitted) return 'turned off — not counted';
+  if (r.gate) return String(r.gate);
+  if (r.total == null) return r.status ? 'not priced — not counted' : 'no price yet — not counted';
+  return '';
+}
 function estimateRows() {
   const { res, plain } = recapData();
   // B6F-C2: the grid is a money surface too — every row carries what it is still waiting on.
@@ -12622,6 +12679,7 @@ function estimateRows() {
       div, edit: 'engine', item: l.item, kind: l.kind, qtyOverridden: !!l.qtyOverridden,
       // Batch AF (R1): the derivation rides the row — the engine's own record, never re-derived here
       driver: l.driver || null, gate: l.gate || null, status: l.matchStatus, qtyNeeded: l.qtyNeeded, productionRate: l.productionRate,
+      rounding: l.rounding || 'CEIL', rounds: !!l.rounds,   // M-1 (Batch Q6): the mode the ordered figure was made under
       condUnit: (l.drivingRefs && l.drivingRefs.length && lib.conditions && lib.conditions[l.drivingRefs[0]]) ? lib.conditions[l.drivingRefs[0]].unit : null,
       okey: l.item, omitted: lineOmitted(l.item),
       srcCid: (l.drivingRefs && l.drivingRefs.length === 1 ? (condByRef[l.drivingRefs[0]] || {}).id : null),
@@ -12645,11 +12703,20 @@ function estimateRows() {
        reads the engine. `gq` and `g.unit_cost` still echo the STORE in their editable cells so
        a bad value stays visible and fixable; only the extended MONEY follows the engine. */
     const ext = generalExt(g, gi);
+    /* ── M-3 (Batch Q6) · A ZERO-QUANTITY GENERAL LINE IS NOT INCLUDED, AND SAYS SO ──────────────
+       The engine has gated it since D-23.9 — flagged, never a silent $0 — but the grid showed the
+       row in ordinary ink with a blank Net Cost, which reads as "priced at nothing" rather than
+       "not in the bid". It is greyed here with the reason, listed under Not included on the bid and
+       the cost sheet, and flagged in the Estimate CSV and workbook. Typing a quantity un-greys it
+       and puts it back in the number — setGeneralField journals that, as it journals every edit. */
+    const zeroQty = gq === 0;
     rows.push({ section: SECTION_PROJECT,   // B2a (R-5): general conditions belong to no condition — they are the job's own section
       group: 'General / Equipment', csi: (g.csi || '—'), sortKey: (g.csi || 'zz') + '|gen',
       label: g.label || '(line)', qty: gq, qtyEst: gq, unit: g.unit || '', unitCost: g.unit_cost,
       waste: null, total: ext, conf: ext == null ? 'var(--unknown)' : 'var(--firm)', np: ext == null,   // C3: blue is never a confidence hue
       div: String(g.csi || '').trim().split(/\s+/)[0] || '—', edit: 'gen', kind: g.kind, gi,
+      rounding: '', rounds: false,
+      gate: zeroQty ? GEN_ZERO_QTY_REASON : null,   // M-3: the grid's greyed reason (trCls reads `gate`)
       okey: (g.id || ('general.' + gi)), omitted: lineOmitted(g.id || ('general.' + gi)) });
   }
   return rows;
@@ -12683,16 +12750,20 @@ function exportGridCSV() {
       r.kind || '',   // L-03: the register the grid already shows (F18.8 Kind column)
       ...derivColumns(r),   // Batch AF: driver · formula · params · qty_needed · basis — trailing, same precedent
       linePendingWord(r),   // B6F-C2: the pending state in words — never a silent 0
-      r.section || SECTION_UNASSIGNED]);   // B2a (R-5d): the section stays the LAST column (probe-b2a-sections B2a-4 pins it there)
+      /* Batch Q6, additive (the L-03 precedent, again): M-1's rounding mode for this line, and
+         M-3's not-included reason — blank when the row's money IS in the estimate. They land
+         BEFORE the section, not after it: R-5d rules the section the LAST column of this file and
+         probe-b2a-sections B2a-4 pins it there, so a new column joins the run ahead of it. */
+      r.rounding || '', notIncludedReason(r),
+      r.section || SECTION_UNASSIGNED]);   // B2a (R-5d): the section stays the LAST column
   }
   const m = recapModel();
-  const pad = ['', '', '', '', '', '', ''];   // Batch AF's five derivation columns + B2a's section + B6F's pending, blank on the footer rows
+  const pad = ['', '', '', '', '', '', '', '', ''];   // Batch AF's five derivation columns + B6F's pending + B2a's section + Q6's rounding and not_included, blank on the footer rows
   out.push(['', '', 'Cost (Σ direct)', '', '', '', m.cost.toFixed(2), '', ...pad]);   // M-D: cents, and it still equals the sum of the rows above
   /* AB-3 (P-TRADE T-03): the reader could see Cost and Sell but not how one became the other. The three ladder
      rows land between them, apportioned to cents against Sell − Cost, so Cost + Overhead + Markup + Profit = Sell
      on the page a controller adds up. */
-  { const costC = Math.round(m.cost * 100), sellC = Math.round(m.sell * 100);
-    const parts = apportionCents([m.ohAmt, m.mkAmt, m.pfAmt], (sellC - costC) / 100);
+  { const L = ladderOf(m); const parts = [L.ohC, L.mkC, L.pfC];   // M-2 (Batch Q6): the one apportionment
     const pct = (x) => (x * 100).toFixed(1).replace(/\.0$/, '') + '%';
     out.push(['', '', 'Overhead (' + pct(m.oh) + ')', '', '', '', (centsVal(parts[0]) || 0).toFixed(2), '', ...pad]);
     out.push(['', '', 'Markup (' + pct(m.mk) + ')', '', '', '', (centsVal(parts[1]) || 0).toFixed(2), '', ...pad]);
@@ -12702,7 +12773,7 @@ function exportGridCSV() {
   // precedent (F18.18 added Off to the BOM, F18.19 added Pitch to the rollup —
   // both trailing) so column-index consumers survive. Batch AF adds five more the same way.
   saveBlob(projectSlug() + '-estimate-grid.csv',
-    VESX.rowsToCSV(['group', 'csi', 'line', 'qty', 'unit', 'unit_cost', 'total', 'kind', ...DERIV_HEADERS, 'pending', 'section'], out), 'text/csv');
+    VESX.rowsToCSV(['group', 'csi', 'line', 'qty', 'unit', 'unit_cost', 'total', 'kind', ...DERIV_HEADERS, 'pending', 'rounding', 'not_included', 'section'], out), 'text/csv');
   toast('Estimate CSV exported — matches the grid, division filter and all.', 'ok');
 }
 /* ════ Batch AF · THE FORMULA COLUMN ═══════════════════════════════════════════════════════════════════
@@ -12742,7 +12813,8 @@ function derivSummary(it) {
     if (it.qtyNeeded == null) return '';
     if (isLab && it.productionRate) return ` = ${fq(it.qtyNeeded)} ÷ ${fq(it.productionRate)}/hr → ${fq(it.qty)} hr`;
     if (isLab) return ` → ${fq(it.qty)} ${it.unit || ''}`;
-    return ` = ${fq(it.qtyNeeded)}${itemWasteNote} → ${fq(it.qty)} ${it.unit || ''}`;
+    const rw = (it.rounding && it.rounding !== 'CEIL') ? ` (${String(it.rounding).toLowerCase()})` : '';   // M-1: the mode is part of how the ordered figure was made
+    return ` = ${fq(it.qtyNeeded)}${itemWasteNote} → ${fq(it.qty)} ${it.unit || ''}${rw}`;
   };
   switch (d.kind) {
     case 'qty': return `typed ${fq(d.value)} ${it.unit || ''} — replaces the derivation (${baseWord} ${fq(base)} ${cu})`;
@@ -12789,9 +12861,26 @@ function libDriverWords(it) {
   if (li.cqty_ref === 'FIXED') return 'fixed allowance';
   return 'same unit as measured — type a formula to convert';
 }
+/* ── M-1 (Batch Q6) · THE ROUNDING CELL ────────────────────────────────────────────────────────
+   Order quantities round UP by default and always have. This cell is where a line says otherwise.
+   It appears ONLY on the lines the engine actually rounds — a library-backed material line whose
+   quantity it derived — because a control that does nothing on a labor line or a typed-quantity
+   line is a lie about what the app will do. CEIL clears the override rather than storing it, so a
+   takeoff that never leaves the default carries no rounding key at all and saves the bytes it did. */
+const ROUND_WORD = { CEIL: 'CEIL · round up', EXACT: 'EXACT · no rounding', NEAREST: 'NEAREST · round to closest' };
+const ROUND_TITLE = 'How this line\u2019s ordered quantity is rounded. CEIL rounds up to the whole order unit (the default, and what a purchase does); EXACT does not round; NEAREST rounds to the closest whole unit.';
+function lineRounds(it) { return it.edit === 'engine' && it.kind !== 'labor' && !it.qtyOverridden && !lineIsAdhoc(it.item); }
+function roundingCell(it) {
+  if (!lineRounds(it)) return '';
+  const cur = VESASM.roundModeOf(it.rounding);
+  const opts = VESASM.ROUND_MODES.map((m) => `<option value="${m}"${m === cur ? ' selected' : ''}>${escA(ROUND_WORD[m])}</option>`).join('');
+  return `<select class="rsel${cur !== 'CEIL' ? ' ov' : ''}" data-item="${escA(it.item)}" data-field="rounding" title="${escA(ROUND_TITLE)}">${opts}</select>`;
+}
 function derivCell(it) {
   if (it.edit === 'plain') return `<td class="deriv"><span class="dsum">measured qty × unit $</span></td>`;
-  if (it.edit !== 'engine') return `<td class="deriv"><span class="dsum">typed qty × unit $</span></td>`;
+  // M-3 (Batch Q6): a general line carrying no quantity is NOT in the bid — the row says the reason
+  // in the same place every engine row says its gate, and the row itself is greyed (trCls, below).
+  if (it.edit !== 'engine') return `<td class="deriv"><span class="dsum">typed qty × unit $</span>${it.gate ? `<span class="dgate">${escA(it.gate)}</span>` : ''}</td>`;
   const lvl = derivLevel(it); const d = it.driver || {};
   const over = lvl === 'LINE' || lvl === 'PROJECT' || lvl === 'QTY';
   const word = (lvl === 'LINE' && d.kind !== 'qty_expr') ? 'line value' : (DMARK_WORD[lvl] || lvl.toLowerCase());   // Batch AG (P-TRADE finding 11): a line-level coverage/density number is not a formula
@@ -12809,7 +12898,7 @@ function derivCell(it) {
     + ` value="${escA(lineExpr)}" placeholder="formula" title="Quantity formula for this line — blank = ${escA(libDriverWords(it))}. Scope: RAW (measured), ADJ (measured + condition waste), WASTE, Q (the driving quantity: RAW for labor, ADJ for material), your inputs, and ceil floor round abs max min.">`;
   const fxp = `<input class="recap-edit fxp${lineParams ? ' ov' : ''}" type="text" autocomplete="off" spellcheck="false" data-item="${escA(it.item)}" data-field="params"`
     + ` value="${escA(lineParams)}" placeholder="inputs" title="Inputs the formula uses, typed on this line as name=value (width=1.25 lbsf=1.156).${libParams ? ' Library inputs: ' + escA(libParams) + ' — one of the same name is replaced by yours.' : ''}">`;
-  return `<td class="deriv">${mark}${sum}${gate}<span class="dedit">${fx}${fxp}</span></td>`;
+  return `<td class="deriv">${mark}${sum}${gate}<span class="dedit">${fx}${fxp}${roundingCell(it)}</span></td>`;
 }
 // Batch AF (ledger F3.3): what the entry row will DO with what is typed, said before ✓ Add — which funnel, and what a
 // library match activates (every item of the assembly, fixed allowances included, priced by the engine itself).
@@ -13002,11 +13091,23 @@ function renderEstimateGrid() {
   const sellC = Math.round(m.sell * 100), costC = Math.round(m.cost * 100);
   const kc = apportionCents([m.material, m.labor].concat(m.equipment ? [m.equipment] : []), costC / 100);
   const oandp = Math.max(0, (sellC - costC) / 100);
+  /* ── M-2 (Batch Q6) · OVERHEAD IS ITS OWN NAMED COLUMN HERE, ALWAYS ──────────────────────────
+     This footer folded overhead, markup and profit into one "O&P" column, so the one number a PM
+     is asked for on every job — what the job carries in overhead — was the one number the estimate
+     screen would not say. The three are apportioned across the SAME margin S3 pins above (round(sell)
+     − round(cost)), so Material + Labor (+ Equipment) + Overhead + Markup + Profit still equals Sell
+     to the cent, and the figure printed here is the same figure the recap ladder, the cost sheet,
+     the workbook ladder and the condition-totals CSV print. The column no longer toggles on the rate
+     being set (D-23.8): a job carrying 0% overhead is a statement, and it is now made. */
+  const LC = ladderOf(m); const lc = [LC.ohC, LC.mkC, LC.pfC];   // M-2: the one apportionment
+  void oandp;
   const fb = (k, v, sell) => `<div class="fb${sell ? ' sell' : ''}"><div class="fk">${escA(k)}</div>`
     + `<div class="fv">${sell ? '<span class="c">$</span>' + money(v).replace(/^\$/, '') : money(v)}</div></div>`;
   // T5: centsVal, not `/ 100` — an EXCLUDED part is null and prints "—", never a firm $0.00.
   $('estgridFoot').innerHTML = fb('Material', centsVal(kc[0])) + fb('Labor', centsVal(kc[1]))
-    + (m.equipment ? fb('Equipment', centsVal(kc[2])) : '') + fb('O&P', oandp) + fb('Sell', m.sell, true);
+    + (m.equipment ? fb('Equipment', centsVal(kc[2])) : '')
+    + fb('Overhead', centsVal(lc[0]) || 0) + fb('Markup', centsVal(lc[1]) || 0) + fb('Profit', centsVal(lc[2]) || 0)
+    + fb('Sell', m.sell, true);
   const offN = rows.reduce((a, r) => a + (r.omitted ? 1 : 0), 0);   // F18.16
   // B2a: the count says what the sheet is now grouped BY, before what it can be filtered by
   const nSec = secOrder.length;
@@ -13799,6 +13900,8 @@ function sanitizeMoneyStore(ap) {
       const rule = spec[k];
       if (rule === 'expr') { if (!okExpr(o[k])) { delete o[k]; drop.fields++; } continue; }
       if (rule === 'params') { const cp = cleanParams(o[k]); if (cp) o[k] = cp; else { delete o[k]; drop.fields++; } continue; }
+      // M-1 (Batch Q6): the rounding mode is a word from the engine's own closed list — anything else is dropped at the door.
+      if (rule === 'round') { if (VESASM.ROUND_MODES.indexOf(String(o[k]).trim().toUpperCase()) < 0) { delete o[k]; drop.fields++; } else o[k] = String(o[k]).trim().toUpperCase(); continue; }
       const min = rule;
       if (min !== undefined) { if (!okNum(o[k], min)) { delete o[k]; drop.fields++; } continue; }
       // any other field: a number that is not finite is invalid everywhere in this engine
@@ -13811,7 +13914,7 @@ function sanitizeMoneyStore(ap) {
      unit_cost >= 0 (matchDispatch), qty >= 0 (hasQtyOv), waste >= 0 (itemWaste), and the
      derived-quantity inputs must at least be finite and non-negative to mean anything.
      Batch AF: qty_expr is a bounded string and params a bounded {name: number} object (typed above). */
-  const LINE_SPEC = { unit_cost: 0, qty: 0, waste: 0, coverage: 0, density: 0, production_rate: 0, qty_expr: 'expr', params: 'params' };
+  const LINE_SPEC = { unit_cost: 0, qty: 0, waste: 0, coverage: 0, density: 0, production_rate: 0, qty_expr: 'expr', params: 'params', rounding: 'round' };
   const COND_SPEC = { pitch: 0, waste: 0 };   // engine ignores pitch <= 0; a negative condition waste would SUBTRACT material
   // T3(a): fields the ITEM-override layers must never carry in from a takeoff file. Batch AF emptied the list
   // (NEW-4 reversed, see the block above); the mechanism stays so a future refusal has its own counted reason.
@@ -14248,6 +14351,25 @@ function exportRollupCSV() {
     if (unused.length) warns.push(`${unused.length} condition(s) loaded but unused (no measurements).`);
     const heldQ1 = J.roll.filter((r) => r.netHeld);   // Q1-1: the clamp, named, never a bare 0
     if (heldQ1.length) warns.push(heldQ1.map((r) => r.name).join('; ') + ': ' + VESCore.NET_FLOOR_ZERO + '.');
+  }
+  /* ── M-2 (Batch Q6) · THE CONDITION-TOTALS FILE CLOSES ON THE SAME NAMED LADDER ──────────────
+     This file's Extended Cost column is condition money; it had no foot at all, so the one figure a
+     reader wants beside it — what the job carries in overhead — was not here in any form. The ladder
+     rows land under the conditions in the SAME vocabulary the recap, the cost sheet, the grid footer
+     and the workbook use, tagged LADDER in the first column the way PROJECT-LEVEL and WARNING
+     already tag their rows, with the money in the Extended Cost column so a reader sums one column.
+     Apportioned to cents against Sell − Cost, so Cost + Overhead + Markup + Profit = Sell exactly. */
+  {
+    const m = recapModel();
+    const L = ladderOf(m); const parts = [L.ohC, L.mkC, L.pfC];   // M-2 (Batch Q6): the one apportionment
+    const pct = (x) => (x * 100).toFixed(1).replace(/\.0$/, '') + '%';
+    const lad = (label, amt) => { const row = new Array(18).fill(''); row[0] = 'LADDER'; row[1] = label; row[12] = amt.toFixed(2); return row; };
+    out.push([]);
+    out.push(lad('Cost (\u03a3 direct)', m.cost));
+    out.push(lad('Overhead (' + pct(m.oh) + ')', centsVal(parts[0]) || 0));
+    out.push(lad('Markup (' + pct(m.mk) + ')', centsVal(parts[1]) || 0));
+    out.push(lad('Profit (' + pct(m.pf) + ')', centsVal(parts[2]) || 0));
+    out.push(lad('Sell', m.sell));
   }
   if (warns.length) { out.push([]); for (const w of warns) out.push(['WARNING', w]); }
   saveBlob(projectSlug() + '-condition-rollup.csv',
@@ -14755,7 +14877,13 @@ function printCostSheet() {
      Profit are apportioned across Total sell minus Cost. */
   const gsC = gSellC, gcC = gc;   // B2a: both grands are the sums of the pinned subtotals the sheet printed
   const kc = apportionCents([kMat, kLab].concat(kEq ? [kEq] : []), gcC / 100);
-  const mc = apportionCents((oh ? [go] : []).concat([gm, gp]), (gsC - gcC) / 100);
+  /* M-2 (Batch Q6): Overhead is always one of the three named rows, at whatever rate — the row is
+     not conditional on the rate being set, so this sheet always states what the job carries. The
+     cents come from the ONE ladder apportionment, against this sheet's own printed grands (which
+     B2a pins to the recap's), so the Overhead figure here is the same integer every other face
+     prints. */
+  const LCS = ladderCents(go, gm, gp, gcC, gsC);
+  const mc = [LCS.ohC, LCS.mkC, LCS.pfC];
   let mi = 0;
   /* R-6b: Class (Material / Labor / Equipment — this file's own kinds map; Other / Supervision
      print only on a file whose kinds map carries them) → cost-code rows above → Subtotal → named
@@ -14765,16 +14893,25 @@ function printCostSheet() {
     + `<tr><td>Class: Labor</td><td class="n">${money(centsVal(kc[1]))}</td></tr>`
     + (kEq ? `<tr><td>Class: Equipment</td><td class="n">${money(centsVal(kc[2]))}</td></tr>` : '')
     + `<tr><td>Subtotal</td><td class="n">${money(gcC / 100)}</td></tr>`
-    + (oh ? `<tr><td>Overhead (${(oh * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>` : '')
+    + `<tr><td>Overhead (${(oh * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>`
     + `<tr><td>Markup (${(mk * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>`
     + `<tr><td>Profit (${(pf * 100).toFixed(1)}%)</td><td class="n">${money(centsVal(mc[mi++]))}</td></tr>`
     + `<tr class="grand"><td>Total</td><td class="n">${money(gsC / 100)}</td></tr></tbody></table>`
     + `<div class="basis">Material + labor${kEq ? ' + equipment' : ''} = Subtotal. Margins apply to the total, not to either half.</div></div>`;
   // AF5 pins the phrase "order unit" reaching this page as visible text (Batch AF, R5) — Cost Unit
   // is that same figure under R-6b's word, so the sentence below carries both, literally.
+  /* ── M-3 (Batch Q6) · THE COST SHEET SAYS WHAT IS NOT IN THE NUMBER ──────────────────────────
+     The bid has printed "Not included in this bid" since D-24.4; the sheet the estimator reads
+     BEFORE committing printed only the excluded-lines warning, which names unpriced work but not
+     the scope that was turned off or never measured — and, since M-3, not the general lines
+     carrying no quantity. Same notIncludedNames() the bid and the proposal read, so the two
+     documents cannot list different work. Display only: no money face reads this list. */
+  const notIncl = notIncludedNames();
+  const notInclBlock = notIncl.length
+    ? `<div class="exclsec"><h2>Not included</h2><ul>${notIncl.map((n) => `<li>${escA(n)}</li>`).join('')}</ul></div>` : '';
   $('printDoc').innerHTML = bidHead('Cost sheet') + `<div class="meta internal-mark">INTERNAL — margins print on this sheet; not for client distribution.</div>`
     + `<div class="meta">Cost Unit is the line's unit cost, per order unit.</div>`
-    + body + recap + risk;
+    + body + recap + notInclBlock + risk;
   closeCmd();
   toast('Cost sheet sent to print.', 'ok');   // AD-3 (T-06)
   printNow();   // R-10e / B6F-C6: one print path, and the latch empties when the print returns
@@ -15582,10 +15719,11 @@ function exportEstimateXLSX() {
       // Q4-6 (was R-6b's EU (P) / Prc Un (Q), trailing additive columns): removed \u2014 both always
       // read the same value as Unit (E/Ord Un), collapsed away rather than repeated twice more.
       // B6F-C2: R (pending) — trailing and additive again, so a workbook reader sees the named state, not a short figure with nothing beside it.
-      out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...dc, sn, linePendingWord(x)]);
+      // Batch Q6: Q (rounding, M-1) and R (not included, M-3) are TRAILING and additive again, so A–P keep their letters.
+      out.push([x.group, x.csi, x.label, qtyOk ? x.qty : '', x.unit || '', ucOk ? x.unitCost : '', ext, x.kind || '', '', ...dc, sn, linePendingWord(x), x.rounding || '', notIncludedReason(x)]);
       r++;
     }
-    out.push(['', '', 'Section: ' + sn + ' section subtotal', '', '', '', { f: `SUM(G${first}:G${r - 1})`, v: sub }, '', '', '', '', '', '', '', sn, '']);
+    out.push(['', '', 'Section: ' + sn + ' section subtotal', '', '', '', { f: `SUM(G${first}:G${r - 1})`, v: sub }, '', '', '', '', '', '', '', sn, '', '', '']);
     subRefs.push('G' + r); r++;
   }
   const m = recapModel();
@@ -15594,13 +15732,16 @@ function exportEstimateXLSX() {
   /* Batch AF (ledger F4.3-4): the ladder percentages were baked into the formula strings as literals, so the
      workbook could not be re-margined in Excel without editing three formulas. Each ladder row now carries its
      fraction in column I and the formula multiplies by THAT cell; cached values are the same numbers as before. */
-  const pad = ['', '', '', '', '', '', ''];   // J\u2013N (the derivation) + O (section) + P (B6F's pending, Q4-6 shifted up from R), blank on the ladder rows
+  const pad = ['', '', '', '', '', '', '', '', ''];   // J\u2013N (the derivation) + O (section) + P (B6F's pending, Q4-6 shifted up from R) + Q/R (Batch Q6: rounding, not included), blank on the ladder rows
   out.push(['', '', 'Cost (\u03a3 direct)', '', '', '', { f: 'SUM(' + (subRefs.length ? subRefs.join(',') : 'G2:G' + (r - 1)) + ')', v: m.cost }, '', '', ...pad]);
   // Batch AG (P-TRADE finding 2a): the label no longer bakes the percentage as text — the Pct cell IS the percentage,
   // so re-margining in Excel leaves no stale "(10%)" beside a changed rate.
-  out.push(['', '', 'Overhead (× Pct)', '', '', '', { f: `G${cRow}*I${oRow}`, v: m.ohAmt }, '', m.oh, ...pad]);
-  out.push(['', '', 'Markup (× Pct)', '', '', '', { f: `(G${cRow}+G${oRow})*I${kRow}`, v: m.mkAmt }, '', m.mk, ...pad]);
-  out.push(['', '', 'Profit (× Pct)', '', '', '', { f: `(G${cRow}+G${oRow}+G${kRow})*I${pRow}`, v: m.pfAmt }, '', m.pf, ...pad]);
+  // M-2 (Batch Q6): the cached values are the SAME printed cents every other money face shows — a
+  // viewer that does not recalculate reads the recap's integers; one that does gets the live formula.
+  const XL = ladderOf(m);
+  out.push(['', '', 'Overhead (× Pct)', '', '', '', { f: `G${cRow}*I${oRow}`, v: centsVal(XL.ohC) || 0 }, '', m.oh, ...pad]);
+  out.push(['', '', 'Markup (× Pct)', '', '', '', { f: `(G${cRow}+G${oRow})*I${kRow}`, v: centsVal(XL.mkC) || 0 }, '', m.mk, ...pad]);
+  out.push(['', '', 'Profit (× Pct)', '', '', '', { f: `(G${cRow}+G${oRow}+G${kRow})*I${pRow}`, v: centsVal(XL.pfC) || 0 }, '', m.pf, ...pad]);
   void pct;
   out.push(['', '', 'Sell', '', '', '', { f: `G${cRow}+G${oRow}+G${kRow}+G${pRow}`, v: m.sell }, '', '', ...pad]);
   /* VOCAB:grid — R-6b: Description/Ord Qty/Unit Price/Net Cost rename existing columns in
@@ -15608,7 +15749,7 @@ function exportEstimateXLSX() {
      keeps its established word (probe-b2a-sections reads it by that exact text) and IS the VOCAB
      "Quantity" (estimated) figure; Q4-6: Ord Un (E) is renamed to Unit — EU/Prc Un's old trailing
      P/Q columns are gone (both always repeated E), so Pending shifts up to P. */
-  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Ord Qty', 'Unit', 'Unit Price', 'Net Cost', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis', 'Section', 'Pending'], rows: out }];
+  const tabs = [{ name: 'Estimate', headers: ['Group', 'CSI', 'Description', 'Ord Qty', 'Unit', 'Unit Price', 'Net Cost', 'Kind', 'Pct', 'Driver', 'Formula', 'Params', 'Qty needed', 'Basis', 'Section', 'Pending', 'Rounding', 'Not included'], rows: out }];
   const bytes = VESX.serializeXLSX(tabs);
   saveBlob(projectSlug() + '-estimate.xlsx', bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   toast('Estimate workbook exported (.xlsx) \u2014 live formulas, internal.', 'ok');
@@ -16249,6 +16390,15 @@ function handleMoneyEdit(e) {
   if (i && i.classList && i.classList.contains('gen-edit') && i.dataset.gen != null) {
     if (fromGrid) gridFocus = { id: i.dataset.gen, field: i.dataset.field };
     setGeneralField(+i.dataset.gen, i.dataset.field, i.value); return;
+  }
+  /* M-1 (Batch Q6): the rounding control is a word from a closed list, never a number — it is routed
+     here, above the money strip below, which deletes commas and refuses anything that is not a number. */
+  if (i && i.dataset && i.dataset.field === 'rounding' && i.dataset.item) {
+    if (fromGrid) gridFocus = { id: i.dataset.item, field: 'rounding' };
+    const mode = VESASM.roundModeOf(i.value);
+    editLine(i.dataset.item, 'rounding', mode === 'CEIL' ? null : mode);   // CEIL is the default: it clears the override rather than storing one
+    if (typeof renderEstimateGrid === 'function' && (state.gridView || state.mode === 'split')) renderEstimateGrid();
+    return;
   }
   if (!i || !i.classList || !i.classList.contains('recap-edit')) return;
   /* ── Batch AF · THE FORMULA CELL AND ITS INPUTS ARE TEXT, NOT MONEY ──────────────────────────
@@ -16891,7 +17041,8 @@ function cycleUiScale() {
 
 // Seam for the automated harness (and console debugging). Drives the same
 // functions the UI events call — no parallel logic.
-const VES_BUILD = '2.1.0-rc.5';  // 2.1.0-rc.5 (2026-09-15): Batch Q4 — FRICTIONS + EXPORTS LIGHT TOUCH, eleven small doors. Q4-1: calibrating one sheet (typed scale, quick-pick, or click+type) offers the SAME scale to every OTHER sheet with none yet — a banner naming every sheet it reached, accepting is ONE journal entry, and pending measurements on those sheets re-price through the same path a direct calibration uses. Q4-2: Shift+L cycles the plan's value labels on → values only → off (a pref like the Fills cycle; shapes, fills and print untouched) — plain L keeps opening the Library door. Q4-3: holding Shift while placing a vertex locks the new segment to the nearest 0/45/90° from the previous vertex (ortho lock), read off the triggering event so a lost keyup can never stick it on; toolMsg names it "ortho". Q4-4: a card's new ⋮ menu duplicates a condition — same type/libRef/pitch/section, next unused palette color, "Copy of <name>", zero measurements, one journal entry, the price book (assemblyProject) never written. Q4-5: openDrawerAuto stops being a no-op — the recap dock opens by default the instant a loaded/opened project already carries priced lines (D-UI's STRIP-FIRST still holds for an unpriced one, canvas dominant); the user's own last toggle always wins from there, in either direction. Q4-6: VOCAB.grid collapses EU / Ord Un / Prc Un — three columns that always read the same value — into ONE Unit column, on the grid, its entry row and the Estimate workbook export (probe-b5-words B5-2 re-pointed; the three-unit EDGE chain stays the roadmap target, in a comment). Q4-7: at 125–150% UI scale the Estimate grid overflows and scrolls INSIDE its own .gscroll container, never the page (#gridview is position:fixed) — the Description column is now sticky, its width explicitly pinned to the same number in the header and every row, since a sticky column reserves nothing by itself. Q4-8: the empty-undo-stack sentence (B6F-9, E-F4) now fires once per takeoff instead of re-toasting on every Ctrl+Z pressed against the same empty stack. Q4-9 (T-22): Tab off the last editable cell of a grid row wraps to the first editable cell of the NEXT row (row-major order) instead of falling into the browser's own tab order, which could land on a checkbox; Shift+Tab wraps back; Enter's column-walk and Esc's revert-in-place are untouched. Q4-10 (O1): the card menu's "Type a quantity…" lands a journaled manual measurement without arming the condition or touching the sheet — addManualQuantity was always there, the door to reach it was not. Q4-11: the Files & exports menu now lists the bill-of-materials, condition-totals and audit CSVs too (same exportBOMCSV/exportRollupCSV/exportAuditCSV functions their Setup doors already call), each with a one-line trade-word purpose, beside the Estimate CSV and Supplier RFQ already there — same files, same names, nothing merged or removed from Setup. Gates: probe-qol.mjs 11/11 (RED-first on rc.3), G0 GREEN 4/4, verifier PASS, vocab-check 0 findings, 0 new egress. Q4-5 REVERTED at the landing (R-14d): auto-opening the summoned recap painted it over the cards and ate the first click (probe-z Z5, p903-rail AG1/AG2 red); openDrawerAuto stays the D-UI strip-first no-op; F-F7 stays open until the recap has a dock lane (C-Q4-1). Audit (CSV) purpose line reworded without seat-speak (p903-words AI1).
+const VES_BUILD = '2.1.0-rc.6';  // 2.1.0-rc.6 (2026-09-15): Batch Q6 — THE MONEY TRIO. M-1: CEIL is ratified — an order quantity still rounds UP to the order unit on every line, and a line may now SAY otherwise: a `rounding` override (CEIL default / EXACT / NEAREST) resolves through the same LINE>CONDITION>PROJECT>ASSEMBLY>ITEM>SCHEMA stack every other line field does, is applied at the one place this engine has ever rounded (the material `ordered` step), is journaled “rounding → NEAREST on <line>”, sits in the line's Formula column beside its formula and inputs (and only on lines the engine actually rounds — never on a labor or typed-quantity line, where it would do nothing), is named in the derivation summary, and rides the Estimate CSV and workbook as a trailing `rounding` column. CEIL is stored as the ABSENCE of an override, so a takeoff that never touches the cell is byte-identical and no certified figure moves. M-2: Overhead is its own named row/column on every money surface — the Estimate grid footer's single folded “O&P” column becomes Overhead / Markup / Profit, apportioned to the same rounded margin S3 pins so Material + Labor (+ Equipment) + the three still equals Sell to the cent; the recap ladder's and the cost sheet's Overhead rows no longer TOGGLE on the rate being set (D-23.8), so a job carrying 0% says so; the condition-totals CSV gains the same named ladder (LADDER-tagged rows, money in the Extended Cost column). Never folded into markup or profit, anywhere. M-3: a general line carrying no quantity is GREYED on the grid with the reason “qty 0 — not included”, listed under “Not included” on the client bid (already) and now on the cost sheet (the same notIncludedNames list, so the two documents cannot disagree), and flagged in the Estimate CSV and workbook through a trailing `not_included` column that carries the reason. D-23.9's gate is unchanged underneath it — never an included $0. Gates: probe-money-trio.mjs 5/5 (RED-first on the rc.5 bytes), G0 GREEN 4/4, probe-b0-fixture 7/7 to the cent, verifier PASS, vocab-check 0 findings, 0 new egress.
+// 2.1.0-rc.5:  // 2.1.0-rc.5 (2026-09-15): Batch Q4 — FRICTIONS + EXPORTS LIGHT TOUCH, eleven small doors. Q4-1: calibrating one sheet (typed scale, quick-pick, or click+type) offers the SAME scale to every OTHER sheet with none yet — a banner naming every sheet it reached, accepting is ONE journal entry, and pending measurements on those sheets re-price through the same path a direct calibration uses. Q4-2: Shift+L cycles the plan's value labels on → values only → off (a pref like the Fills cycle; shapes, fills and print untouched) — plain L keeps opening the Library door. Q4-3: holding Shift while placing a vertex locks the new segment to the nearest 0/45/90° from the previous vertex (ortho lock), read off the triggering event so a lost keyup can never stick it on; toolMsg names it "ortho". Q4-4: a card's new ⋮ menu duplicates a condition — same type/libRef/pitch/section, next unused palette color, "Copy of <name>", zero measurements, one journal entry, the price book (assemblyProject) never written. Q4-5: openDrawerAuto stops being a no-op — the recap dock opens by default the instant a loaded/opened project already carries priced lines (D-UI's STRIP-FIRST still holds for an unpriced one, canvas dominant); the user's own last toggle always wins from there, in either direction. Q4-6: VOCAB.grid collapses EU / Ord Un / Prc Un — three columns that always read the same value — into ONE Unit column, on the grid, its entry row and the Estimate workbook export (probe-b5-words B5-2 re-pointed; the three-unit EDGE chain stays the roadmap target, in a comment). Q4-7: at 125–150% UI scale the Estimate grid overflows and scrolls INSIDE its own .gscroll container, never the page (#gridview is position:fixed) — the Description column is now sticky, its width explicitly pinned to the same number in the header and every row, since a sticky column reserves nothing by itself. Q4-8: the empty-undo-stack sentence (B6F-9, E-F4) now fires once per takeoff instead of re-toasting on every Ctrl+Z pressed against the same empty stack. Q4-9 (T-22): Tab off the last editable cell of a grid row wraps to the first editable cell of the NEXT row (row-major order) instead of falling into the browser's own tab order, which could land on a checkbox; Shift+Tab wraps back; Enter's column-walk and Esc's revert-in-place are untouched. Q4-10 (O1): the card menu's "Type a quantity…" lands a journaled manual measurement without arming the condition or touching the sheet — addManualQuantity was always there, the door to reach it was not. Q4-11: the Files & exports menu now lists the bill-of-materials, condition-totals and audit CSVs too (same exportBOMCSV/exportRollupCSV/exportAuditCSV functions their Setup doors already call), each with a one-line trade-word purpose, beside the Estimate CSV and Supplier RFQ already there — same files, same names, nothing merged or removed from Setup. Gates: probe-qol.mjs 11/11 (RED-first on rc.3), G0 GREEN 4/4, verifier PASS, vocab-check 0 findings, 0 new egress. Q4-5 REVERTED at the landing (R-14d): auto-opening the summoned recap painted it over the cards and ate the first click (probe-z Z5, p903-rail AG1/AG2 red); openDrawerAuto stays the D-UI strip-first no-op; F-F7 stays open until the recap has a dock lane (C-Q4-1). Audit (CSV) purpose line reworded without seat-speak (p903-words AI1).
 // 2.1.0-rc.4:  // 2.1.0-rc.4 (2026-09-15): Batch Q2F — the one fix batch after Q2's regression was caught by the gate on the runner (CI on ebbea2c, probes job red at probe-z Z5): at phone width the file:// notice banner overflowed its 63px box across the rail's cards and, with the open rail at z-index auto, took the long-press that opens the money peek; Q2's strip had moved the first card down into that band. The open rail in the narrow layout now stacks above the stage's banners (z-index 21; R-14b). One CSS rule; no money, no file, no print path.
 // 2.1.0-rc.3:  // 2.1.0-rc.3 (2026-09-15): Batch Q3 — SELECTION AFFORDANCES: the picked thing announces itself and offers its doors. A selection chip beside the pointer (trade word · condition · value · sheet · N more under it) with Edit · Delete · Move · Duplicate · Re-assign · Cycle; `state.selectedIds` beside `selectedId` (grips only when one is selected); Shift+click adds, a drag on EMPTY paper sweeps a marquee that skips hidden conditions, Esc clears; pointerdown on the BODY of an already-selected shape moves it (grips win inside 8 px; an unselected body still pans; a press that never travelled 3 px is a click, so a repeat click still steps the stack — AF-1 stands); Ctrl+D duplicates at +12/+12 and lands selected; Shift+R files the selection under another condition of the SAME kind (plain R still rotates; the wrong kind is refused with the reason spoken); bulk Delete / Move / Re-assign are ONE journal entry, one Ctrl+Z; Shift+Space steps the stack under the pointer; a hidden region keeps a faint ghost chip carrying its eye, and Show all clears hiddenRegions too (Q3-0, R-12a). Screen-side only: no money rule, no file version, no print path moved.
 // 2.1.0-rc.2:  // 2.1.0-rc.2 (2026-09-15): Batch Q2 — HIDE / SOLO: finishing the screen-only visibility story (Patrick: hide = screen aid only). A rail-header strip above the cards (Solo · Hide others · Hide measured · Show all, plus a "N hidden" chip that IS Show all) writes state.hiddenConds wholesale through the SAME eye/journal pair the per-condition eye has always used — one Ctrl+Z reverses the whole gesture; Alt+click any card's own eye is Solo for that one condition, unchanged otherwise. `H` hides the ARMED condition (toggle, same funnel as the eye) and `Shift+H` is Show all — both keys were unbound; a nothing-armed `H` says why. Drawn regions get an eye of their own, ON the chip: `state.hiddenRegions` is a new Set (viz-only, mirrors hiddenConds); a hidden region paints nothing — outline AND chip both, drawOverlay skips it and its chip is never pushed to the pane's hit-test list, so it cannot be picked either — and hiding one never touches `state.sections`, containment tagging, or a section subtotal (regionsOnPage itself is never filtered). Screen only, exactly like the existing per-condition hide: the rollup, every card's quantity, the grid, the recap, the bid, the proposal and the takeoff paper are identical to the cent with everything hidden and with nothing hidden — the takeoff print already ignored `hiddenConds` by design (B6F) and prints a region regardless of `hiddenRegions` the same way, unchanged. TAKEOFF_VERSION unchanged (Q2-5): `hiddenRegions` rides beside `hiddenConds` in the existing viz blob; an older reader that has never heard of the key simply ignores it. No money moved: G0 GREEN 4/4. 2.1.0-rc.1 (2026-09-15): Batch Q1 — DEDUCTIONS. A cutout traced inside a field area subtracts its SF from that area, on the same condition, with one click to hand its perimeter to a flashing condition. `m.sign` (+1 default, -1 deduct) is set only through addMeasurement's opts and `value` stays a positive magnitude everywhere — `VESCore.rollup` is the one place the sign becomes a quantity (`qty += m.value * sgn`), with a named NET_FLOOR_ZERO clamp when the cutouts add up past the field: never a silent 0, the same sentence on the card, the grid row, the recap line, the audit file, the rollup file and the takeoff paper. Deduct is a rack MODIFIER beside Fills (key D, Shift keeps it armed) that disarms after one trace and refuses to arm on a linear or count condition with the reason spoken and nothing created; the cutout lands on the armed condition, is not required to lie inside anything (a soft note says when it does not), and two overlapping deducts both subtract. On the plan it is the condition's own hue with a dashed edge and a cross-hatch, labelled with the minus. When it closes, a picker opens at the pointer listing the job's linear conditions and "None": choosing one writes a sibling LINEAR measurement from the closed ring (the cutout's perimeter) and the pair is ONE journal entry — "deduct + perimeter to <condition>" — that one Ctrl+Z takes back whole. The audit CSV and the condition-rollup CSV each carry one signed `Deduct` row per cutout so a reader summing the quantity column gets the net; the rollup row prints the gross above them and names the net in its Cost Basis. TAKEOFF_VERSION is 6 but `fileVersionNeeded()` WRITES 6 only when a measurement carries a sign — a takeoff with no deduct still says 5 and is byte-for-byte what 2.0.0 wrote; the version refusal now names the build that reads the file. The exact-quantity door still takes a positive magnitude and the sign rides through it. 2.0.0 (2026-09-15): RELEASE — the VES 2 line: one lineage (B0) · pitch one store rise/12 (B1) · sections typed + drawn (B2a/B2b) · 24 colors + custom + print patterns (B3) · every sheet prints (B4) · one description, EDGE column words (B5) · persona fix batch (B6F). Changelog: RELEASE_NOTES.md. MIT License © 2026 Patrick Moriarty / Bitumen Machina LLC.
